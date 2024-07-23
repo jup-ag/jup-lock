@@ -10,6 +10,8 @@ pub struct Escrow {
     pub recipient: Pubkey,
     /// escrow token address
     pub escrow_token: Pubkey,
+    /// creator of the escrow
+    pub creator: Pubkey,
     /// escrow base key
     pub base: Pubkey,
     /// escrow bump
@@ -32,7 +34,7 @@ pub struct Escrow {
     pub buffer: [u128; 6],
 }
 
-const_assert_eq!(std::mem::size_of::<Escrow>(), 32 * 3 + 8 * 7 + 16 * 6); // 248
+const_assert_eq!(std::mem::size_of::<Escrow>(), 32 * 4 + 8 * 7 + 16 * 6); // 280
 
 impl Escrow {
     pub fn init(
@@ -44,6 +46,7 @@ impl Escrow {
         number_of_period: u64,
         recipient: Pubkey,
         escrow_token: Pubkey,
+        sender: Pubkey,
         base: Pubkey,
         escrow_bump: u8,
     ) {
@@ -54,6 +57,7 @@ impl Escrow {
         self.number_of_period = number_of_period;
         self.recipient = recipient;
         self.escrow_token = escrow_token;
+        self.creator = sender;
         self.base = base;
         self.escrow_bump = escrow_bump;
     }

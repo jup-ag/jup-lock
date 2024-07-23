@@ -91,6 +91,7 @@ pub fn handle_create_vesting_plan(
         number_of_period,
         ctx.accounts.recipient.key(),
         ctx.accounts.escrow_token.key(),
+        ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         *ctx.bumps.get("escrow").unwrap(),
     );
