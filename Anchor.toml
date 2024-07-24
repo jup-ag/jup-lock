@@ -10,5 +10,9 @@ locker = "2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg"
 [registry]
 url = "https://api.apr.dev"
 
+[provider]
+cluster = "Localnet"
+wallet = "keys/localnet/admin-bossj3JvwiNK7pvjr149DqdtJxf2gdygbcmEPTkb2F1.json"
+
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
