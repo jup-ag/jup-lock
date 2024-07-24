@@ -34,7 +34,7 @@ pub struct Escrow {
     pub buffer: [u128; 6],
 }
 
-const_assert_eq!(std::mem::size_of::<Escrow>(), 32 * 4 + 8 * 7 + 16 * 6); // 280
+const_assert_eq!(Escrow::INIT_SPACE, 280); //  32 * 4 + 8 * 7 + 16 * 6
 
 impl Escrow {
     pub fn init(
