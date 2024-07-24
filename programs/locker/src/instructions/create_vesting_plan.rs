@@ -1,8 +1,6 @@
 use crate::safe_math::SafeMath;
 use crate::*;
-use anchor_spl::associated_token::AssociatedToken;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface, TransferChecked};
-
+use anchor_spl::token::{Token, TokenAccount, Transfer};
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct CreateVestingPlanParameters {
     pub start_time: u64,
@@ -39,33 +37,23 @@ pub struct CreateVestingPlanCtx<'info> {
     )]
     pub escrow: AccountLoader<'info, Escrow>,
 
-    #[account(
-        init,
-        payer = sender,
-        associated_token::mint = token_mint,
-        associated_token::authority = escrow,
-        associated_token::token_program = token_program,
-    )]
-    pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
+    #[account(mut)]
+    pub escrow_token: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]
     pub sender: Signer<'info>,
 
     #[account(mut)]
-    pub sender_token: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub sender_token: Box<Account<'info, TokenAccount>>,
 
     /// CHECK: recipient account
     pub recipient: UncheckedAccount<'info>,
 
-    pub token_mint: Box<InterfaceAccount<'info, Mint>>,
-
-    pub token_program: Interface<'info, TokenInterface>,
+    /// Token program.
+    pub token_program: Program<'info, Token>,
 
     // system program
     pub system_program: Program<'info, System>,
-
-    /// Associated token program.
-    pub associated_token_program: Program<'info, AssociatedToken>,
 }
 
 pub fn handle_create_vesting_plan(
@@ -82,6 +70,16 @@ pub fn handle_create_vesting_plan(
 
     require!(frequency != 0, LockerError::FrequencyIsZero);
 
+    let escrow_token = anchor_spl::associated_token::get_associated_token_address(
+        &ctx.accounts.escrow.key(),
+        &ctx.accounts.sender_token.mint,
+    );
+
+    require!(
+        escrow_token == ctx.accounts.escrow_token.key(),
+        LockerError::InvalidEscrowTokenAddress
+    );
+
     let mut escrow = ctx.accounts.escrow.load_init()?;
     escrow.init(
         start_time,
@@ -96,18 +94,16 @@ pub fn handle_create_vesting_plan(
         *ctx.bumps.get("escrow").unwrap(),
     );
 
-    anchor_spl::token_2022::transfer_checked(
+    anchor_spl::token::transfer(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
-            TransferChecked {
+            Transfer {
                 from: ctx.accounts.sender_token.to_account_info(),
                 to: ctx.accounts.escrow_token.to_account_info(),
                 authority: ctx.accounts.sender.to_account_info(),
-                mint: ctx.accounts.token_mint.to_account_info(),
             },
         ),
         params.get_total_deposit_amount()?,
-        ctx.accounts.token_mint.decimals,
     )?;
 
     emit!(EventCreateVestingPlan {

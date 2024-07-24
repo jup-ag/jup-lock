@@ -1,5 +1,5 @@
 use crate::*;
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface, TransferChecked};
+use anchor_spl::token::{Token, TokenAccount, Transfer};
 
 #[event_cpi]
 #[derive(Accounts)]
@@ -8,20 +8,36 @@ pub struct ClaimCtx<'info> {
     pub escrow: AccountLoader<'info, Escrow>,
 
     #[account(mut)]
-    pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub escrow_token: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]
     pub recipient: Signer<'info>,
 
     #[account(mut)]
-    pub recipient_token: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub recipient_token: Box<Account<'info, TokenAccount>>,
 
-    pub token_mint: Box<InterfaceAccount<'info, Mint>>,
+    /// Token program.
+    pub token_program: Program<'info, Token>,
+}
 
-    pub token_program: Interface<'info, TokenInterface>,
-
-    // system program
-    pub system_program: Program<'info, System>,
+impl<'info> ClaimCtx<'info> {
+    fn transfer_to_recipient(&self, amount: u64) -> Result<()> {
+        let escrow = self.escrow.load()?;
+        let escrow_seeds = escrow_seeds!(escrow);
+        anchor_spl::token::transfer(
+            CpiContext::new_with_signer(
+                self.token_program.to_account_info(),
+                Transfer {
+                    from: self.escrow_token.to_account_info(),
+                    to: self.recipient_token.to_account_info(),
+                    authority: self.escrow.to_account_info(),
+                },
+                &[&escrow_seeds[..]],
+            ),
+            amount,
+        )?;
+        Ok(())
+    }
 }
 
 pub fn handle_claim(ctx: Context<ClaimCtx>, max_amount: u64) -> Result<()> {
@@ -32,21 +48,18 @@ pub fn handle_claim(ctx: Context<ClaimCtx>, max_amount: u64) -> Result<()> {
     let amount = claimable_amount.min(max_amount);
     escrow.accumulate_claimed_amount(amount)?;
 
-    let escrow_seeds = escrow_seeds!(escrow);
-    anchor_spl::token_2022::transfer_checked(
-        CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            TransferChecked {
-                from: ctx.accounts.escrow_token.to_account_info(),
-                to: ctx.accounts.recipient_token.to_account_info(),
-                authority: ctx.accounts.escrow.to_account_info(),
-                mint: ctx.accounts.token_mint.to_account_info(),
-            },
-            &[&escrow_seeds[..]],
-        ),
+    // localnet debug
+    #[cfg(feature = "localnet")]
+    msg!(
+        "claim amount {} {} {}",
         amount,
-        ctx.accounts.token_mint.decimals,
-    )?;
+        current_ts,
+        escrow.start_time
+    );
+
+    drop(escrow);
+
+    ctx.accounts.transfer_to_recipient(amount)?;
 
     emit!(EventClaim {
         amount,

@@ -4,7 +4,7 @@ use self::safe_math::SafeMath;
 use static_assertions::const_assert_eq;
 
 #[account(zero_copy)]
-#[derive(InitSpace)]
+#[derive(Default, InitSpace, Debug)]
 pub struct Escrow {
     /// recipient address
     pub recipient: Pubkey,
@@ -87,5 +87,68 @@ impl Escrow {
     pub fn accumulate_claimed_amount(&mut self, claimed_amount: u64) -> Result<()> {
         self.total_claimed_amount = self.total_claimed_amount.safe_add(claimed_amount)?;
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod escrow_test {
+    use super::*;
+    use proptest::proptest;
+
+    proptest! {
+    #[test]
+    fn test_get_max_unlocked_amount(
+        start_time in 1..=u64::MAX/2,
+        frequency in 1..2592000u64,
+        number_of_period in 0..10000u64,
+        cliff_amount in 0..u64::MAX / 100,
+        amount_per_period in 0..u64::MAX / 10000,
+    ) {
+        let mut escrow = Escrow::default();
+        escrow.start_time = start_time;
+        escrow.frequency = frequency;
+        escrow.number_of_period = number_of_period;
+        escrow.cliff_amount = cliff_amount;
+        escrow.amount_per_period = amount_per_period;
+
+        let unlocked_amount = escrow.get_max_unlocked_amount(start_time - 1).unwrap();
+        assert_eq!(unlocked_amount, 0);
+
+        let unlocked_amount = escrow.get_max_unlocked_amount(start_time).unwrap();
+        assert_eq!(unlocked_amount, cliff_amount);
+
+        let unlocked_amount = escrow
+            .get_max_unlocked_amount(start_time + frequency * 1)
+            .unwrap();
+        assert_eq!(unlocked_amount, cliff_amount + amount_per_period * 1);
+
+        let unlocked_amount = escrow
+            .get_max_unlocked_amount(start_time + frequency * number_of_period - 1)
+            .unwrap();
+        if number_of_period == 0 {
+            assert_eq!(
+                unlocked_amount,
+                0
+            );
+        } else {
+            assert_eq!(unlocked_amount, cliff_amount+ amount_per_period * (number_of_period-1));
+        }
+
+        let unlocked_amount = escrow
+            .get_max_unlocked_amount(start_time + frequency * number_of_period)
+            .unwrap();
+        assert_eq!(
+            unlocked_amount,
+            cliff_amount + amount_per_period * number_of_period
+        );
+
+        let unlocked_amount = escrow
+            .get_max_unlocked_amount(start_time + frequency * number_of_period + 1)
+            .unwrap();
+        assert_eq!(
+            unlocked_amount,
+            cliff_amount + amount_per_period * number_of_period
+        );
+        }
     }
 }
