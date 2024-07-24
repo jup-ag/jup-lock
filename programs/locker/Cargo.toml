@@ -19,9 +19,7 @@ localnet = []
 [dependencies]
 anchor-lang = { version = "0.28.0", features = ["event-cpi"] }
 anchor-spl = "0.28.0"
-solana-program = "1.16.25"
 bytemuck = { version = "1.13.1", features = ["derive", "min_const_generics"] }
-num_enum = "0.7.1"
 static_assertions = "1.1.0"
 
 [dev-dependencies]

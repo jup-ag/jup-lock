@@ -30,11 +30,13 @@ pub struct Escrow {
     pub number_of_period: u64,
     /// total claimed amount
     pub total_claimed_amount: u64,
+    /// padding
+    pub padding_1: [u8; 8],
     /// buffer
     pub buffer: [u128; 6],
 }
 
-const_assert_eq!(Escrow::INIT_SPACE, 280); //  32 * 4 + 8 * 7 + 16 * 6
+const_assert_eq!(Escrow::INIT_SPACE, 288); //  32 * 4 + 8 * 8 + 16 * 6
 
 impl Escrow {
     pub fn init(
