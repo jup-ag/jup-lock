@@ -38,5 +38,12 @@ pub mod locker {
         handle_claim(ctx, max_amount)
     }
 
+    pub fn create_escrow_metadata(
+        ctx: Context<CreateEscrowMetadataCtx>,
+        params: CreateEscrowMetadataParameters,
+    ) -> Result<()> {
+        handle_create_escrow_metadata(ctx, &params)
+    }
+
     // TODO add function to close escrow after all token has been claimed
 }

@@ -1,7 +1,17 @@
 use crate::*;
 
 use self::safe_math::SafeMath;
+use num_enum::{IntoPrimitive, TryFromPrimitive};
 use static_assertions::const_assert_eq;
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u8)]
+pub enum UpdateRecipientMode {
+    NeitherCreatorOrRecipient, //0
+    OnlyCreator,               //1
+    OnlyRecipient,             //2
+    EitherCreatorAndRecipient, //3
+}
 
 #[account(zero_copy)]
 #[derive(Default, InitSpace, Debug)]
@@ -16,8 +26,10 @@ pub struct Escrow {
     pub base: Pubkey,
     /// escrow bump
     pub escrow_bump: u8,
+    /// update_recipient_mode
+    pub update_recipient_mode: u8,
     /// padding
-    pub padding_0: [u8; 7],
+    pub padding_0: [u8; 6],
     /// start time
     pub start_time: u64,
     /// frequency
@@ -51,6 +63,7 @@ impl Escrow {
         sender: Pubkey,
         base: Pubkey,
         escrow_bump: u8,
+        update_recipient_mode: u8,
     ) {
         self.start_time = start_time;
         self.frequency = frequency;
@@ -62,6 +75,7 @@ impl Escrow {
         self.creator = sender;
         self.base = base;
         self.escrow_bump = escrow_bump;
+        self.update_recipient_mode = update_recipient_mode;
     }
 
     pub fn get_max_unlocked_amount(&self, current_ts: u64) -> Result<u64> {
@@ -89,6 +103,10 @@ impl Escrow {
     pub fn accumulate_claimed_amount(&mut self, claimed_amount: u64) -> Result<()> {
         self.total_claimed_amount = self.total_claimed_amount.safe_add(claimed_amount)?;
         Ok(())
+    }
+
+    pub fn update_recipient(&mut self, new_recipient: Pubkey) {
+        self.recipient = new_recipient;
     }
 }
 

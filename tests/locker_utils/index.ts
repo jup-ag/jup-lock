@@ -33,6 +33,21 @@ export function deriveEscrow(
     );
 }
 
+
+export function deriveEscrowMetadata(
+    escrow: web3.PublicKey,
+    programId: web3.PublicKey
+) {
+    return web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("escrow_metadata"),
+            escrow.toBuffer(),
+        ],
+        programId
+    );
+}
+
+
 export interface CreateVestingPlanParams {
     ownerKeypair: web3.Keypair,
     tokenMint: web3.PublicKey,
@@ -84,14 +99,16 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         systemProgram: web3.SystemProgram.programId,
         escrow,
     }).preInstructions(
-        createAssociatedTokenAccountInstruction(
-            ownerKeypair.publicKey,
-            escrowToken,
-            escrow,
-            tokenMint,
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-        )
+        [
+            createAssociatedTokenAccountInstruction(
+                ownerKeypair.publicKey,
+                escrowToken,
+                escrow,
+                tokenMint,
+                TOKEN_PROGRAM_ID,
+                ASSOCIATED_TOKEN_PROGRAM_ID
+            )
+        ]
     ).signers([baseKP]).rpc();
 
     if (isAssertion) {
@@ -130,4 +147,41 @@ export async function claimToken(params: ClaimTokenParams) {
         recipient: recipient.publicKey,
         recipientToken,
     }).rpc();
+}
+
+
+export interface CreateEscrowMetadataParams {
+    isAssertion: boolean,
+    creator: web3.Keypair,
+    escrow: web3.PublicKey,
+    name: string,
+    description: string,
+    creatorEmail: string,
+    recepientEmail: string,
+}
+export async function createEscrowMetadata(params: CreateEscrowMetadataParams) {
+    let { isAssertion, escrow, name, description, creatorEmail, recepientEmail, creator } = params;
+    const program = createLockerProgram(new Wallet(creator));
+    const [escrowMetadata] = deriveEscrowMetadata(escrow, program.programId);
+    await program.methods.createEscrowMetadata({
+        name,
+        description,
+        creatorEmail,
+        recepientEmail,
+    }).accounts({
+        escrow,
+        systemProgram: web3.SystemProgram.programId,
+        payer: creator.publicKey,
+        creator: creator.publicKey,
+        escrowMetadata
+    }).rpc();
+
+    if (isAssertion) {
+        const escrowMetadataState = await program.account.escrowMetadata.fetch(escrowMetadata);
+        expect(escrowMetadataState.escrow.toString()).eq(escrow.toString());
+        expect(escrowMetadataState.name.toString()).eq(name.toString());
+        expect(escrowMetadataState.description.toString()).eq(description.toString());
+        expect(escrowMetadataState.creatorEmail.toString()).eq(creatorEmail.toString());
+        expect(escrowMetadataState.recepientEmail.toString()).eq(recepientEmail.toString());
+    }
 }

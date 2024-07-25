@@ -11,4 +11,10 @@ pub enum LockerError {
 
     #[msg("Invalid escrow token address")]
     InvalidEscrowTokenAddress,
+
+    #[msg("Invalid update recipient mode")]
+    InvalidUpdateRecipientMode,
+
+    #[msg("Not permit to do this action")]
+    NotPermitToDoThisAction,
 }
