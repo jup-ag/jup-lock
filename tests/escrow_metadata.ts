@@ -88,6 +88,7 @@ describe("Escrow metadata", () => {
             amountPerPeriod: new BN(50_000),
             numberOfPeriod: new BN(2),
             recipient: ReceipentKP.publicKey,
+            updateRecipientMode: 0,
         });
         console.log("Create escrow metadata");
         await createEscrowMetadata({
@@ -95,7 +96,7 @@ describe("Escrow metadata", () => {
             name: "Jupiter lock",
             description: "This is jupiter lock",
             creatorEmail: "andrew@raccoons.dev",
-            recepientEmail: "max@raccoons.dev",
+            recipientEmail: "max@raccoons.dev",
             creator: UserKP,
             isAssertion: true
         });

@@ -45,5 +45,9 @@ pub mod locker {
         handle_create_escrow_metadata(ctx, &params)
     }
 
+    pub fn update_recipient(ctx: Context<UpdateRecipientCtx>, new_recipient: Pubkey) -> Result<()> {
+        handle_update_recipient(ctx, new_recipient)
+    }
+
     // TODO add function to close escrow after all token has been claimed
 }

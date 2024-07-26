@@ -106,6 +106,7 @@ describe("Full flow", () => {
       amountPerPeriod: new BN(50_000),
       numberOfPeriod: new BN(2),
       recipient: ReceipentKP.publicKey,
+      updateRecipientMode: 0,
     });
 
 

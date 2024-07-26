@@ -58,10 +58,11 @@ export interface CreateVestingPlanParams {
     amountPerPeriod: BN,
     numberOfPeriod: BN,
     recipient: web3.PublicKey,
+    updateRecipientMode: number,
 }
 
 export async function createVestingPlan(params: CreateVestingPlanParams) {
-    let { isAssertion, tokenMint, ownerKeypair, startTime, frequency, cliffAmount, amountPerPeriod, numberOfPeriod, recipient } = params;
+    let { isAssertion, tokenMint, ownerKeypair, startTime, frequency, cliffAmount, amountPerPeriod, numberOfPeriod, recipient, updateRecipientMode } = params;
     const program = createLockerProgram(new Wallet(ownerKeypair));
 
     const baseKP = web3.Keypair.generate();
@@ -89,6 +90,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         cliffAmount,
         amountPerPeriod,
         numberOfPeriod,
+        updateRecipientMode,
     }).accounts({
         base: baseKP.publicKey,
         senderToken,
@@ -122,6 +124,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         expect(escrowState.escrowToken.toString()).eq(escrowToken.toString());
         expect(escrowState.creator.toString()).eq(ownerKeypair.publicKey.toString());
         expect(escrowState.base.toString()).eq(baseKP.publicKey.toString());
+        expect(escrowState.updateRecipientMode).eq(updateRecipientMode);
     }
 
     return escrow;
@@ -157,17 +160,17 @@ export interface CreateEscrowMetadataParams {
     name: string,
     description: string,
     creatorEmail: string,
-    recepientEmail: string,
+    recipientEmail: string,
 }
 export async function createEscrowMetadata(params: CreateEscrowMetadataParams) {
-    let { isAssertion, escrow, name, description, creatorEmail, recepientEmail, creator } = params;
+    let { isAssertion, escrow, name, description, creatorEmail, recipientEmail, creator } = params;
     const program = createLockerProgram(new Wallet(creator));
     const [escrowMetadata] = deriveEscrowMetadata(escrow, program.programId);
     await program.methods.createEscrowMetadata({
         name,
         description,
         creatorEmail,
-        recepientEmail,
+        recipientEmail,
     }).accounts({
         escrow,
         systemProgram: web3.SystemProgram.programId,
@@ -182,6 +185,27 @@ export async function createEscrowMetadata(params: CreateEscrowMetadataParams) {
         expect(escrowMetadataState.name.toString()).eq(name.toString());
         expect(escrowMetadataState.description.toString()).eq(description.toString());
         expect(escrowMetadataState.creatorEmail.toString()).eq(creatorEmail.toString());
-        expect(escrowMetadataState.recepientEmail.toString()).eq(recepientEmail.toString());
+        expect(escrowMetadataState.recipientEmail.toString()).eq(recipientEmail.toString());
+    }
+}
+
+
+export interface UpdateRecipientParams {
+    isAssertion: boolean,
+    signer: web3.Keypair,
+    escrow: web3.PublicKey,
+    newRecipient: web3.PublicKey,
+}
+export async function updateRecipient(params: UpdateRecipientParams) {
+    let { isAssertion, escrow, signer, newRecipient } = params;
+    const program = createLockerProgram(new Wallet(signer));
+    await program.methods.updateRecipient(newRecipient).accounts({
+        escrow,
+        signer: signer.publicKey,
+    }).rpc();
+
+    if (isAssertion) {
+        const escrowState = await program.account.escrow.fetch(escrow);
+        expect(escrowState.recipient.toString()).eq(newRecipient.toString());
     }
 }
