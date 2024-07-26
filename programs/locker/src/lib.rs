@@ -18,7 +18,7 @@ pub mod events;
 pub use events::*;
 
 #[cfg(not(feature = "localnet"))]
-declare_id!("2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg");
+declare_id!("LocFvGGETbEV7P85DzS7zC3YBdZz4cy5efEHVF19pm1");
 
 #[cfg(feature = "localnet")]
 declare_id!("2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg");
