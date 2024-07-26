@@ -18,7 +18,7 @@ pub mod events;
 pub use events::*;
 
 #[cfg(not(feature = "localnet"))]
-declare_id!("2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg");
+declare_id!("LocFvGGETbEV7P85DzS7zC3YBdZz4cy5efEHVF19pm1");
 
 #[cfg(feature = "localnet")]
 declare_id!("2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg");
@@ -36,6 +36,17 @@ pub mod locker {
 
     pub fn claim(ctx: Context<ClaimCtx>, max_amount: u64) -> Result<()> {
         handle_claim(ctx, max_amount)
+    }
+
+    pub fn create_escrow_metadata(
+        ctx: Context<CreateEscrowMetadataCtx>,
+        params: CreateEscrowMetadataParameters,
+    ) -> Result<()> {
+        handle_create_escrow_metadata(ctx, &params)
+    }
+
+    pub fn update_recipient(ctx: Context<UpdateRecipientCtx>, new_recipient: Pubkey) -> Result<()> {
+        handle_update_recipient(ctx, new_recipient)
     }
 
     // TODO add function to close escrow after all token has been claimed

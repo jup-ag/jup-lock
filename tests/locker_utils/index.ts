@@ -33,6 +33,21 @@ export function deriveEscrow(
     );
 }
 
+
+export function deriveEscrowMetadata(
+    escrow: web3.PublicKey,
+    programId: web3.PublicKey
+) {
+    return web3.PublicKey.findProgramAddressSync(
+        [
+            Buffer.from("escrow_metadata"),
+            escrow.toBuffer(),
+        ],
+        programId
+    );
+}
+
+
 export interface CreateVestingPlanParams {
     ownerKeypair: web3.Keypair,
     tokenMint: web3.PublicKey,
@@ -43,10 +58,11 @@ export interface CreateVestingPlanParams {
     amountPerPeriod: BN,
     numberOfPeriod: BN,
     recipient: web3.PublicKey,
+    updateRecipientMode: number,
 }
 
 export async function createVestingPlan(params: CreateVestingPlanParams) {
-    let { isAssertion, tokenMint, ownerKeypair, startTime, frequency, cliffAmount, amountPerPeriod, numberOfPeriod, recipient } = params;
+    let { isAssertion, tokenMint, ownerKeypair, startTime, frequency, cliffAmount, amountPerPeriod, numberOfPeriod, recipient, updateRecipientMode } = params;
     const program = createLockerProgram(new Wallet(ownerKeypair));
 
     const baseKP = web3.Keypair.generate();
@@ -74,6 +90,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         cliffAmount,
         amountPerPeriod,
         numberOfPeriod,
+        updateRecipientMode,
     }).accounts({
         base: baseKP.publicKey,
         senderToken,
@@ -84,14 +101,16 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         systemProgram: web3.SystemProgram.programId,
         escrow,
     }).preInstructions(
-        createAssociatedTokenAccountInstruction(
-            ownerKeypair.publicKey,
-            escrowToken,
-            escrow,
-            tokenMint,
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-        )
+        [
+            createAssociatedTokenAccountInstruction(
+                ownerKeypair.publicKey,
+                escrowToken,
+                escrow,
+                tokenMint,
+                TOKEN_PROGRAM_ID,
+                ASSOCIATED_TOKEN_PROGRAM_ID
+            )
+        ]
     ).signers([baseKP]).rpc();
 
     if (isAssertion) {
@@ -105,6 +124,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         expect(escrowState.escrowToken.toString()).eq(escrowToken.toString());
         expect(escrowState.creator.toString()).eq(ownerKeypair.publicKey.toString());
         expect(escrowState.base.toString()).eq(baseKP.publicKey.toString());
+        expect(escrowState.updateRecipientMode).eq(updateRecipientMode);
     }
 
     return escrow;
@@ -130,4 +150,62 @@ export async function claimToken(params: ClaimTokenParams) {
         recipient: recipient.publicKey,
         recipientToken,
     }).rpc();
+}
+
+
+export interface CreateEscrowMetadataParams {
+    isAssertion: boolean,
+    creator: web3.Keypair,
+    escrow: web3.PublicKey,
+    name: string,
+    description: string,
+    creatorEmail: string,
+    recipientEmail: string,
+}
+export async function createEscrowMetadata(params: CreateEscrowMetadataParams) {
+    let { isAssertion, escrow, name, description, creatorEmail, recipientEmail, creator } = params;
+    const program = createLockerProgram(new Wallet(creator));
+    const [escrowMetadata] = deriveEscrowMetadata(escrow, program.programId);
+    await program.methods.createEscrowMetadata({
+        name,
+        description,
+        creatorEmail,
+        recipientEmail,
+    }).accounts({
+        escrow,
+        systemProgram: web3.SystemProgram.programId,
+        payer: creator.publicKey,
+        creator: creator.publicKey,
+        escrowMetadata
+    }).rpc();
+
+    if (isAssertion) {
+        const escrowMetadataState = await program.account.escrowMetadata.fetch(escrowMetadata);
+        expect(escrowMetadataState.escrow.toString()).eq(escrow.toString());
+        expect(escrowMetadataState.name.toString()).eq(name.toString());
+        expect(escrowMetadataState.description.toString()).eq(description.toString());
+        expect(escrowMetadataState.creatorEmail.toString()).eq(creatorEmail.toString());
+        expect(escrowMetadataState.recipientEmail.toString()).eq(recipientEmail.toString());
+    }
+}
+
+
+export interface UpdateRecipientParams {
+    isAssertion: boolean,
+    signer: web3.Keypair,
+    escrow: web3.PublicKey,
+    newRecipient: web3.PublicKey,
+}
+export async function updateRecipient(params: UpdateRecipientParams) {
+    let { isAssertion, escrow, signer, newRecipient } = params;
+    const program = createLockerProgram(new Wallet(signer));
+    await program.methods.updateRecipient(newRecipient).accounts({
+        escrow,
+        signer: signer.publicKey,
+    }).rpc();
+
+    if (isAssertion) {
+        const escrowState = await program.account.escrow.fetch(escrow);
+        expect(escrowState.recipient.toString()).eq(newRecipient.toString());
+    }
 }

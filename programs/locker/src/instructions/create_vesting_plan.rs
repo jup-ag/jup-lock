@@ -8,6 +8,7 @@ pub struct CreateVestingPlanParameters {
     pub cliff_amount: u64,
     pub amount_per_period: u64,
     pub number_of_period: u64,
+    pub update_recipient_mode: u8,
 }
 
 impl CreateVestingPlanParameters {
@@ -66,7 +67,13 @@ pub fn handle_create_vesting_plan(
         cliff_amount,
         amount_per_period,
         number_of_period,
+        update_recipient_mode,
     } = params;
+
+    require!(
+        UpdateRecipientMode::try_from(update_recipient_mode).is_ok(),
+        LockerError::InvalidUpdateRecipientMode,
+    );
 
     require!(frequency != 0, LockerError::FrequencyIsZero);
 
@@ -92,6 +99,7 @@ pub fn handle_create_vesting_plan(
         ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         *ctx.bumps.get("escrow").unwrap(),
+        update_recipient_mode,
     );
 
     anchor_spl::token::transfer(
@@ -114,6 +122,7 @@ pub fn handle_create_vesting_plan(
         number_of_period,
         recipient: ctx.accounts.recipient.key(),
         escrow: ctx.accounts.escrow.key(),
+        update_recipient_mode,
     });
     Ok(())
 }
