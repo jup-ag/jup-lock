@@ -65,7 +65,7 @@ pub fn handle_claim(ctx: Context<ClaimCtx>, max_amount: u64) -> Result<()> {
         "claim amount {} {} {}",
         amount,
         current_ts,
-        vesting_escrow.start_time
+        escrow.start_time
     );
 
     drop(escrow);
