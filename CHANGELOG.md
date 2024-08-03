@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Breaking Changes
 
 
-## Program [0.2.0] [PR #16](https://github.com/jup-ag/distributor/pull/16)
+## Program [0.2.0] [PR #3](https://github.com/jup-ag/jup-lock/pull/3)
 
 
 ### Changed
@@ -32,5 +32,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rename endpoint `update_recipient` to `update_vesting_escrow_recipient`
 
 ### Breaking Changes
-
 - escrow state remove field `escrow_token` and add field `token_mint`
