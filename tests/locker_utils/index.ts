@@ -84,7 +84,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         TOKEN_PROGRAM_ID,
         ASSOCIATED_TOKEN_PROGRAM_ID
     );
-    await program.methods.createVestingPlan({
+    await program.methods.createVestingEscrow({
         startTime,
         frequency,
         cliffAmount,
@@ -114,14 +114,14 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     ).signers([baseKP]).rpc();
 
     if (isAssertion) {
-        const escrowState = await program.account.escrow.fetch(escrow);
+        const escrowState = await program.account.vestingEscrow.fetch(escrow);
         expect(escrowState.startTime.toString()).eq(startTime.toString());
         expect(escrowState.frequency.toString()).eq(frequency.toString());
         expect(escrowState.cliffAmount.toString()).eq(cliffAmount.toString());
         expect(escrowState.amountPerPeriod.toString()).eq(amountPerPeriod.toString());
         expect(escrowState.numberOfPeriod.toString()).eq(numberOfPeriod.toString());
         expect(escrowState.recipient.toString()).eq(recipient.toString());
-        expect(escrowState.escrowToken.toString()).eq(escrowToken.toString());
+        expect(escrowState.tokenMint.toString()).eq(tokenMint.toString());
         expect(escrowState.creator.toString()).eq(ownerKeypair.publicKey.toString());
         expect(escrowState.base.toString()).eq(baseKP.publicKey.toString());
         expect(escrowState.updateRecipientMode).eq(updateRecipientMode);
@@ -141,12 +141,20 @@ export interface ClaimTokenParams {
 export async function claimToken(params: ClaimTokenParams) {
     let { isAssertion, escrow, recipient, maxAmount, recipientToken } = params;
     const program = createLockerProgram(new Wallet(recipient));
-    const escrowState = await program.account.escrow.fetch(escrow);
+    const escrowState = await program.account.vestingEscrow.fetch(escrow);
+
+    const escrowToken = getAssociatedTokenAddressSync(
+        escrowState.tokenMint,
+        escrow,
+        true,
+        TOKEN_PROGRAM_ID,
+        ASSOCIATED_TOKEN_PROGRAM_ID
+    );
 
     await program.methods.claim(maxAmount).accounts({
         tokenProgram: TOKEN_PROGRAM_ID,
         escrow,
-        escrowToken: escrowState.escrowToken,
+        escrowToken,
         recipient: recipient.publicKey,
         recipientToken,
     }).rpc();
@@ -166,7 +174,7 @@ export async function createEscrowMetadata(params: CreateEscrowMetadataParams) {
     let { isAssertion, escrow, name, description, creatorEmail, recipientEmail, creator } = params;
     const program = createLockerProgram(new Wallet(creator));
     const [escrowMetadata] = deriveEscrowMetadata(escrow, program.programId);
-    await program.methods.createEscrowMetadata({
+    await program.methods.createVestingEscrowMetadata({
         name,
         description,
         creatorEmail,
@@ -180,7 +188,7 @@ export async function createEscrowMetadata(params: CreateEscrowMetadataParams) {
     }).rpc();
 
     if (isAssertion) {
-        const escrowMetadataState = await program.account.escrowMetadata.fetch(escrowMetadata);
+        const escrowMetadataState = await program.account.vestingEscrowMetadata.fetch(escrowMetadata);
         expect(escrowMetadataState.escrow.toString()).eq(escrow.toString());
         expect(escrowMetadataState.name.toString()).eq(name.toString());
         expect(escrowMetadataState.description.toString()).eq(description.toString());
@@ -199,13 +207,13 @@ export interface UpdateRecipientParams {
 export async function updateRecipient(params: UpdateRecipientParams) {
     let { isAssertion, escrow, signer, newRecipient } = params;
     const program = createLockerProgram(new Wallet(signer));
-    await program.methods.updateRecipient(newRecipient).accounts({
+    await program.methods.updateVestingEscrowRecipient(newRecipient).accounts({
         escrow,
         signer: signer.publicKey,
     }).rpc();
 
     if (isAssertion) {
-        const escrowState = await program.account.escrow.fetch(escrow);
+        const escrowState = await program.account.vestingEscrow.fetch(escrow);
         expect(escrowState.recipient.toString()).eq(newRecipient.toString());
     }
 }

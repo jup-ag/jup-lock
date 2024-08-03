@@ -1,20 +1,20 @@
 use crate::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct CreateEscrowMetadataParameters {
+pub struct CreateVestingEscrowMetadataParameters {
     pub name: String,
     pub description: String,
     pub creator_email: String,
     pub recipient_email: String,
 }
 
-/// Accounts for [locker::create_escrow_metadata].
+/// Accounts for [locker::create_vesting_escrow_metadata].
 #[derive(Accounts)]
-#[instruction(metadata: CreateEscrowMetadataParameters)]
-pub struct CreateEscrowMetadataCtx<'info> {
+#[instruction(metadata: CreateVestingEscrowMetadataParameters)]
+pub struct CreateVestingEscrowMetadataCtx<'info> {
     /// The [Escrow].
     #[account(mut, has_one = creator)]
-    pub escrow: AccountLoader<'info, Escrow>,
+    pub escrow: AccountLoader<'info, VestingEscrow>,
     /// Creator of the escrow.
     pub creator: Signer<'info>,
     /// The [ProposalMeta].
@@ -26,9 +26,9 @@ pub struct CreateEscrowMetadataCtx<'info> {
         ],
         bump,
         payer = payer,
-        space = 8 + EscrowMetadata::space(&metadata)
+        space = 8 + VestingEscrowMetadata::space(&metadata)
     )]
-    pub escrow_metadata: Box<Account<'info, EscrowMetadata>>,
+    pub escrow_metadata: Box<Account<'info, VestingEscrowMetadata>>,
     /// Payer of the [ProposalMeta].
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -36,9 +36,9 @@ pub struct CreateEscrowMetadataCtx<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_create_escrow_metadata(
-    ctx: Context<CreateEscrowMetadataCtx>,
-    params: &CreateEscrowMetadataParameters,
+pub fn handle_create_vesting_escrow_metadata(
+    ctx: Context<CreateVestingEscrowMetadataCtx>,
+    params: &CreateVestingEscrowMetadataParameters,
 ) -> Result<()> {
     let escrow_metadata = &mut ctx.accounts.escrow_metadata;
     escrow_metadata.escrow = ctx.accounts.escrow.key();

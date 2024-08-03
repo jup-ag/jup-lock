@@ -3,7 +3,7 @@ use crate::*;
 /// Metadata about an escrow.
 #[account]
 #[derive(Debug, Default)]
-pub struct EscrowMetadata {
+pub struct VestingEscrowMetadata {
     /// The [Escrow].
     pub escrow: Pubkey,
     /// Name of escrow.
@@ -16,9 +16,9 @@ pub struct EscrowMetadata {
     pub recipient_email: String,
 }
 
-impl EscrowMetadata {
+impl VestingEscrowMetadata {
     /// Space that a [EscrowMetadata] takes up.
-    pub fn space(metadata: &CreateEscrowMetadataParameters) -> usize {
+    pub fn space(metadata: &CreateVestingEscrowMetadataParameters) -> usize {
         std::mem::size_of::<Pubkey>()
             + 4
             + metadata.name.as_bytes().len()

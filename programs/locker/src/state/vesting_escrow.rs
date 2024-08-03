@@ -15,11 +15,11 @@ pub enum UpdateRecipientMode {
 
 #[account(zero_copy)]
 #[derive(Default, InitSpace, Debug)]
-pub struct Escrow {
+pub struct VestingEscrow {
     /// recipient address
     pub recipient: Pubkey,
-    /// escrow token address
-    pub escrow_token: Pubkey,
+    /// token mint
+    pub token_mint: Pubkey,
     /// creator of the escrow
     pub creator: Pubkey,
     /// escrow base key
@@ -48,9 +48,9 @@ pub struct Escrow {
     pub buffer: [u128; 6],
 }
 
-const_assert_eq!(Escrow::INIT_SPACE, 288); //  32 * 4 + 8 * 8 + 16 * 6
+const_assert_eq!(VestingEscrow::INIT_SPACE, 288); //  32 * 4 + 8 * 8 + 16 * 6
 
-impl Escrow {
+impl VestingEscrow {
     pub fn init(
         &mut self,
         start_time: u64,
@@ -59,7 +59,7 @@ impl Escrow {
         amount_per_period: u64,
         number_of_period: u64,
         recipient: Pubkey,
-        escrow_token: Pubkey,
+        token_mint: Pubkey,
         sender: Pubkey,
         base: Pubkey,
         escrow_bump: u8,
@@ -71,7 +71,7 @@ impl Escrow {
         self.amount_per_period = amount_per_period;
         self.number_of_period = number_of_period;
         self.recipient = recipient;
-        self.escrow_token = escrow_token;
+        self.token_mint = token_mint;
         self.creator = sender;
         self.base = base;
         self.escrow_bump = escrow_bump;
@@ -124,7 +124,7 @@ mod escrow_test {
         cliff_amount in 0..u64::MAX / 100,
         amount_per_period in 0..u64::MAX / 10000,
     ) {
-        let mut escrow = Escrow::default();
+        let mut escrow = VestingEscrow::default();
         escrow.start_time = start_time;
         escrow.frequency = frequency;
         escrow.number_of_period = number_of_period;
