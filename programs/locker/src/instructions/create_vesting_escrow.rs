@@ -2,7 +2,7 @@ use crate::safe_math::SafeMath;
 use crate::*;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct CreateVestingPlanParameters {
+pub struct CreateVestingEscrowParameters {
     pub start_time: u64,
     pub frequency: u64,
     pub cliff_amount: u64,
@@ -11,7 +11,7 @@ pub struct CreateVestingPlanParameters {
     pub update_recipient_mode: u8,
 }
 
-impl CreateVestingPlanParameters {
+impl CreateVestingEscrowParameters {
     pub fn get_total_deposit_amount(&self) -> Result<u64> {
         let total_amount = self
             .cliff_amount
@@ -22,7 +22,7 @@ impl CreateVestingPlanParameters {
 
 #[event_cpi]
 #[derive(Accounts)]
-pub struct CreateVestingPlanCtx<'info> {
+pub struct CreateVestingEscrowCtx<'info> {
     #[account(mut)]
     pub base: Signer<'info>,
 
@@ -34,9 +34,9 @@ pub struct CreateVestingPlanCtx<'info> {
         ],
         bump,
         payer = sender,
-        space = 8 + Escrow::INIT_SPACE
+        space = 8 + VestingEscrow::INIT_SPACE
     )]
-    pub escrow: AccountLoader<'info, Escrow>,
+    pub escrow: AccountLoader<'info, VestingEscrow>,
 
     #[account(mut)]
     pub escrow_token: Box<Account<'info, TokenAccount>>,
@@ -57,11 +57,11 @@ pub struct CreateVestingPlanCtx<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_create_vesting_plan(
-    ctx: Context<CreateVestingPlanCtx>,
-    params: &CreateVestingPlanParameters,
+pub fn handle_create_vesting_escrow(
+    ctx: Context<CreateVestingEscrowCtx>,
+    params: &CreateVestingEscrowParameters,
 ) -> Result<()> {
-    let &CreateVestingPlanParameters {
+    let &CreateVestingEscrowParameters {
         start_time,
         frequency,
         cliff_amount,
@@ -95,7 +95,7 @@ pub fn handle_create_vesting_plan(
         amount_per_period,
         number_of_period,
         ctx.accounts.recipient.key(),
-        ctx.accounts.escrow_token.key(),
+        ctx.accounts.sender_token.mint,
         ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         *ctx.bumps.get("escrow").unwrap(),
@@ -114,7 +114,7 @@ pub fn handle_create_vesting_plan(
         params.get_total_deposit_amount()?,
     )?;
 
-    emit!(EventCreateVestingPlan {
+    emit!(EventCreateVestingEscrow {
         start_time,
         frequency,
         cliff_amount,

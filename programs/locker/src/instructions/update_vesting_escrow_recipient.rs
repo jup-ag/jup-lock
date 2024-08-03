@@ -1,16 +1,16 @@
 use crate::*;
 
 #[derive(Accounts)]
-pub struct UpdateRecipientCtx<'info> {
+pub struct UpdateVestingEscrowRecipientCtx<'info> {
     #[account(mut)]
-    pub escrow: AccountLoader<'info, Escrow>,
+    pub escrow: AccountLoader<'info, VestingEscrow>,
 
     #[account(mut)]
     pub signer: Signer<'info>,
 }
 
-pub fn handle_update_recipient(
-    ctx: Context<UpdateRecipientCtx>,
+pub fn handle_update_vesting_escrow_recipient(
+    ctx: Context<UpdateVestingEscrowRecipientCtx>,
     new_recipient: Pubkey,
 ) -> Result<()> {
     let mut escrow = ctx.accounts.escrow.load_mut()?;
@@ -45,7 +45,7 @@ pub fn handle_update_recipient(
 
     escrow.update_recipient(new_recipient);
 
-    emit!(EventUpdateRecipient {
+    emit!(EventUpdateVestingEscrowRecipient {
         escrow: ctx.accounts.escrow.key(),
         signer,
         old_recipient,

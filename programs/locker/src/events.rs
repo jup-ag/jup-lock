@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 
 #[event]
-pub struct EventCreateVestingPlan {
+pub struct EventCreateVestingEscrow {
     pub start_time: u64,
     pub frequency: u64,
     pub cliff_amount: u64,
@@ -20,7 +20,7 @@ pub struct EventClaim {
 }
 
 #[event]
-pub struct EventUpdateRecipient {
+pub struct EventUpdateVestingEscrowRecipient {
     pub escrow: Pubkey,
     pub old_recipient: Pubkey,
     pub new_recipient: Pubkey,
