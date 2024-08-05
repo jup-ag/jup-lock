@@ -203,17 +203,30 @@ export interface UpdateRecipientParams {
     signer: web3.Keypair,
     escrow: web3.PublicKey,
     newRecipient: web3.PublicKey,
+    newRecipientEmail: null | string
 }
 export async function updateRecipient(params: UpdateRecipientParams) {
-    let { isAssertion, escrow, signer, newRecipient } = params;
+    let { isAssertion, escrow, signer, newRecipient, newRecipientEmail } = params;
     const program = createLockerProgram(new Wallet(signer));
-    await program.methods.updateVestingEscrowRecipient(newRecipient).accounts({
+    let escrowMetadata = null;
+    if (newRecipientEmail != null) {
+        [escrowMetadata] = deriveEscrowMetadata(escrow, program.programId);
+    }
+    await program.methods.updateVestingEscrowRecipient(newRecipient, newRecipientEmail).accounts({
         escrow,
+        escrowMetadata,
         signer: signer.publicKey,
+        systemProgram: web3.SystemProgram.programId,
     }).rpc();
 
     if (isAssertion) {
         const escrowState = await program.account.vestingEscrow.fetch(escrow);
         expect(escrowState.recipient.toString()).eq(newRecipient.toString());
+        if (newRecipientEmail != null) {
+            [escrowMetadata] = deriveEscrowMetadata(escrow, program.programId);
+            const escrowMetadataState = await program.account.vestingEscrowMetadata.fetch(escrowMetadata);
+            expect(escrowMetadataState.recipientEmail.toString()).eq(newRecipientEmail.toString());
+        }
+
     }
 }

@@ -21,9 +21,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+## Program [0.2.1] [PR #4](https://github.com/jup-ag/jup-lock/pull/4)
+
+### Fixed
+- Add check `recipient_token` in claim instruction
+- Update `emit_cpi` in `claim` and `create_vesting_escrow` instruction
+
+### Breaking Changes
+- Endpoint `update vesting_escrow_recipient` allow signer to update `recipient_email` in `escrow_metadata`
+
 
 ## Program [0.2.0] [PR #3](https://github.com/jup-ag/jup-lock/pull/3)
-
 
 ### Changed
 - Rename account `escrow` to `vesting_escrow`, `escrow_metadata` to `vesting_escrow_metadata`
