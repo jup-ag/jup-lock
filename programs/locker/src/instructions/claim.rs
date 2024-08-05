@@ -13,7 +13,7 @@ pub struct ClaimCtx<'info> {
     #[account(mut)]
     pub recipient: Signer<'info>,
 
-    #[account(mut)]
+    #[account(mut, constraint = recipient_token.key() != escrow_token.key() @ LockerError::InvalidRecipientTokenAccount)]
     pub recipient_token: Box<Account<'info, TokenAccount>>,
 
     /// Token program.
@@ -72,7 +72,7 @@ pub fn handle_claim(ctx: Context<ClaimCtx>, max_amount: u64) -> Result<()> {
 
     ctx.accounts.transfer_to_recipient(amount)?;
 
-    emit!(EventClaim {
+    emit_cpi!(EventClaim {
         amount,
         current_ts,
         escrow: ctx.accounts.escrow.key(),

@@ -2,6 +2,8 @@ use crate::safe_math::SafeMath;
 use crate::*;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
 #[derive(AnchorSerialize, AnchorDeserialize)]
+
+/// Accounts for [locker::create_vesting_escrow].
 pub struct CreateVestingEscrowParameters {
     pub start_time: u64,
     pub frequency: u64,
@@ -114,7 +116,7 @@ pub fn handle_create_vesting_escrow(
         params.get_total_deposit_amount()?,
     )?;
 
-    emit!(EventCreateVestingEscrow {
+    emit_cpi!(EventCreateVestingEscrow {
         start_time,
         frequency,
         cliff_amount,

@@ -17,4 +17,10 @@ pub enum LockerError {
 
     #[msg("Not permit to do this action")]
     NotPermitToDoThisAction,
+
+    #[msg("Invalid recipient token account")]
+    InvalidRecipientTokenAccount,
+
+    #[msg("Invalid escrow metadata")]
+    InvalidEscrowMetadata,
 }
