@@ -17,11 +17,14 @@ pub mod safe_math;
 pub mod events;
 pub use events::*;
 
-#[cfg(not(feature = "localnet"))]
-declare_id!("LocpQgucEQHbqNABEYvBvwoxCPsSbG91A1QaQhQQqjn");
-
 #[cfg(feature = "localnet")]
 declare_id!("2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg");
+
+#[cfg(feature = "staging")]
+declare_id!("sLovrBvGxvyvBniMxj8uUt9CdD7CV4PhnBnBD6cPSXo");
+
+#[cfg(not(any(feature = "localnet", feature = "staging")))]
+declare_id!("LocpQgucEQHbqNABEYvBvwoxCPsSbG91A1QaQhQQqjn");
 
 #[program]
 pub mod locker {
