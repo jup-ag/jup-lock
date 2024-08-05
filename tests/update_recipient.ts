@@ -227,7 +227,7 @@ describe("Update recipient", () => {
     });
 
 
-    it.only("Update both recipient and recipient email", async () => {
+    it("Update both recipient and recipient email", async () => {
         console.log("Create vesting plan");
         const program = createLockerProgram(new anchor.Wallet(UserKP));
         let currentBlockTime = await getCurrentBlockTime(program.provider.connection);
