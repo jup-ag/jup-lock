@@ -54,7 +54,7 @@ export interface CreateVestingPlanParams {
     isAssertion: boolean,
     startTime: BN,
     frequency: BN,
-    cliffAmount: BN,
+    initialUnlockAmount: BN,
     amountPerPeriod: BN,
     numberOfPeriod: BN,
     recipient: web3.PublicKey,
@@ -62,7 +62,7 @@ export interface CreateVestingPlanParams {
 }
 
 export async function createVestingPlan(params: CreateVestingPlanParams) {
-    let { isAssertion, tokenMint, ownerKeypair, startTime, frequency, cliffAmount, amountPerPeriod, numberOfPeriod, recipient, updateRecipientMode } = params;
+    let { isAssertion, tokenMint, ownerKeypair, startTime, frequency, initialUnlockAmount, amountPerPeriod, numberOfPeriod, recipient, updateRecipientMode } = params;
     const program = createLockerProgram(new Wallet(ownerKeypair));
 
     const baseKP = web3.Keypair.generate();
@@ -87,7 +87,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     await program.methods.createVestingEscrow({
         startTime,
         frequency,
-        cliffAmount,
+        initialUnlockAmount,
         amountPerPeriod,
         numberOfPeriod,
         updateRecipientMode,
@@ -117,7 +117,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         const escrowState = await program.account.vestingEscrow.fetch(escrow);
         expect(escrowState.startTime.toString()).eq(startTime.toString());
         expect(escrowState.frequency.toString()).eq(frequency.toString());
-        expect(escrowState.cliffAmount.toString()).eq(cliffAmount.toString());
+        expect(escrowState.initialUnlockAmount.toString()).eq(initialUnlockAmount.toString());
         expect(escrowState.amountPerPeriod.toString()).eq(amountPerPeriod.toString());
         expect(escrowState.numberOfPeriod.toString()).eq(numberOfPeriod.toString());
         expect(escrowState.recipient.toString()).eq(recipient.toString());

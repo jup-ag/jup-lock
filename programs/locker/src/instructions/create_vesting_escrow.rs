@@ -7,7 +7,7 @@ use anchor_spl::token::{Token, TokenAccount, Transfer};
 pub struct CreateVestingEscrowParameters {
     pub start_time: u64,
     pub frequency: u64,
-    pub cliff_amount: u64,
+    pub initial_unlock_amount: u64,
     pub amount_per_period: u64,
     pub number_of_period: u64,
     pub update_recipient_mode: u8,
@@ -16,7 +16,7 @@ pub struct CreateVestingEscrowParameters {
 impl CreateVestingEscrowParameters {
     pub fn get_total_deposit_amount(&self) -> Result<u64> {
         let total_amount = self
-            .cliff_amount
+            .initial_unlock_amount
             .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
         Ok(total_amount)
     }
@@ -66,7 +66,7 @@ pub fn handle_create_vesting_escrow(
     let &CreateVestingEscrowParameters {
         start_time,
         frequency,
-        cliff_amount,
+        initial_unlock_amount,
         amount_per_period,
         number_of_period,
         update_recipient_mode,
@@ -93,7 +93,7 @@ pub fn handle_create_vesting_escrow(
     escrow.init(
         start_time,
         frequency,
-        cliff_amount,
+        initial_unlock_amount,
         amount_per_period,
         number_of_period,
         ctx.accounts.recipient.key(),
@@ -119,7 +119,7 @@ pub fn handle_create_vesting_escrow(
     emit_cpi!(EventCreateVestingEscrow {
         start_time,
         frequency,
-        cliff_amount,
+        initial_unlock_amount,
         amount_per_period,
         number_of_period,
         recipient: ctx.accounts.recipient.key(),

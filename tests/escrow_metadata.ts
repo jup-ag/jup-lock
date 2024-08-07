@@ -84,7 +84,7 @@ describe("Escrow metadata", () => {
             isAssertion: true,
             startTime,
             frequency: new BN(1),
-            cliffAmount: new BN(100_000),
+            initialUnlockAmount: new BN(100_000),
             amountPerPeriod: new BN(50_000),
             numberOfPeriod: new BN(2),
             recipient: ReceipentKP.publicKey,
