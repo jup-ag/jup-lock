@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+## Program [0.2.2] [PR #8](https://github.com/jup-ag/jup-lock/pull/8)
+
+### Breaking Changes
+- Rename `cliff_amount` to `initial_unlock_amount`
+
+
 ## Program [0.2.1] [PR #4](https://github.com/jup-ag/jup-lock/pull/4)
 
 ### Fixed

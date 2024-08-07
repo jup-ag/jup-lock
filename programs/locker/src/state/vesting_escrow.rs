@@ -34,8 +34,8 @@ pub struct VestingEscrow {
     pub start_time: u64,
     /// frequency
     pub frequency: u64,
-    /// cliff amount
-    pub cliff_amount: u64,
+    /// initial unlock amount
+    pub initial_unlock_amount: u64,
     /// amount per period
     pub amount_per_period: u64,
     /// number of period
@@ -55,7 +55,7 @@ impl VestingEscrow {
         &mut self,
         start_time: u64,
         frequency: u64,
-        cliff_amount: u64,
+        initial_unlock_amount: u64,
         amount_per_period: u64,
         number_of_period: u64,
         recipient: Pubkey,
@@ -67,7 +67,7 @@ impl VestingEscrow {
     ) {
         self.start_time = start_time;
         self.frequency = frequency;
-        self.cliff_amount = cliff_amount;
+        self.initial_unlock_amount = initial_unlock_amount;
         self.amount_per_period = amount_per_period;
         self.number_of_period = number_of_period;
         self.recipient = recipient;
@@ -88,7 +88,7 @@ impl VestingEscrow {
         let period = period.min(self.number_of_period);
 
         let unlocked_amount = self
-            .cliff_amount
+            .initial_unlock_amount
             .safe_add(period.safe_mul(self.amount_per_period)?)?;
 
         Ok(unlocked_amount)
@@ -121,26 +121,26 @@ mod escrow_test {
         start_time in 1..=u64::MAX/2,
         frequency in 1..2592000u64,
         number_of_period in 0..10000u64,
-        cliff_amount in 0..u64::MAX / 100,
+        initial_unlock_amount in 0..u64::MAX / 100,
         amount_per_period in 0..u64::MAX / 10000,
     ) {
         let mut escrow = VestingEscrow::default();
         escrow.start_time = start_time;
         escrow.frequency = frequency;
         escrow.number_of_period = number_of_period;
-        escrow.cliff_amount = cliff_amount;
+        escrow.initial_unlock_amount = initial_unlock_amount;
         escrow.amount_per_period = amount_per_period;
 
         let unlocked_amount = escrow.get_max_unlocked_amount(start_time - 1).unwrap();
         assert_eq!(unlocked_amount, 0);
 
         let unlocked_amount = escrow.get_max_unlocked_amount(start_time).unwrap();
-        assert_eq!(unlocked_amount, cliff_amount);
+        assert_eq!(unlocked_amount, initial_unlock_amount);
 
         let unlocked_amount = escrow
             .get_max_unlocked_amount(start_time + frequency * 1)
             .unwrap();
-        assert_eq!(unlocked_amount, cliff_amount + amount_per_period * 1);
+        assert_eq!(unlocked_amount, initial_unlock_amount + amount_per_period * 1);
 
         let unlocked_amount = escrow
             .get_max_unlocked_amount(start_time + frequency * number_of_period - 1)
@@ -151,7 +151,7 @@ mod escrow_test {
                 0
             );
         } else {
-            assert_eq!(unlocked_amount, cliff_amount+ amount_per_period * (number_of_period-1));
+            assert_eq!(unlocked_amount, initial_unlock_amount+ amount_per_period * (number_of_period-1));
         }
 
         let unlocked_amount = escrow
@@ -159,7 +159,7 @@ mod escrow_test {
             .unwrap();
         assert_eq!(
             unlocked_amount,
-            cliff_amount + amount_per_period * number_of_period
+            initial_unlock_amount + amount_per_period * number_of_period
         );
 
         let unlocked_amount = escrow
@@ -167,7 +167,7 @@ mod escrow_test {
             .unwrap();
         assert_eq!(
             unlocked_amount,
-            cliff_amount + amount_per_period * number_of_period
+            initial_unlock_amount + amount_per_period * number_of_period
         );
         }
     }
