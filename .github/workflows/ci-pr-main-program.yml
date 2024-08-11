@@ -7,7 +7,7 @@ on:
 env:
   SOLANA_CLI_VERSION: 1.16.25
   NODE_VERSION: 18.14.2
-  ANCHOR_CLI_VERSION: 0.28.0
+  ANCHOR_CLI_VERSION: 0.29.0
 
 jobs:
   program_changed_files:
