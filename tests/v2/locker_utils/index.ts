@@ -1,10 +1,9 @@
-import { AnchorProvider, Program, Wallet, web3, BN } from "@coral-xyz/anchor";
-import { Locker, IDL as LockerIDL } from "../../target/types/locker";
+import { AnchorProvider, BN, Program, Wallet, web3 } from "@coral-xyz/anchor";
+import { IDL as LockerIDL, Locker } from "../../../target/types/locker";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-  getAssociatedTokenAddressSync,
   createAssociatedTokenAccountInstruction,
+  getAssociatedTokenAddressSync,
 } from "@solana/spl-token";
 import { expect } from "chai";
 
@@ -12,12 +11,13 @@ export const LOCKER_PROGRAM_ID = new web3.PublicKey(
   "2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg"
 );
 
+const MEMO_PROGRAM = new web3.PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr");
+
 export function createLockerProgram(wallet: Wallet): Program<Locker> {
   const provider = new AnchorProvider(AnchorProvider.env().connection, wallet, {
     maxRetries: 3,
   });
-  const program = new Program<Locker>(LockerIDL, LOCKER_PROGRAM_ID, provider);
-  return program;
+  return new Program<Locker>(LockerIDL, LOCKER_PROGRAM_ID, provider);
 }
 
 export function deriveEscrow(base: web3.PublicKey, programId: web3.PublicKey) {
@@ -48,6 +48,7 @@ export interface CreateVestingPlanParams {
   numberOfPeriod: BN;
   recipient: web3.PublicKey;
   updateRecipientMode: number;
+  tokenProgram: web3.PublicKey;
 }
 
 export async function createVestingPlan(params: CreateVestingPlanParams) {
@@ -62,6 +63,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     numberOfPeriod,
     recipient,
     updateRecipientMode,
+    tokenProgram,
   } = params;
   const program = createLockerProgram(new Wallet(ownerKeypair));
 
@@ -73,7 +75,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     tokenMint,
     ownerKeypair.publicKey,
     false,
-    TOKEN_PROGRAM_ID,
+    tokenProgram,
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
 
@@ -81,25 +83,27 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     tokenMint,
     escrow,
     true,
-    TOKEN_PROGRAM_ID,
+    tokenProgram,
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
   await program.methods
-    .createVestingEscrow({
+    .createVestingEscrowV2({
       startTime,
       frequency,
       initialUnlockAmount,
       amountPerPeriod,
       numberOfPeriod,
       updateRecipientMode,
-    })
+    }, "")
     .accounts({
       base: baseKP.publicKey,
       senderToken,
       escrowToken,
       recipient,
+      mint: tokenMint,
       sender: ownerKeypair.publicKey,
-      tokenProgram: TOKEN_PROGRAM_ID,
+      memoProgram: MEMO_PROGRAM,
+      tokenProgram,
       systemProgram: web3.SystemProgram.programId,
       escrow,
     })
@@ -109,7 +113,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         escrowToken,
         escrow,
         tokenMint,
-        TOKEN_PROGRAM_ID,
+        tokenProgram,
         ASSOCIATED_TOKEN_PROGRAM_ID
       ),
     ])
@@ -139,13 +143,23 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
 
 export interface ClaimTokenParams {
   isAssertion: boolean;
+  tokenMint: web3.PublicKey;
   escrow: web3.PublicKey;
   recipient: web3.Keypair;
   maxAmount: BN;
   recipientToken: web3.PublicKey;
+  tokenProgram: web3.PublicKey;
 }
 export async function claimToken(params: ClaimTokenParams) {
-  let { isAssertion, escrow, recipient, maxAmount, recipientToken } = params;
+  let {
+    isAssertion,
+    escrow,
+    tokenMint,
+    recipient,
+    maxAmount,
+    recipientToken,
+    tokenProgram,
+  } = params;
   const program = createLockerProgram(new Wallet(recipient));
   const escrowState = await program.account.vestingEscrow.fetch(escrow);
 
@@ -153,14 +167,16 @@ export async function claimToken(params: ClaimTokenParams) {
     escrowState.tokenMint,
     escrow,
     true,
-    TOKEN_PROGRAM_ID,
+    tokenProgram,
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
 
   await program.methods
-    .claim(maxAmount)
+    .claimV2(maxAmount)
     .accounts({
-      tokenProgram: TOKEN_PROGRAM_ID,
+      tokenProgram,
+      mint: tokenMint,
+      memoProgram: MEMO_PROGRAM,
       escrow,
       escrowToken,
       recipient: recipient.publicKey,

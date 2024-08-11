@@ -1,30 +1,15 @@
-use crate::safe_math::SafeMath;
+use crate::util::token::{self, fee_amount};
 use crate::*;
-use anchor_spl::token::{Token, TokenAccount, Transfer};
-#[derive(AnchorSerialize, AnchorDeserialize)]
-
-/// Accounts for [locker::create_vesting_escrow].
-pub struct CreateVestingEscrowParameters {
-    pub start_time: u64,
-    pub frequency: u64,
-    pub initial_unlock_amount: u64,
-    pub amount_per_period: u64,
-    pub number_of_period: u64,
-    pub update_recipient_mode: u8,
-}
-
-impl CreateVestingEscrowParameters {
-    pub fn get_total_deposit_amount(&self) -> Result<u64> {
-        let total_amount = self
-            .initial_unlock_amount
-            .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
-        Ok(total_amount)
-    }
-}
+use anchor_spl::token_interface::{
+    transfer_checked, Mint, TokenAccount, TokenInterface, TransferChecked,
+};
+use anchor_spl::memo;
+use anchor_spl::memo::{BuildMemo, Memo};
+use crate::util::{is_supported_token_mint, is_transfer_memo_required};
 
 #[event_cpi]
 #[derive(Accounts)]
-pub struct CreateVestingEscrowCtx<'info> {
+pub struct CreateVestingEscrowV2<'info> {
     #[account(mut)]
     pub base: Signer<'info>,
 
@@ -41,28 +26,38 @@ pub struct CreateVestingEscrowCtx<'info> {
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
     #[account(mut)]
-    pub escrow_token: Box<Account<'info, TokenAccount>>,
+    pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(mut)]
     pub sender: Signer<'info>,
 
     #[account(mut)]
-    pub sender_token: Box<Account<'info, TokenAccount>>,
+    pub sender_token: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    pub mint: Box<InterfaceAccount<'info, Mint>>,
+
+    pub memo_program: Program<'info, Memo>,
 
     /// CHECK: recipient account
     pub recipient: UncheckedAccount<'info>,
 
     /// Token program.
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
 
     // system program
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_create_vesting_escrow(
-    ctx: Context<CreateVestingEscrowCtx>,
+pub fn handle_create_vesting_escrow_v2(
+    ctx: Context<CreateVestingEscrowV2>,
     params: &CreateVestingEscrowParameters,
+    memo: &str,
 ) -> Result<()> {
+    require!(
+        ctx.accounts.mint.key() == ctx.accounts.sender_token.mint,
+        LockerError::InvalidMintAccount,
+    );
+
     let &CreateVestingEscrowParameters {
         start_time,
         frequency,
@@ -79,9 +74,10 @@ pub fn handle_create_vesting_escrow(
 
     require!(frequency != 0, LockerError::FrequencyIsZero);
 
-    let escrow_token = anchor_spl::associated_token::get_associated_token_address(
+    let escrow_token = anchor_spl::associated_token::get_associated_token_address_with_program_id(
         &ctx.accounts.escrow.key(),
         &ctx.accounts.sender_token.mint,
+        &ctx.accounts.token_program.key,
     );
 
     require!(
@@ -104,16 +100,44 @@ pub fn handle_create_vesting_escrow(
         update_recipient_mode,
     );
 
-    anchor_spl::token::transfer(
+    let token_mint_info = ctx.accounts.mint.to_account_info();
+    let token_mint_data = token_mint_info.data.borrow();
+    let token_mint_unpacked =
+        token::unpack_mint_with_extensions(&token_mint_data, &ctx.accounts.token_program.key)?;
+    require!(
+        is_supported_token_mint(&token_mint_unpacked),
+        LockerError::UnsupportedMint
+    );
+
+    if is_transfer_memo_required(&token_mint_unpacked) {
+        memo::build_memo(
+            CpiContext::new(
+                ctx.accounts.memo_program.to_account_info(),
+                BuildMemo {}
+            ),
+            memo.as_bytes()
+        )?;
+    }
+
+    let amount = params.get_total_deposit_amount()?;
+    transfer_checked(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
-            Transfer {
+            TransferChecked {
                 from: ctx.accounts.sender_token.to_account_info(),
                 to: ctx.accounts.escrow_token.to_account_info(),
                 authority: ctx.accounts.sender.to_account_info(),
+                mint: ctx.accounts.mint.to_account_info(),
             },
         ),
-        params.get_total_deposit_amount()?,
+        // The total fee transfer should be counted twice,
+        //  one for the initial deposit
+        //  and everytime users withdraw
+        amount.saturating_add(fee_amount(
+            amount.saturating_add(fee_amount(amount, &token_mint_unpacked)?),
+            &token_mint_unpacked,
+        )?),
+        ctx.accounts.mint.decimals,
     )?;
 
     emit_cpi!(EventCreateVestingEscrow {

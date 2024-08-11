@@ -23,4 +23,19 @@ pub enum LockerError {
 
     #[msg("Invalid escrow metadata")]
     InvalidEscrowMetadata,
+
+    #[msg("Invalid mint account")]
+    InvalidMintAccount,
+
+    #[msg("Invalid token programId")]
+    IncorrectTokenProgramId,
+
+    #[msg("Parse token extensions failure")]
+    ParseTokenExtensionsFailure,
+
+    #[msg("Calculate transfer fee failure")]
+    TransferFeeCalculationFailure,
+
+    #[msg("Unsupported mint")]
+    UnsupportedMint,
 }

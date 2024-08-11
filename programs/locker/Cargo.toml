@@ -19,8 +19,8 @@ localnet = []
 staging = []
 
 [dependencies]
-anchor-lang = { version = "0.28.0", features = ["event-cpi"] }
-anchor-spl = "0.28.0"
+anchor-lang = { version = "0.29.0", features = ["event-cpi"] }
+anchor-spl = { version = "0.29.0", features = ["metadata", "memo"] }
 bytemuck = { version = "1.13.1", features = ["derive", "min_const_generics"] }
 static_assertions = "1.1.0"
 num_enum = "0.7.1"

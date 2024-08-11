@@ -1,104 +1,132 @@
 import * as anchor from "@coral-xyz/anchor";
 import { web3 } from "@coral-xyz/anchor";
 import {
-    ASSOCIATED_TOKEN_PROGRAM_ID,
-    TOKEN_PROGRAM_ID,
-    createMint,
-    getOrCreateAssociatedTokenAccount,
-    mintTo,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  TOKEN_PROGRAM_ID,
+  createMint,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+  createInitializeMint2Instruction,
+  createAssociatedTokenAccountIdempotent,
 } from "@solana/spl-token";
 import { BN } from "bn.js";
+import { createAndFundWallet, getCurrentBlockTime, sleep } from "./common";
 import {
-    createAndFundWallet,
-    getCurrentBlockTime,
-    sleep,
-} from "./common";
-import { claimToken, createEscrowMetadata, createLockerProgram, createVestingPlan } from "./locker_utils";
-
+  claimToken,
+  createEscrowMetadata,
+  createLockerProgram,
+  createVestingPlan,
+} from "./locker_utils";
+import {
+  sendAndConfirmTransaction,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 
 const provider = anchor.AnchorProvider.env();
 
 describe("Escrow metadata", () => {
-    const tokenDecimal = 8;
-    let TOKEN: web3.PublicKey;
-    let UserKP: web3.Keypair;
-    let ReceipentKP: web3.Keypair;
+  const tokenDecimal = 8;
+  let mintAuthority: web3.Keypair;
+  let mintKeypair: web3.Keypair;
+  let TOKEN: web3.PublicKey;
 
-    before(async () => {
-        {
-            const result = await createAndFundWallet(provider.connection);
-            UserKP = result.keypair;
-        }
-        {
-            const result = await createAndFundWallet(provider.connection);
-            ReceipentKP = result.keypair;
-        }
+  let UserKP: web3.Keypair;
+  let RecipientKP: web3.Keypair;
+  let RecipientToken: web3.PublicKey;
 
-        TOKEN = await createMint(
-            provider.connection,
-            UserKP,
-            UserKP.publicKey,
-            null,
-            tokenDecimal,
-            web3.Keypair.generate(),
-            null,
-            TOKEN_PROGRAM_ID
-        );
+  let mintAmount: bigint;
+  before(async () => {
+    {
+      const result = await createAndFundWallet(provider.connection);
+      UserKP = result.keypair;
+    }
+    {
+      const result = await createAndFundWallet(provider.connection);
+      RecipientKP = result.keypair;
+    }
 
-        const userToken = await getOrCreateAssociatedTokenAccount(
-            provider.connection,
-            UserKP,
-            TOKEN,
-            UserKP.publicKey,
-            false,
-            "confirmed",
-            {
-                commitment: "confirmed",
-            },
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID
-        );
-        // userBTC = userTokenX.address;
-        await mintTo(
-            provider.connection,
-            UserKP,
-            TOKEN,
-            userToken.address,
-            UserKP.publicKey,
-            100 * 10 ** tokenDecimal,
-            [],
-            {
-                commitment: "confirmed",
-            },
-            TOKEN_PROGRAM_ID
-        );
+    mintAuthority = new web3.Keypair();
+    mintKeypair = new web3.Keypair();
+    TOKEN = mintKeypair.publicKey;
+
+    mintAmount = BigInt(1_000_000 * Math.pow(10, tokenDecimal)); // Mint 1,000,000 tokens
+
+    // Step 2 - Create a New Token
+    const mintLamports =
+        await provider.connection.getMinimumBalanceForRentExemption(82);
+    const mintTransaction = new Transaction().add(
+        SystemProgram.createAccount({
+          fromPubkey: UserKP.publicKey,
+          newAccountPubkey: TOKEN,
+          space: 82,
+          lamports: mintLamports,
+          programId: TOKEN_PROGRAM_ID,
+        }),
+        createInitializeMint2Instruction(
+            TOKEN, // Mint account
+            tokenDecimal, // Decimals
+            mintAuthority.publicKey, // Mint authority
+            null, // Freeze authority
+            TOKEN_PROGRAM_ID // Token program ID
+        )
+    );
+    await sendAndConfirmTransaction(
+        provider.connection,
+        mintTransaction,
+        [UserKP, mintKeypair],
+        undefined
+    );
+
+    const userToken = await createAssociatedTokenAccountIdempotent(
+        provider.connection,
+        UserKP,
+        TOKEN,
+        UserKP.publicKey,
+        {},
+        TOKEN_PROGRAM_ID
+    );
+
+    await mintTo(
+        provider.connection,
+        UserKP,
+        TOKEN,
+        userToken,
+        mintAuthority,
+        mintAmount,
+        [],
+        undefined,
+        TOKEN_PROGRAM_ID
+    );
+  });
+  it("Full flow", async () => {
+    console.log("Create vesting plan");
+    const program = createLockerProgram(new anchor.Wallet(UserKP));
+    let currentBlockTime = await getCurrentBlockTime(
+        program.provider.connection
+    );
+    const startTime = new BN(currentBlockTime).add(new BN(5));
+    let escrow = await createVestingPlan({
+      ownerKeypair: UserKP,
+      tokenMint: TOKEN,
+      isAssertion: true,
+      startTime,
+      frequency: new BN(1),
+      initialUnlockAmount: new BN(100_000),
+      amountPerPeriod: new BN(50_000),
+      numberOfPeriod: new BN(2),
+      recipient: RecipientKP.publicKey,
+      updateRecipientMode: 0,
     });
-    it("Full flow", async () => {
-        console.log("Create vesting plan");
-        const program = createLockerProgram(new anchor.Wallet(UserKP));
-        let currentBlockTime = await getCurrentBlockTime(program.provider.connection);
-        const startTime = new BN(currentBlockTime).add(new BN(5));
-        let escrow = await createVestingPlan({
-            ownerKeypair: UserKP,
-            tokenMint: TOKEN,
-            isAssertion: true,
-            startTime,
-            frequency: new BN(1),
-            initialUnlockAmount: new BN(100_000),
-            amountPerPeriod: new BN(50_000),
-            numberOfPeriod: new BN(2),
-            recipient: ReceipentKP.publicKey,
-            updateRecipientMode: 0,
-        });
-        console.log("Create escrow metadata");
-        await createEscrowMetadata({
-            escrow,
-            name: "Jupiter lock",
-            description: "This is jupiter lock",
-            creatorEmail: "andrew@raccoons.dev",
-            recipientEmail: "max@raccoons.dev",
-            creator: UserKP,
-            isAssertion: true
-        });
+    console.log("Create escrow metadata");
+    await createEscrowMetadata({
+      escrow,
+      name: "Jupiter lock",
+      description: "This is jupiter lock",
+      creatorEmail: "andrew@raccoons.dev",
+      recipientEmail: "max@raccoons.dev",
+      creator: UserKP,
+      isAssertion: true,
     });
+  });
 });
