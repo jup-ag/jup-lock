@@ -1,0 +1,11 @@
+{
+  "extends": "../tsconfig-base.json",
+  "compilerOptions": {
+    "composite": true
+  },
+  "include": ["./**/*", "./artifacts/**/*.json"],
+  "typedocOptions": {
+    "entryPoints": ["index.ts"],
+    "out": "../../docs"
+  }
+}
