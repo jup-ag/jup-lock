@@ -52,9 +52,10 @@ export interface CreateVestingPlanParams {
     ownerKeypair: web3.Keypair,
     tokenMint: web3.PublicKey,
     isAssertion: boolean,
-    startTime: BN,
+    vestingStartTime: BN,
+    cliffTime: BN,
     frequency: BN,
-    initialUnlockAmount: BN,
+    cliffUnlockAmount: BN,
     amountPerPeriod: BN,
     numberOfPeriod: BN,
     recipient: web3.PublicKey,
@@ -62,7 +63,7 @@ export interface CreateVestingPlanParams {
 }
 
 export async function createVestingPlan(params: CreateVestingPlanParams) {
-    let { isAssertion, tokenMint, ownerKeypair, startTime, frequency, initialUnlockAmount, amountPerPeriod, numberOfPeriod, recipient, updateRecipientMode } = params;
+    let { isAssertion, tokenMint, ownerKeypair, cliffTime, frequency, cliffUnlockAmount, amountPerPeriod, numberOfPeriod, recipient, updateRecipientMode, vestingStartTime } = params;
     const program = createLockerProgram(new Wallet(ownerKeypair));
 
     const baseKP = web3.Keypair.generate();
@@ -85,12 +86,13 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         ASSOCIATED_TOKEN_PROGRAM_ID
     );
     await program.methods.createVestingEscrow({
-        startTime,
+        cliffTime,
         frequency,
-        initialUnlockAmount,
+        cliffUnlockAmount,
         amountPerPeriod,
         numberOfPeriod,
         updateRecipientMode,
+        vestingStartTime,
     }).accounts({
         base: baseKP.publicKey,
         senderToken,
@@ -115,9 +117,9 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
 
     if (isAssertion) {
         const escrowState = await program.account.vestingEscrow.fetch(escrow);
-        expect(escrowState.startTime.toString()).eq(startTime.toString());
+        expect(escrowState.cliffTime.toString()).eq(cliffTime.toString());
         expect(escrowState.frequency.toString()).eq(frequency.toString());
-        expect(escrowState.initialUnlockAmount.toString()).eq(initialUnlockAmount.toString());
+        expect(escrowState.cliffUnlockAmount.toString()).eq(cliffUnlockAmount.toString());
         expect(escrowState.amountPerPeriod.toString()).eq(amountPerPeriod.toString());
         expect(escrowState.numberOfPeriod.toString()).eq(numberOfPeriod.toString());
         expect(escrowState.recipient.toString()).eq(recipient.toString());

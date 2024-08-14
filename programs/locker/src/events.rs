@@ -2,9 +2,10 @@ use anchor_lang::prelude::*;
 
 #[event]
 pub struct EventCreateVestingEscrow {
-    pub start_time: u64,
+    pub vesting_start_time: u64,
+    pub cliff_time: u64,
     pub frequency: u64,
-    pub initial_unlock_amount: u64,
+    pub cliff_unlock_amount: u64,
     pub amount_per_period: u64,
     pub number_of_period: u64,
     pub update_recipient_mode: u8,
