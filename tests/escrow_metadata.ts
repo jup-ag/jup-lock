@@ -77,14 +77,15 @@ describe("Escrow metadata", () => {
         console.log("Create vesting plan");
         const program = createLockerProgram(new anchor.Wallet(UserKP));
         let currentBlockTime = await getCurrentBlockTime(program.provider.connection);
-        const startTime = new BN(currentBlockTime).add(new BN(5));
+        const cliffTime = new BN(currentBlockTime).add(new BN(5));
         let escrow = await createVestingPlan({
             ownerKeypair: UserKP,
             tokenMint: TOKEN,
+            vestingStartTime: new BN(0),
             isAssertion: true,
-            startTime,
+            cliffTime,
             frequency: new BN(1),
-            initialUnlockAmount: new BN(100_000),
+            cliffUnlockAmount: new BN(100_000),
             amountPerPeriod: new BN(50_000),
             numberOfPeriod: new BN(2),
             recipient: ReceipentKP.publicKey,

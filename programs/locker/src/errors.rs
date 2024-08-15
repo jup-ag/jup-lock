@@ -23,4 +23,7 @@ pub enum LockerError {
 
     #[msg("Invalid escrow metadata")]
     InvalidEscrowMetadata,
+
+    #[msg("Invalid vesting start time")]
+    InvalidVestingStartTime,
 }

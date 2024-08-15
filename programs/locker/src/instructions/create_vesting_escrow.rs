@@ -5,9 +5,10 @@ use anchor_spl::token::{Token, TokenAccount, Transfer};
 
 /// Accounts for [locker::create_vesting_escrow].
 pub struct CreateVestingEscrowParameters {
-    pub start_time: u64,
+    pub vesting_start_time: u64,
+    pub cliff_time: u64,
     pub frequency: u64,
-    pub initial_unlock_amount: u64,
+    pub cliff_unlock_amount: u64,
     pub amount_per_period: u64,
     pub number_of_period: u64,
     pub update_recipient_mode: u8,
@@ -16,7 +17,7 @@ pub struct CreateVestingEscrowParameters {
 impl CreateVestingEscrowParameters {
     pub fn get_total_deposit_amount(&self) -> Result<u64> {
         let total_amount = self
-            .initial_unlock_amount
+            .cliff_unlock_amount
             .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
         Ok(total_amount)
     }
@@ -64,13 +65,19 @@ pub fn handle_create_vesting_escrow(
     params: &CreateVestingEscrowParameters,
 ) -> Result<()> {
     let &CreateVestingEscrowParameters {
-        start_time,
+        vesting_start_time,
+        cliff_time,
         frequency,
-        initial_unlock_amount,
+        cliff_unlock_amount,
         amount_per_period,
         number_of_period,
         update_recipient_mode,
     } = params;
+
+    require!(
+        cliff_time >= vesting_start_time,
+        LockerError::InvalidVestingStartTime
+    );
 
     require!(
         UpdateRecipientMode::try_from(update_recipient_mode).is_ok(),
@@ -91,9 +98,10 @@ pub fn handle_create_vesting_escrow(
 
     let mut escrow = ctx.accounts.escrow.load_init()?;
     escrow.init(
-        start_time,
+        vesting_start_time,
+        cliff_time,
         frequency,
-        initial_unlock_amount,
+        cliff_unlock_amount,
         amount_per_period,
         number_of_period,
         ctx.accounts.recipient.key(),
@@ -117,14 +125,15 @@ pub fn handle_create_vesting_escrow(
     )?;
 
     emit_cpi!(EventCreateVestingEscrow {
-        start_time,
+        cliff_time,
         frequency,
-        initial_unlock_amount,
+        cliff_unlock_amount,
         amount_per_period,
         number_of_period,
         recipient: ctx.accounts.recipient.key(),
         escrow: ctx.accounts.escrow.key(),
         update_recipient_mode,
+        vesting_start_time,
     });
     Ok(())
 }
