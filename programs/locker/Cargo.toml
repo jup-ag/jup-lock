@@ -3,7 +3,7 @@ name = "locker"
 version = "0.2.2"
 description = "Created with Anchor"
 edition = "2021"
-authors = ["andrew<andrew@raccoons.dev"]
+authors = ["andrew <andrew@raccoons.dev>"]
 
 [lib]
 crate-type = ["cdylib", "lib"]
