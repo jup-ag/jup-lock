@@ -5,7 +5,7 @@ import { BN } from "bn.js";
 import { createAndFundWallet, getCurrentBlockTime } from "../common";
 import { createLockerProgram, createVestingPlan } from "./locker_utils";
 import { assert } from "chai";
-import { createMintTransaction } from "./locker_utils/mint";
+import { ADMIN, createMintTransaction } from "./locker_utils/mint";
 
 const provider = anchor.AnchorProvider.env();
 
@@ -17,6 +17,9 @@ describe("[V2] Test supported/unsupported Token Mint", () => {
   let extensions: ExtensionType[];
 
   before(async () => {
+    {
+      await createAndFundWallet(provider.connection, ADMIN);
+    }
     {
       const result = await createAndFundWallet(provider.connection);
       UserKP = result.keypair;

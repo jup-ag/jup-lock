@@ -15,7 +15,7 @@ import {
   createVestingPlan,
   initializeTokenBadge,
 } from "./locker_utils";
-import { createMintTransaction } from "./locker_utils/mint";
+import { ADMIN, createMintTransaction } from "./locker_utils/mint";
 import { assert } from "chai";
 import {
   sendAndConfirmTransaction,
@@ -34,6 +34,9 @@ describe("[V2] Test full flow", () => {
   let extensions: ExtensionType[];
 
   before(async () => {
+    {
+      await createAndFundWallet(provider.connection, ADMIN);
+    }
     {
       const result = await createAndFundWallet(provider.connection);
       UserKP = result.keypair;
