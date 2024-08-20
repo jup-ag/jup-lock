@@ -65,14 +65,15 @@ describe("[V2] Test full flow", () => {
       program.provider.connection
     );
 
-    const startTime = new BN(currentBlockTime).add(new BN(5));
+    const cliffTime = new BN(currentBlockTime).add(new BN(5));
     let escrow = await createVestingPlan({
       ownerKeypair: UserKP,
+      vestingStartTime: new BN(0),
       tokenMint: TOKEN,
       isAssertion: true,
-      startTime,
+      cliffTime,
       frequency: new BN(1),
-      initialUnlockAmount: new BN(100_000),
+      cliffUnlockAmount: new BN(100_000),
       amountPerPeriod: new BN(50_000),
       numberOfPeriod: new BN(2),
       recipient: RecipientKP.publicKey,
@@ -84,7 +85,7 @@ describe("[V2] Test full flow", () => {
       const currentBlockTime = await getCurrentBlockTime(
         program.provider.connection
       );
-      if (currentBlockTime > startTime.toNumber()) {
+      if (currentBlockTime > cliffTime.toNumber()) {
         break;
       } else {
         await sleep(1000);
