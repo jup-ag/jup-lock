@@ -1,8 +1,9 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+use static_assertions::const_assert_eq;
+
 use crate::*;
 
 use self::safe_math::SafeMath;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-use static_assertions::const_assert_eq;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]
@@ -107,6 +108,16 @@ impl VestingEscrow {
         Ok(())
     }
 
+    pub fn claim(&mut self, max_amount: u64) -> Result<u64> {
+        let current_ts = Clock::get()?.unix_timestamp as u64;
+        let claimable_amount = self.get_claimable_amount(current_ts)?;
+
+        let amount = claimable_amount.min(max_amount);
+        self.accumulate_claimed_amount(amount)?;
+
+        Ok(amount)
+    }
+
     pub fn update_recipient(&mut self, new_recipient: Pubkey) {
         self.recipient = new_recipient;
     }
@@ -114,8 +125,9 @@ impl VestingEscrow {
 
 #[cfg(test)]
 mod escrow_test {
-    use super::*;
     use proptest::proptest;
+
+    use super::*;
 
     proptest! {
     #[test]

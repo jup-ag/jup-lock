@@ -1,10 +1,9 @@
 import { AnchorProvider, BN, Program, Wallet, web3 } from "@coral-xyz/anchor";
-import { IDL as LockerIDL, Locker } from "../../target/types/locker";
+import { IDL as LockerIDL, Locker } from "../../../target/types/locker";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { expect } from "chai";
 
@@ -12,12 +11,15 @@ export const LOCKER_PROGRAM_ID = new web3.PublicKey(
   "2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg"
 );
 
+const MEMO_PROGRAM = new web3.PublicKey(
+  "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+);
+
 export function createLockerProgram(wallet: Wallet): Program<Locker> {
   const provider = new AnchorProvider(AnchorProvider.env().connection, wallet, {
     maxRetries: 3,
   });
-  const program = new Program<Locker>(LockerIDL, LOCKER_PROGRAM_ID, provider);
-  return program;
+  return new Program<Locker>(LockerIDL, LOCKER_PROGRAM_ID, provider);
 }
 
 export function deriveEscrow(base: web3.PublicKey, programId: web3.PublicKey) {
@@ -37,6 +39,16 @@ export function deriveEscrowMetadata(
   );
 }
 
+export function deriveTokenBadge(
+  programId: web3.PublicKey,
+  mint: web3.PublicKey
+) {
+  return web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("token_badge"), mint.toBuffer()],
+    programId
+  );
+}
+
 export interface CreateVestingPlanParams {
   ownerKeypair: web3.Keypair;
   tokenMint: web3.PublicKey;
@@ -49,6 +61,7 @@ export interface CreateVestingPlanParams {
   numberOfPeriod: BN;
   recipient: web3.PublicKey;
   updateRecipientMode: number;
+  tokenProgram: web3.PublicKey;
 }
 
 export async function createVestingPlan(params: CreateVestingPlanParams) {
@@ -64,6 +77,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     numberOfPeriod,
     recipient,
     updateRecipientMode,
+    tokenProgram,
   } = params;
   const program = createLockerProgram(new Wallet(ownerKeypair));
 
@@ -71,11 +85,13 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
 
   let [escrow] = deriveEscrow(baseKP.publicKey, program.programId);
 
+  let [tokenBadge] = deriveTokenBadge(program.programId, tokenMint);
+
   const senderToken = getAssociatedTokenAddressSync(
     tokenMint,
     ownerKeypair.publicKey,
     false,
-    TOKEN_PROGRAM_ID,
+    tokenProgram,
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
 
@@ -83,26 +99,31 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     tokenMint,
     escrow,
     true,
-    TOKEN_PROGRAM_ID,
+    tokenProgram,
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
   await program.methods
-    .createVestingEscrow({
-      cliffTime,
-      frequency,
-      cliffUnlockAmount,
-      amountPerPeriod,
-      numberOfPeriod,
-      updateRecipientMode,
-      vestingStartTime,
-    })
+    .createVestingEscrowV2(
+      {
+        vestingStartTime,
+        cliffTime,
+        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
+        updateRecipientMode,
+      },
+      null
+    )
     .accounts({
       base: baseKP.publicKey,
       senderToken,
       escrowToken,
       recipient,
+      tokenBadge,
+      mint: tokenMint,
       sender: ownerKeypair.publicKey,
-      tokenProgram: TOKEN_PROGRAM_ID,
+      tokenProgram,
       systemProgram: web3.SystemProgram.programId,
       escrow,
     })
@@ -112,7 +133,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         escrowToken,
         escrow,
         tokenMint,
-        TOKEN_PROGRAM_ID,
+        tokenProgram,
         ASSOCIATED_TOKEN_PROGRAM_ID
       ),
     ])
@@ -144,14 +165,24 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
 
 export interface ClaimTokenParams {
   isAssertion: boolean;
+  tokenMint: web3.PublicKey;
   escrow: web3.PublicKey;
   recipient: web3.Keypair;
   maxAmount: BN;
   recipientToken: web3.PublicKey;
+  tokenProgram: web3.PublicKey;
 }
 
 export async function claimToken(params: ClaimTokenParams) {
-  let { isAssertion, escrow, recipient, maxAmount, recipientToken } = params;
+  let {
+    isAssertion,
+    escrow,
+    tokenMint,
+    recipient,
+    maxAmount,
+    recipientToken,
+    tokenProgram,
+  } = params;
   const program = createLockerProgram(new Wallet(recipient));
   const escrowState = await program.account.vestingEscrow.fetch(escrow);
 
@@ -159,20 +190,24 @@ export async function claimToken(params: ClaimTokenParams) {
     escrowState.tokenMint,
     escrow,
     true,
-    TOKEN_PROGRAM_ID,
+    tokenProgram,
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
 
-  await program.methods
-    .claim(maxAmount)
+  const tx = await program.methods
+    .claimV2(maxAmount, null)
     .accounts({
-      tokenProgram: TOKEN_PROGRAM_ID,
+      tokenProgram,
+      mint: tokenMint,
+      memoProgram: MEMO_PROGRAM,
       escrow,
       escrowToken,
       recipient: recipient.publicKey,
       recipientToken,
     })
     .rpc();
+
+  console.log("   claim token signature", tx);
 }
 
 export interface CreateEscrowMetadataParams {
@@ -267,4 +302,34 @@ export async function updateRecipient(params: UpdateRecipientParams) {
       );
     }
   }
+}
+
+export interface InitializeTokenBadgeParams {
+  isAssertion: boolean;
+  ownerKeypair: web3.Keypair;
+  mint: web3.PublicKey;
+}
+
+export async function initializeTokenBadge(params: InitializeTokenBadgeParams) {
+  let { isAssertion, ownerKeypair, mint } = params;
+  const program = createLockerProgram(new Wallet(ownerKeypair));
+  let [tokenBadge] = deriveTokenBadge(program.programId, mint);
+
+  await program.methods
+    .initializeTokenBadge()
+    .accounts({
+      tokenBadgeAuthority: ownerKeypair.publicKey,
+      tokenMint: mint,
+      tokenBadge,
+      payer: ownerKeypair.publicKey,
+      systemProgram: web3.SystemProgram.programId,
+    })
+    .rpc();
+
+  if (isAssertion) {
+    const tokenBadgeState = await program.account.tokenBadge.fetch(tokenBadge);
+    expect(tokenBadgeState.tokenMint.toString()).eq(mint.toString());
+  }
+
+  return tokenBadge;
 }
