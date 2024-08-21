@@ -1,8 +1,10 @@
+use anchor_spl::token::Token;
 use anchor_spl::token_interface::{
     Mint, TokenAccount, TokenInterface,
 };
 
 use crate::*;
+use crate::TokenProgramFLag::UseSplToken;
 use crate::util::{AccountsType, calculate_transfer_fee_included_amount, parse_remaining_accounts, ParsedRemainingAccounts, transfer_to_escrow_v2, validate_mint};
 
 #[event_cpi]
@@ -69,6 +71,12 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
         LockerError::InvalidEscrowTokenAddress
     );
 
+    let token_mint_info = ctx.accounts.mint.to_account_info();
+    let token_program_flag = if *token_mint_info.owner == Token::id() {
+        UseSplToken
+    } else {
+        TokenProgramFLag::UseToken2022
+    };
     params.init_escrow(
         &ctx.accounts.escrow,
         ctx.accounts.recipient.key(),
@@ -76,7 +84,7 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
         ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         ctx.bumps.escrow,
-        USE_TOKEN_2022_PROGRAM,
+        token_program_flag,
     )?;
 
     // Process remaining accounts

@@ -25,7 +25,7 @@ import {
 
 const provider = anchor.AnchorProvider.env();
 
-describe("[V2] Test full flow", () => {
+describe("[V2] Test full flow With token 2022", () => {
   let TOKEN: web3.PublicKey;
   let UserKP: web3.Keypair;
   let RecipientKP: web3.Keypair;
@@ -61,7 +61,7 @@ describe("[V2] Test full flow", () => {
     );
   });
 
-  it("Full flow With token 2022", async () => {
+  it("Full flow", async () => {
     console.log("Create vesting plan");
     const program = createLockerProgram(new anchor.Wallet(UserKP));
     let currentBlockTime = await getCurrentBlockTime(

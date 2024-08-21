@@ -4,6 +4,7 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { expect } from "chai";
 
@@ -158,7 +159,9 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     );
     expect(escrowState.base.toString()).eq(baseKP.publicKey.toString());
     expect(escrowState.updateRecipientMode).eq(updateRecipientMode);
-    expect(escrowState.tokenProgramFlag).eq(1);
+    expect(escrowState.tokenProgramFlag).eq(
+      tokenProgram == TOKEN_PROGRAM_ID ? 0 : 1
+    );
   }
 
   return escrow;

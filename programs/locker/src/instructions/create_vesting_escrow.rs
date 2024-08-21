@@ -2,10 +2,8 @@ use anchor_spl::token::{Token, TokenAccount};
 
 use crate::*;
 use crate::safe_math::SafeMath;
+use crate::TokenProgramFLag::UseSplToken;
 use crate::util::token::transfer_to_escrow;
-
-pub const USE_SPL_TOKEN_PROGRAM: u8 = 0;
-pub const USE_TOKEN_2022_PROGRAM: u8 = 1;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 /// Accounts for [locker::create_vesting_escrow].
@@ -47,7 +45,7 @@ impl CreateVestingEscrowParameters {
         sender: Pubkey,
         base: Pubkey,
         escrow_bump: u8,
-        token_program_flag: u8,
+        token_program_flag: TokenProgramFLag,
     ) -> Result<()> {
         self.validate()?;
 
@@ -130,7 +128,7 @@ pub fn handle_create_vesting_escrow(
         ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         ctx.bumps.escrow,
-        USE_SPL_TOKEN_PROGRAM,
+        UseSplToken,
     )?;
 
     transfer_to_escrow(

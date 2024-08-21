@@ -14,6 +14,14 @@ pub enum UpdateRecipientMode {
     EitherCreatorAndRecipient, //3
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u8)]
+pub enum TokenProgramFLag {
+    UseSplToken,   //0
+    UseToken2022,  //1
+}
+
+
 #[account(zero_copy)]
 #[derive(Default, InitSpace, Debug)]
 pub struct VestingEscrow {
@@ -68,7 +76,7 @@ impl VestingEscrow {
         base: Pubkey,
         escrow_bump: u8,
         update_recipient_mode: u8,
-        token_program_flag: u8,
+        token_program_flag: TokenProgramFLag,
     ) {
         self.vesting_start_time = vesting_start_time;
         self.cliff_time = cliff_time;
@@ -82,7 +90,7 @@ impl VestingEscrow {
         self.base = base;
         self.escrow_bump = escrow_bump;
         self.update_recipient_mode = update_recipient_mode;
-        self.token_program_flag = token_program_flag;
+        self.token_program_flag = token_program_flag as u8;
     }
 
     pub fn get_max_unlocked_amount(&self, current_ts: u64) -> Result<u64> {
