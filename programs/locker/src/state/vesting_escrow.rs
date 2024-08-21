@@ -29,8 +29,10 @@ pub struct VestingEscrow {
     pub escrow_bump: u8,
     /// update_recipient_mode
     pub update_recipient_mode: u8,
+    /// token program flag
+    pub token_program_flag: u8,
     /// padding
-    pub padding_0: [u8; 6],
+    pub padding_0: [u8; 5],
     /// cliff time
     pub cliff_time: u64,
     /// frequency
@@ -66,6 +68,7 @@ impl VestingEscrow {
         base: Pubkey,
         escrow_bump: u8,
         update_recipient_mode: u8,
+        token_program_flag: u8,
     ) {
         self.vesting_start_time = vesting_start_time;
         self.cliff_time = cliff_time;
@@ -79,6 +82,7 @@ impl VestingEscrow {
         self.base = base;
         self.escrow_bump = escrow_bump;
         self.update_recipient_mode = update_recipient_mode;
+        self.token_program_flag = token_program_flag;
     }
 
     pub fn get_max_unlocked_amount(&self, current_ts: u64) -> Result<u64> {

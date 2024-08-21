@@ -76,6 +76,7 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
         ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         ctx.bumps.escrow,
+        USE_TOKEN_2022_PROGRAM,
     )?;
 
     // Process remaining accounts
