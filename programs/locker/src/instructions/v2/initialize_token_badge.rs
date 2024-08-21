@@ -3,10 +3,13 @@ use anchor_spl::token_interface::Mint;
 
 use crate::LockerError;
 use crate::state::*;
-use crate::util::is_authorized;
+use crate::util::ADMINS;
 
 #[derive(Accounts)]
 pub struct InitializeTokenBadge<'info> {
+    #[account(
+        constraint = ADMINS.contains(token_badge_authority.key) == true @ LockerError::Unauthorized
+    )]
     pub token_badge_authority: Signer<'info>,
 
     pub token_mint: InterfaceAccount<'info, Mint>,
@@ -30,11 +33,6 @@ pub struct InitializeTokenBadge<'info> {
 pub fn handle_initialize_token_badge(
     ctx: Context<InitializeTokenBadge>,
 ) -> Result<()> {
-    require!(
-        is_authorized(ctx.accounts.token_badge_authority.key),
-        LockerError::Unauthorized
-    );
-
     ctx.accounts.token_badge.initialize(ctx.accounts.token_mint.key());
     Ok(())
 }

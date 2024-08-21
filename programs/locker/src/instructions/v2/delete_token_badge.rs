@@ -3,10 +3,13 @@ use anchor_spl::token_interface::Mint;
 
 use crate::LockerError;
 use crate::state::*;
-use crate::util::is_authorized;
+use crate::util::ADMINS;
 
 #[derive(Accounts)]
 pub struct DeleteTokenBadge<'info> {
+    #[account(
+        constraint = ADMINS.contains(token_badge_authority.key) == true @ LockerError::Unauthorized
+    )]
     pub token_badge_authority: Signer<'info>,
 
     pub token_mint: InterfaceAccount<'info, Mint>,
@@ -28,12 +31,7 @@ pub struct DeleteTokenBadge<'info> {
 }
 
 pub fn handle_delete_token_badge(
-    ctx: Context<DeleteTokenBadge>,
+    _ctx: Context<DeleteTokenBadge>,
 ) -> Result<()> {
-    require!(
-        is_authorized(ctx.accounts.token_badge_authority.key),
-        LockerError::Unauthorized
-    );
-
     Ok(())
 }
