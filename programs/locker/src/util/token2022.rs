@@ -213,7 +213,7 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>, token_badge: &Unchecke
 pub fn calculate_transfer_fee_included_amount(amount: u64, mint: &InterfaceAccount<Mint>) -> Result<u64> {
     let mint_info = mint.to_account_info();
     if *mint_info.owner == Token::id() {
-        return Ok(0);
+        return Ok(amount);
     }
 
     let token_mint_data = mint_info.try_borrow_data()?;
@@ -222,7 +222,7 @@ pub fn calculate_transfer_fee_included_amount(amount: u64, mint: &InterfaceAccou
         let transfer_fee = transfer_fee_config.get_epoch_fee(Clock::get()?.epoch);
         calculate_pre_fee_amount(transfer_fee, amount).ok_or(LockerError::TransferFeeCalculationFailure)?
     } else {
-        0
+        amount
     };
 
     Ok(actual_amount)
