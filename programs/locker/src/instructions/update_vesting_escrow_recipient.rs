@@ -2,6 +2,7 @@ use crate::*;
 
 /// Accounts for [locker::update_vesting_escrow_recipient].
 #[derive(Accounts)]
+#[event_cpi]
 pub struct UpdateVestingEscrowRecipientCtx<'info> {
     /// Escrow.
     #[account(mut)]
@@ -85,14 +86,14 @@ pub fn handle_update_vesting_escrow_recipient(
             anchor_lang::system_program::transfer(cpi_context, lamports_diff)?;
 
             // realloc
-            escrow_metadata_info.realloc(new_len, true)?;
+            escrow_metadata_info.realloc(new_len, false)?;
             // update new recipient_email
             escrow_metadata.recipient_email = recipient_email;
         } else {
             return Err(LockerError::InvalidEscrowMetadata.into());
         }
     }
-    emit!(EventUpdateVestingEscrowRecipient {
+    emit_cpi!(EventUpdateVestingEscrowRecipient {
         escrow: ctx.accounts.escrow.key(),
         signer,
         old_recipient,

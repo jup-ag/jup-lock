@@ -16,7 +16,8 @@ import {
 import { claimToken, createEscrowMetadata, createLockerProgram, createVestingPlan } from "./locker_utils";
 
 
-const provider = anchor.AnchorProvider.env();
+let provider = anchor.AnchorProvider.env();
+provider.opts.commitment = 'confirmed';
 
 describe("Escrow metadata", () => {
     const tokenDecimal = 8;
@@ -41,7 +42,9 @@ describe("Escrow metadata", () => {
             null,
             tokenDecimal,
             web3.Keypair.generate(),
-            null,
+            {
+                commitment: "confirmed",
+            },
             TOKEN_PROGRAM_ID
         );
 

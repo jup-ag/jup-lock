@@ -18,6 +18,7 @@ import { claimToken, createEscrowMetadata, createLockerProgram, createVestingPla
 
 
 const provider = anchor.AnchorProvider.env();
+provider.opts.commitment = 'confirmed';
 
 describe("Update recipient", () => {
     const tokenDecimal = 8;
@@ -42,7 +43,9 @@ describe("Update recipient", () => {
             null,
             tokenDecimal,
             web3.Keypair.generate(),
-            null,
+            {
+                commitment: "confirmed",
+            },
             TOKEN_PROGRAM_ID
         );
 
@@ -261,13 +264,22 @@ describe("Update recipient", () => {
             isAssertion: true
         });
 
-        console.log("Update recipient");
+        console.log("Update recipient with bigger email size");
         await updateRecipient({
             escrow,
             newRecipient: ReceipentKP.publicKey,
             isAssertion: true,
             signer: UserKP,
             newRecipientEmail: "maximillian@raccoons.dev",
+        });
+
+        console.log("Update recipient with smaller email size");
+        await updateRecipient({
+            escrow,
+            newRecipient: ReceipentKP.publicKey,
+            isAssertion: true,
+            signer: UserKP,
+            newRecipientEmail: "max@raccoons.dev",
         });
     });
 });
