@@ -110,7 +110,6 @@ describe("Full flow", () => {
       updateRecipientMode: 0,
     });
 
-
     while (true) {
       const currentBlockTime = await getCurrentBlockTime(program.provider.connection);
       if (currentBlockTime > cliffTime.toNumber()) {

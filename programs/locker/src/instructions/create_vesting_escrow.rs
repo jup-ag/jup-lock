@@ -41,7 +41,11 @@ pub struct CreateVestingEscrowCtx<'info> {
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = sender_token.mint,
+        associated_token::authority = escrow
+    )]
     pub escrow_token: Box<Account<'info, TokenAccount>>,
 
     #[account(mut)]
@@ -85,16 +89,6 @@ pub fn handle_create_vesting_escrow(
     );
 
     require!(frequency != 0, LockerError::FrequencyIsZero);
-
-    let escrow_token = anchor_spl::associated_token::get_associated_token_address(
-        &ctx.accounts.escrow.key(),
-        &ctx.accounts.sender_token.mint,
-    );
-
-    require!(
-        escrow_token == ctx.accounts.escrow_token.key(),
-        LockerError::InvalidEscrowTokenAddress
-    );
 
     let mut escrow = ctx.accounts.escrow.load_init()?;
     escrow.init(
