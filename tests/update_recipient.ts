@@ -18,6 +18,7 @@ import { claimToken, createEscrowMetadata, createLockerProgram, createVestingPla
 
 
 const provider = anchor.AnchorProvider.env();
+provider.opts.commitment = 'confirmed';
 
 describe("Update recipient", () => {
     const tokenDecimal = 8;
@@ -42,7 +43,9 @@ describe("Update recipient", () => {
             null,
             tokenDecimal,
             web3.Keypair.generate(),
-            null,
+            {
+                commitment: "confirmed",
+            },
             TOKEN_PROGRAM_ID
         );
 

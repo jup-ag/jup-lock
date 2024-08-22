@@ -16,6 +16,7 @@ export function createLockerProgram(
     const provider = new AnchorProvider(AnchorProvider.env().connection, wallet, {
         maxRetries: 3,
     });
+    provider.opts.commitment = 'confirmed';
     const program = new Program<Locker>(LockerIDL, LOCKER_PROGRAM_ID, provider);
     return program;
 }

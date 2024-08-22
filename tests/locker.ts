@@ -16,7 +16,8 @@ import {
 import { claimToken, createLockerProgram, createVestingPlan } from "./locker_utils";
 
 
-const provider = anchor.AnchorProvider.env();
+let provider = anchor.AnchorProvider.env();
+provider.opts.commitment = 'confirmed';
 
 describe("Full flow", () => {
   const tokenDecimal = 8;
@@ -42,7 +43,9 @@ describe("Full flow", () => {
       null,
       tokenDecimal,
       web3.Keypair.generate(),
-      null,
+      {
+        commitment: "confirmed",
+      },
       TOKEN_PROGRAM_ID
     );
 
