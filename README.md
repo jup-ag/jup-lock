@@ -16,7 +16,7 @@ anchor build
 
 
 ## Audit
-Jupiter Locker has been audited by Sec3 (prev.Soteria). View the audit report [here](./audits/jup-lock_report_final.pdf).
+Jupiter Locker has been audited by Sec3 (prev.Soteria) and OtterSec. View the audit report [here](./audits).
 
 
 ## License
