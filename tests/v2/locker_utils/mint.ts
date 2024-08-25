@@ -6,6 +6,7 @@ import {
 } from "@solana/web3.js";
 import {
   AccountState,
+  ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountIdempotent,
   createInitializeDefaultAccountStateInstruction,
   createInitializeInterestBearingMintInstruction,
@@ -13,12 +14,14 @@ import {
   createInitializeMintInstruction,
   createInitializePermanentDelegateInstruction,
   createInitializeTransferFeeConfigInstruction,
+  createInitializeTransferHookInstruction,
   ExtensionType,
   getMintLen,
   mintTo,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 import { initializeTokenBadge } from "./index";
+import { TEST_TRANSFER_HOOK_PROGRAM_ID } from "../utils/token-extensions";
 
 export const ADMIN = web3.Keypair.fromSecretKey(
   Uint8Array.from([
@@ -71,15 +74,15 @@ export async function createMintTransaction(
     })
   );
 
-  mintTransaction.add(
-    ...createExtensionMintIx(
-      extensions,
-      UserKP,
-      TOKEN,
-      transferFeeConfigAuthority,
-      withdrawWithheldAuthority
-    )
+  let { instructions, postInstructions } = createExtensionMintIx(
+    extensions,
+    UserKP,
+    TOKEN,
+    transferFeeConfigAuthority,
+    withdrawWithheldAuthority
   );
+
+  mintTransaction.add(...instructions);
 
   mintTransaction.add(
     createInitializeMintInstruction(
@@ -88,7 +91,8 @@ export async function createMintTransaction(
       mintAuthority.publicKey,
       shouldHaveFreezeAuthority ? mintAuthority.publicKey : null,
       TOKEN_2022_PROGRAM_ID
-    )
+    ),
+    ...postInstructions
   );
 
   await sendAndConfirmTransaction(
@@ -138,8 +142,12 @@ function createExtensionMintIx(
   TOKEN: web3.PublicKey,
   transferFeeConfigAuthority: web3.Keypair,
   withdrawWithheldAuthority: web3.Keypair
-): web3.TransactionInstruction[] {
+): {
+  instructions: web3.TransactionInstruction[];
+  postInstructions: web3.TransactionInstruction[];
+} {
   const ix = [];
+  const postIx = [];
 
   if (extensions.includes(ExtensionType.TransferFeeConfig)) {
     ix.push(
@@ -195,5 +203,62 @@ function createExtensionMintIx(
     );
   }
 
-  return ix;
+  if (extensions.includes(ExtensionType.TransferHook)) {
+    ix.push(
+      createInitializeTransferHookInstruction(
+        TOKEN,
+        ADMIN.publicKey,
+        TEST_TRANSFER_HOOK_PROGRAM_ID, // Transfer Hook Program ID
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+
+    // create ExtraAccountMetaList account
+    postIx.push(
+      createInitializeExtraAccountMetaListInstruction(UserKP.publicKey, TOKEN)
+    );
+  }
+
+  return { instructions: ix, postInstructions: postIx };
+}
+
+export function createInitializeExtraAccountMetaListInstruction(
+  payer: web3.PublicKey,
+  mint: web3.PublicKey
+): web3.TransactionInstruction {
+  // create ExtraAccountMetaList account
+  const [extraAccountMetaListPDA] = web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("extra-account-metas"), mint.toBuffer()],
+    TEST_TRANSFER_HOOK_PROGRAM_ID
+  );
+  const [counterAccountPDA] = web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("counter"), mint.toBuffer()],
+    TEST_TRANSFER_HOOK_PROGRAM_ID
+  );
+
+  return {
+    programId: TEST_TRANSFER_HOOK_PROGRAM_ID,
+    keys: [
+      { pubkey: payer, isSigner: true, isWritable: true },
+      { pubkey: extraAccountMetaListPDA, isSigner: false, isWritable: true },
+      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: counterAccountPDA, isSigner: false, isWritable: true },
+      {
+        pubkey: TOKEN_2022_PROGRAM_ID,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: ASSOCIATED_TOKEN_PROGRAM_ID,
+        isSigner: false,
+        isWritable: false,
+      },
+      {
+        pubkey: web3.SystemProgram.programId,
+        isSigner: false,
+        isWritable: false,
+      },
+    ],
+    data: Buffer.from([0x5c, 0xc5, 0xae, 0xc5, 0x29, 0x7c, 0x13, 0x03]), // InitializeExtraAccountMetaList
+  };
 }

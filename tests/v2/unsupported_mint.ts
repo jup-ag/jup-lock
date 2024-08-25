@@ -125,7 +125,30 @@ describe("[V2] Test supported/unsupported Token Mint", () => {
     await check(TOKEN);
   });
 
-  async function check(TOKEN: web3.PublicKey) {
+  it("[FAIL] unsupported TransferHook without TokenBadge", async () => {
+    extensions = [ExtensionType.TransferHook];
+
+    TOKEN = await createMintTransaction(provider, UserKP, extensions);
+
+    await check(TOKEN);
+  });
+
+  it("supported TransferHook with TokenBadge", async () => {
+    extensions = [ExtensionType.TransferHook];
+
+    TOKEN = await createMintTransaction(
+      provider,
+      UserKP,
+      extensions,
+      true,
+      false,
+      true
+    );
+
+    await check(TOKEN, "Unable to call transfer hook without extra accounts");
+  });
+
+  async function check(TOKEN: web3.PublicKey, errorMsg = "Unsupported mint") {
     const program = createLockerProgram(new anchor.Wallet(UserKP));
     let currentBlockTime = await getCurrentBlockTime(
       program.provider.connection
@@ -151,7 +174,7 @@ describe("[V2] Test supported/unsupported Token Mint", () => {
       const errMsg = error.error?.errorMessage
         ? error.error?.errorMessage
         : anchor.AnchorError.parse(error.logs).error.errorMessage;
-      assert.equal(errMsg, "Unsupported mint");
+      assert.equal(errMsg, errorMsg);
     }
   }
 });

@@ -47,9 +47,16 @@ describe("[V2] Test full flow With token 2022", () => {
     }
 
     // Define the extensions to be used by the mint
-    extensions = [ExtensionType.TransferFeeConfig];
+    extensions = [ExtensionType.TransferFeeConfig, ExtensionType.TransferHook];
 
-    TOKEN = await createMintTransaction(provider, UserKP, extensions);
+    TOKEN = await createMintTransaction(
+      provider,
+      UserKP,
+      extensions,
+      true,
+      false,
+      true
+    );
 
     RecipientToken = await createAssociatedTokenAccountIdempotent(
       provider.connection,
