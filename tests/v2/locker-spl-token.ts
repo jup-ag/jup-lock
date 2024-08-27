@@ -7,9 +7,9 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { BN } from "bn.js";
-import { createAndFundWallet, getCurrentBlockTime } from "./common";
+import { createAndFundWallet, getCurrentBlockTime, sleep } from "../common";
 import {
-  createEscrowMetadata,
+  claimToken,
   createLockerProgram,
   createVestingPlan,
 } from "./locker_utils";
@@ -19,10 +19,9 @@ import {
   Transaction,
 } from "@solana/web3.js";
 
-let provider = anchor.AnchorProvider.env();
-provider.opts.commitment = "confirmed";
+const provider = anchor.AnchorProvider.env();
 
-describe("Escrow metadata", () => {
+describe("[V2] Full flow With SPL Token", () => {
   const tokenDecimal = 8;
   let mintAuthority: web3.Keypair;
   let mintKeypair: web3.Keypair;
@@ -33,6 +32,7 @@ describe("Escrow metadata", () => {
   let RecipientToken: web3.PublicKey;
 
   let mintAmount: bigint;
+
   before(async () => {
     {
       const result = await createAndFundWallet(provider.connection);
@@ -95,7 +95,17 @@ describe("Escrow metadata", () => {
       undefined,
       TOKEN_PROGRAM_ID
     );
+
+    RecipientToken = await createAssociatedTokenAccountIdempotent(
+      provider.connection,
+      UserKP,
+      TOKEN,
+      RecipientKP.publicKey,
+      {},
+      TOKEN_PROGRAM_ID
+    );
   });
+
   it("Full flow", async () => {
     console.log("Create vesting plan");
     const program = createLockerProgram(new anchor.Wallet(UserKP));
@@ -105,8 +115,8 @@ describe("Escrow metadata", () => {
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
     let escrow = await createVestingPlan({
       ownerKeypair: UserKP,
-      tokenMint: TOKEN,
       vestingStartTime: new BN(0),
+      tokenMint: TOKEN,
       isAssertion: true,
       cliffTime,
       frequency: new BN(1),
@@ -115,18 +125,29 @@ describe("Escrow metadata", () => {
       numberOfPeriod: new BN(2),
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
-      cancelMode: 0,
+      tokenProgram: TOKEN_PROGRAM_ID,
     });
+    while (true) {
+      const currentBlockTime = await getCurrentBlockTime(
+        program.provider.connection
+      );
+      if (currentBlockTime > cliffTime.toNumber()) {
+        break;
+      } else {
+        await sleep(1000);
+        console.log("Wait until cliffTime");
+      }
+    }
 
-    console.log("Create escrow metadata");
-    await createEscrowMetadata({
+    console.log("Claim token");
+    await claimToken({
+      recipient: RecipientKP,
+      recipientToken: RecipientToken,
+      tokenMint: TOKEN,
       escrow,
-      name: "Jupiter lock",
-      description: "This is jupiter lock",
-      creatorEmail: "andrew@raccoons.dev",
-      recipientEmail: "max@raccoons.dev",
-      creator: UserKP,
+      maxAmount: new BN(1_000_000),
       isAssertion: true,
+      tokenProgram: TOKEN_PROGRAM_ID,
     });
   });
 });

@@ -22,6 +22,7 @@ impl CreateVestingEscrowParameters {
         let total_amount = self
             .cliff_unlock_amount
             .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
+
         Ok(total_amount)
     }
 
@@ -42,6 +43,39 @@ impl CreateVestingEscrowParameters {
         );
 
         require!(self.frequency != 0, LockerError::FrequencyIsZero);
+
+        Ok(())
+    }
+
+    pub fn init_escrow(
+        &self,
+        vesting_escrow: &AccountLoader<VestingEscrow>,
+        recipient: Pubkey,
+        mint: Pubkey,
+        sender: Pubkey,
+        base: Pubkey,
+        escrow_bump: u8,
+        token_program_flag: TokenProgramFLag,
+    ) -> Result<()> {
+        self.validate()?;
+
+        let mut escrow = vesting_escrow.load_init()?;
+        escrow.init(
+            self.vesting_start_time,
+            self.cliff_time,
+            self.frequency,
+            self.cliff_unlock_amount,
+            self.amount_per_period,
+            self.number_of_period,
+            recipient,
+            mint,
+            sender,
+            base,
+            escrow_bump,
+            self.update_recipient_mode,
+            self.cancel_mode,
+            token_program_flag as u8,
+        );
 
         Ok(())
     }
@@ -92,6 +126,24 @@ pub fn handle_create_vesting_escrow(
     ctx: Context<CreateVestingEscrowCtx>,
     params: &CreateVestingEscrowParameters,
 ) -> Result<()> {
+    params.init_escrow(
+        &ctx.accounts.escrow,
+        ctx.accounts.recipient.key(),
+        ctx.accounts.sender_token.mint,
+        ctx.accounts.sender.key(),
+        ctx.accounts.base.key(),
+        ctx.bumps.escrow,
+        TokenProgramFLag::UseSplToken,
+    )?;
+
+    transfer_to_escrow(
+        &ctx.accounts.sender,
+        &ctx.accounts.sender_token,
+        &ctx.accounts.escrow_token,
+        &ctx.accounts.token_program,
+        params.get_total_deposit_amount()?,
+    )?;
+
     let &CreateVestingEscrowParameters {
         vesting_start_time,
         cliff_time,
@@ -102,33 +154,6 @@ pub fn handle_create_vesting_escrow(
         update_recipient_mode,
         cancel_mode,
     } = params;
-    params.validate()?;
-
-    let mut escrow = ctx.accounts.escrow.load_init()?;
-    escrow.init(
-        vesting_start_time,
-        cliff_time,
-        frequency,
-        cliff_unlock_amount,
-        amount_per_period,
-        number_of_period,
-        ctx.accounts.recipient.key(),
-        ctx.accounts.sender_token.mint,
-        ctx.accounts.sender.key(),
-        ctx.accounts.base.key(),
-        *ctx.bumps.get("escrow").unwrap(),
-        update_recipient_mode,
-        cancel_mode,
-    );
-
-    transfer_to_escrow(
-        &ctx.accounts.sender,
-        &ctx.accounts.sender_token,
-        &ctx.accounts.escrow_token,
-        &ctx.accounts.token_program,
-        params.get_total_deposit_amount()?,
-    )?;
-
     emit_cpi!(EventCreateVestingEscrow {
         cliff_time,
         frequency,

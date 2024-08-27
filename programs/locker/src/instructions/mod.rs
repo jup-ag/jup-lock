@@ -14,3 +14,6 @@ pub mod update_vesting_escrow_recipient;
 
 pub mod cancel_vesting_escrow;
 
+pub mod v2;
+
+pub use v2::*;

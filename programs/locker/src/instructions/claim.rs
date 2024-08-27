@@ -34,20 +34,9 @@ pub struct ClaimCtx<'info> {
 }
 
 pub fn handle_claim(ctx: Context<ClaimCtx>, max_amount: u64) -> Result<()> {
-    let current_ts = Clock::get()?.unix_timestamp as u64;
     let mut escrow = ctx.accounts.escrow.load_mut()?;
 
     let amount = escrow.claim(max_amount)?;
-
-    // localnet debug
-    #[cfg(feature = "localnet")]
-    msg!(
-        "claim amount {} {} {}",
-        amount,
-        current_ts,
-        escrow.cliff_time
-    );
-
     drop(escrow);
 
     transfer_to_user(
@@ -58,6 +47,7 @@ pub fn handle_claim(ctx: Context<ClaimCtx>, max_amount: u64) -> Result<()> {
         amount,
     )?;
 
+    let current_ts = Clock::get()?.unix_timestamp as u64;
     emit_cpi!(EventClaim {
         amount,
         current_ts,

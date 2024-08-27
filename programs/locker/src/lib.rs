@@ -17,7 +17,10 @@ pub mod errors;
 pub mod safe_math;
 
 pub mod events;
+
 pub mod util;
+
+pub mod constants;
 
 #[cfg(feature = "localnet")]
 declare_id!("2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg");
@@ -60,6 +63,21 @@ pub mod locker {
 
     pub fn cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result<()> {
         handle_cancel_vesting_escrow(ctx)
+    }
+
+    // V2 instructions
+    pub fn create_vesting_escrow_v2<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
+        params: CreateVestingEscrowParameters,
+    ) -> Result<()> {
+        handle_create_vesting_escrow_v2(ctx, &params)
+    }
+
+    pub fn claim_v2<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ClaimV2<'info>>,
+        max_amount: u64,
+    ) -> Result<()> {
+        handle_claim_v2(ctx, max_amount)
     }
 
     // TODO add function to close escrow after all token has been claimed
