@@ -56,5 +56,9 @@ pub mod locker {
         handle_update_vesting_escrow_recipient(ctx, new_recipient, new_recipient_email)
     }
 
+    pub fn cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result<()> {
+        handle_cancel_vesting_escrow(ctx)
+    }
+
     // TODO add function to close escrow after all token has been claimed
 }

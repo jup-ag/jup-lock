@@ -1,12 +1,22 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+use static_assertions::const_assert_eq;
+
 use crate::*;
 
 use self::safe_math::SafeMath;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-use static_assertions::const_assert_eq;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]
 pub enum UpdateRecipientMode {
+    NeitherCreatorOrRecipient, //0
+    OnlyCreator,               //1
+    OnlyRecipient,             //2
+    EitherCreatorAndRecipient, //3
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u8)]
+pub enum CancelMode {
     NeitherCreatorOrRecipient, //0
     OnlyCreator,               //1
     OnlyRecipient,             //2
@@ -28,8 +38,12 @@ pub struct VestingEscrow {
     pub escrow_bump: u8,
     /// update_recipient_mode
     pub update_recipient_mode: u8,
+    /// cancel_mode
+    pub cancel_mode: u8,
+    /// cancel_mode
+    pub cancelled: u8,
     /// padding
-    pub padding_0: [u8; 6],
+    pub padding_0: [u8; 4],
     /// cliff time
     pub cliff_time: u64,
     /// frequency
@@ -65,6 +79,7 @@ impl VestingEscrow {
         base: Pubkey,
         escrow_bump: u8,
         update_recipient_mode: u8,
+        cancel_mode: u8,
     ) {
         self.vesting_start_time = vesting_start_time;
         self.cliff_time = cliff_time;
@@ -78,6 +93,8 @@ impl VestingEscrow {
         self.base = base;
         self.escrow_bump = escrow_bump;
         self.update_recipient_mode = update_recipient_mode;
+        self.cancel_mode = cancel_mode;
+        self.cancelled = 0;
     }
 
     pub fn get_max_unlocked_amount(&self, current_ts: u64) -> Result<u64> {
@@ -102,6 +119,13 @@ impl VestingEscrow {
         Ok(claimable_amount)
     }
 
+    pub fn get_total_deposit_amount(&self) -> Result<u64> {
+        let deposit_amount = self
+            .cliff_unlock_amount
+            .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
+        Ok(deposit_amount)
+    }
+
     pub fn accumulate_claimed_amount(&mut self, claimed_amount: u64) -> Result<()> {
         self.total_claimed_amount = self.total_claimed_amount.safe_add(claimed_amount)?;
         Ok(())
@@ -110,12 +134,31 @@ impl VestingEscrow {
     pub fn update_recipient(&mut self, new_recipient: Pubkey) {
         self.recipient = new_recipient;
     }
+
+    pub fn validate_cancel_actor(self, signer: Pubkey) -> Result<bool> {
+        let cancel_mode = CancelMode::try_from(self.cancel_mode).unwrap();
+        match cancel_mode {
+            CancelMode::NeitherCreatorOrRecipient => {
+                return Ok(false);
+            }
+            CancelMode::OnlyCreator => {
+                Ok(signer == self.creator)
+            }
+            CancelMode::OnlyRecipient => {
+                Ok(signer == self.recipient)
+            }
+            CancelMode::EitherCreatorAndRecipient => {
+                Ok(signer == self.creator || signer == self.recipient)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
 mod escrow_test {
-    use super::*;
     use proptest::proptest;
+
+    use super::*;
 
     proptest! {
     #[test]

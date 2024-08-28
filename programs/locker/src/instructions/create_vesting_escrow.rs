@@ -1,8 +1,9 @@
-use crate::safe_math::SafeMath;
-use crate::*;
 use anchor_spl::token::{Token, TokenAccount, Transfer};
-#[derive(AnchorSerialize, AnchorDeserialize)]
 
+use crate::*;
+use crate::safe_math::SafeMath;
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
 /// Accounts for [locker::create_vesting_escrow].
 pub struct CreateVestingEscrowParameters {
     pub vesting_start_time: u64,
@@ -12,6 +13,7 @@ pub struct CreateVestingEscrowParameters {
     pub amount_per_period: u64,
     pub number_of_period: u64,
     pub update_recipient_mode: u8,
+    pub cancel_mode: u8,
 }
 
 impl CreateVestingEscrowParameters {
@@ -32,8 +34,8 @@ pub struct CreateVestingEscrowCtx<'info> {
     #[account(
         init,
         seeds = [
-            b"escrow".as_ref(),
-            base.key().as_ref(),
+        b"escrow".as_ref(),
+        base.key().as_ref(),
         ],
         bump,
         payer = sender,
@@ -76,6 +78,7 @@ pub fn handle_create_vesting_escrow(
         amount_per_period,
         number_of_period,
         update_recipient_mode,
+        cancel_mode,
     } = params;
 
     require!(
@@ -104,6 +107,7 @@ pub fn handle_create_vesting_escrow(
         ctx.accounts.base.key(),
         *ctx.bumps.get("escrow").unwrap(),
         update_recipient_mode,
+        cancel_mode,
     );
 
     anchor_spl::token::transfer(
@@ -128,6 +132,7 @@ pub fn handle_create_vesting_escrow(
         escrow: ctx.accounts.escrow.key(),
         update_recipient_mode,
         vesting_start_time,
+        cancel_mode,
     });
     Ok(())
 }
