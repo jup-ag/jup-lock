@@ -1,17 +1,21 @@
 use anchor_spl::token::{Token, TokenAccount};
 
 use crate::*;
-use crate::util::token::transfer_to_recipient;
+use crate::util::token::transfer_to_user;
 
 #[event_cpi]
 #[derive(Accounts)]
 pub struct ClaimCtx<'info> {
-    #[account(mut, has_one = recipient)]
+    #[account(
+        mut,
+        has_one = recipient,
+        constraint = escrow.load() ?.cancelled_at == 0 @ LockerError::AlreadyCancelled
+    )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
     #[account(
         mut,
-        associated_token::mint = recipient_token.mint,
+        associated_token::mint = escrow.load() ?.token_mint,
         associated_token::authority = escrow
     )]
     pub escrow_token: Box<Account<'info, TokenAccount>>,
@@ -46,7 +50,7 @@ pub fn handle_claim(ctx: Context<ClaimCtx>, max_amount: u64) -> Result<()> {
 
     drop(escrow);
 
-    transfer_to_recipient(
+    transfer_to_user(
         &ctx.accounts.escrow,
         &ctx.accounts.escrow_token,
         &ctx.accounts.recipient_token,

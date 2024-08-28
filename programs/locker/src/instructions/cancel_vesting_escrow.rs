@@ -3,7 +3,8 @@ use solana_program::program::invoke_signed;
 use spl_token::instruction::close_account;
 
 use crate::*;
-use crate::util::token::transfer_to_recipient;
+use crate::safe_math::SafeMath;
+use crate::util::token::transfer_to_user;
 
 /// Accounts for [locker::cancel_vesting_escrow].
 #[derive(Accounts)]
@@ -12,26 +13,34 @@ pub struct CancelVestingEscrow<'info> {
     /// Escrow.
     #[account(
         mut,
-        has_one = creator
+        constraint = escrow.load() ?.cancelled_at == 0 @ LockerError::AlreadyCancelled
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
     #[account(
         mut,
-        associated_token::mint = recipient_token.mint,
+        associated_token::mint = escrow.load() ?.token_mint,
         associated_token::authority = escrow
     )]
     pub escrow_token: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = escrow.load() ?.token_mint,
+        associated_token::authority = escrow.load() ?.creator
+    )]
     pub creator_token: Box<Account<'info, TokenAccount>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = escrow.load() ?.token_mint,
+        associated_token::authority = escrow.load() ?.recipient
+    )]
     pub recipient_token: Box<Account<'info, TokenAccount>>,
 
     /// CHECKED: the creator will receive the rent back
     #[account(mut)]
-    pub creator: UncheckedAccount<'info>,
+    pub rent_receiver: UncheckedAccount<'info>,
 
     /// Signer.
     #[account(mut)]
@@ -53,33 +62,18 @@ impl<'info> CancelVestingEscrow<'info> {
             &close_account(
                 self.token_program.key,
                 self.escrow_token.to_account_info().key,
-                self.creator.key,
+                self.rent_receiver.key,
                 &self.escrow.key(),
                 &[],
             )?,
             &[
                 self.token_program.to_account_info(),
                 self.escrow_token.to_account_info(),
-                self.creator.to_account_info(),
+                self.rent_receiver.to_account_info(),
                 self.escrow.to_account_info(),
             ],
             &[&escrow_seeds[..]],
         )?;
-
-        Ok(())
-    }
-
-    fn validate(&self) -> Result<()> {
-        let escrow = self.escrow.load()?;
-        require!(
-            escrow.recipient == self.recipient_token.owner && escrow.token_mint == self.recipient_token.mint,
-            LockerError::InvalidRecipientTokenAccount,
-        );
-
-        require!(
-            escrow.creator == self.creator_token.owner && escrow.token_mint == self.creator_token.mint,
-            LockerError::InvalidCreatorTokenAccount,
-        );
 
         Ok(())
     }
@@ -88,20 +82,20 @@ impl<'info> CancelVestingEscrow<'info> {
 pub fn handle_cancel_vesting_escrow(
     ctx: Context<CancelVestingEscrow>
 ) -> Result<()> {
-    ctx.accounts.validate()?;
-
     let mut escrow = ctx.accounts.escrow.load_mut()?;
     let signer = ctx.accounts.signer.key();
     escrow.validate_cancel_actor(signer)?;
 
     let current_ts = Clock::get()?.unix_timestamp as u64;
+    require!(current_ts > 0, LockerError::TimestampZero);
+
     let claimable_amount = escrow.get_claimable_amount(current_ts)?;
-    let locked_amount = escrow.get_locked_amount(current_ts)?;
+    let remaining_amount = ctx.accounts.escrow_token.amount.safe_sub(claimable_amount)?;
     escrow.cancelled_at = current_ts;
     drop(escrow);
 
     // Transfer the claimable amount to the recipient
-    transfer_to_recipient(
+    transfer_to_user(
         &ctx.accounts.escrow,
         &ctx.accounts.escrow_token,
         &ctx.accounts.recipient_token,
@@ -109,14 +103,13 @@ pub fn handle_cancel_vesting_escrow(
         claimable_amount,
     )?;
 
-
     // Transfer the locked amount to the sender
-    transfer_to_recipient(
+    transfer_to_user(
         &ctx.accounts.escrow,
         &ctx.accounts.escrow_token,
         &ctx.accounts.creator_token,
         &ctx.accounts.token_program,
-        locked_amount,
+        remaining_amount,
     )?;
 
     ctx.accounts.close_escrow_token()?;
@@ -125,7 +118,7 @@ pub fn handle_cancel_vesting_escrow(
         escrow: ctx.accounts.escrow.key(),
         signer,
         claimable_amount,
-        locked_amount,
+        remaining_amount,
         cancelled_at: current_ts,
     });
     Ok(())

@@ -35,6 +35,6 @@ pub struct EventCancelVestingEscrow {
     pub escrow: Pubkey,
     pub signer: Pubkey,
     pub claimable_amount: u64,
-    pub locked_amount: u64,
+    pub remaining_amount: u64,
     pub cancelled_at: u64,
 }

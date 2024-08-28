@@ -15,7 +15,7 @@ pub enum LockerError {
     #[msg("Invalid update recipient mode")]
     InvalidUpdateRecipientMode,
 
-    #[msg("Invalid update recipient mode")]
+    #[msg("Invalid cancel mode")]
     InvalidCancelMode,
 
     #[msg("Not permit to do this action")]
@@ -35,4 +35,7 @@ pub enum LockerError {
 
     #[msg("Already cancelled")]
     AlreadyCancelled,
+
+    #[msg("Timestamp is zero")]
+    TimestampZero,
 }

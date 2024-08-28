@@ -59,7 +59,7 @@ pub struct VestingEscrow {
     /// cancelled_at
     pub cancelled_at: u64,
     /// buffer
-    pub padding_1: [u64; 1],
+    pub padding_1: u64,
     /// buffer
     pub buffer: [u128; 5],
 }
@@ -121,26 +121,12 @@ impl VestingEscrow {
         Ok(claimable_amount)
     }
 
-    pub fn get_locked_amount(&self, current_ts: u64) -> Result<u64> {
-        let total_deposit_amount = self
-            .cliff_unlock_amount
-            .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
-
-        let locked_amount = total_deposit_amount.safe_sub(self.get_claimable_amount(current_ts)?)?;
-        Ok(locked_amount)
-    }
-
     pub fn accumulate_claimed_amount(&mut self, claimed_amount: u64) -> Result<()> {
         self.total_claimed_amount = self.total_claimed_amount.safe_add(claimed_amount)?;
         Ok(())
     }
 
     pub fn claim(&mut self, max_amount: u64) -> Result<u64> {
-        require!(
-            self.cancelled_at == 0,
-            LockerError::AlreadyCancelled
-        );
-
         let current_ts = Clock::get()?.unix_timestamp as u64;
         let claimable_amount = self.get_claimable_amount(current_ts)?;
 
@@ -150,15 +136,8 @@ impl VestingEscrow {
         Ok(amount)
     }
 
-    pub fn update_recipient(&mut self, new_recipient: Pubkey) -> Result<()> {
-        require!(
-            self.cancelled_at == 0,
-            LockerError::AlreadyCancelled
-        );
-
+    pub fn update_recipient(&mut self, new_recipient: Pubkey) {
         self.recipient = new_recipient;
-
-        Ok(())
     }
 
     pub fn validate_cancel_actor(self, signer: Pubkey) -> Result<()> {
@@ -184,6 +163,37 @@ impl VestingEscrow {
                     signer == self.creator || signer == self.recipient,
                     LockerError::NotPermitToDoThisAction
                 );
+            }
+        }
+
+        Ok(())
+    }
+
+    pub fn validate_update_actor(self, signer: Pubkey) -> Result<()> {
+        let update_recipient_mode =
+            UpdateRecipientMode::try_from(self.update_recipient_mode).unwrap();
+
+        match update_recipient_mode {
+            UpdateRecipientMode::NeitherCreatorOrRecipient => {
+                return Err(LockerError::NotPermitToDoThisAction.into());
+            }
+            UpdateRecipientMode::OnlyCreator => {
+                require!(
+                signer == self.creator,
+                LockerError::NotPermitToDoThisAction
+            );
+            }
+            UpdateRecipientMode::OnlyRecipient => {
+                require!(
+                signer == self.recipient,
+                LockerError::NotPermitToDoThisAction
+            );
+            }
+            UpdateRecipientMode::EitherCreatorAndRecipient => {
+                require!(
+                signer == self.creator || signer == self.recipient,
+                LockerError::NotPermitToDoThisAction
+            );
             }
         }
 

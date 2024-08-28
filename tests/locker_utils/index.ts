@@ -278,7 +278,7 @@ export interface CancelVestingPlanParams {
   isAssertion: boolean;
   tokenMint: web3.PublicKey;
   escrow: web3.PublicKey;
-  creator: web3.PublicKey;
+  rentReceiver: web3.PublicKey;
   creatorToken: web3.PublicKey;
   recipientToken: web3.PublicKey;
   signer: web3.Keypair;
@@ -291,7 +291,7 @@ export async function cancelVestingPlan(
 ) {
   let {
     isAssertion,
-    creator,
+    rentReceiver,
     tokenMint,
     escrow,
     creatorToken,
@@ -324,7 +324,7 @@ export async function cancelVestingPlan(
       escrowToken,
       creatorToken: creatorToken,
       recipientToken: recipientToken,
-      creator,
+      rentReceiver,
       signer: signer.publicKey,
       tokenProgram: TOKEN_PROGRAM_ID,
       systemProgram: web3.SystemProgram.programId,

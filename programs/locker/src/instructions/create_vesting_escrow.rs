@@ -24,6 +24,27 @@ impl CreateVestingEscrowParameters {
             .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
         Ok(total_amount)
     }
+
+    fn validate(&self) -> Result<()> {
+        require!(
+            self.cliff_time >= self.vesting_start_time,
+            LockerError::InvalidVestingStartTime
+        );
+
+        require!(
+            UpdateRecipientMode::try_from(self.update_recipient_mode).is_ok(),
+            LockerError::InvalidUpdateRecipientMode,
+        );
+
+        require!(
+            CancelMode::try_from(self.cancel_mode).is_ok(),
+            LockerError::InvalidCancelMode,
+        );
+
+        require!(self.frequency != 0, LockerError::FrequencyIsZero);
+
+        Ok(())
+    }
 }
 
 #[event_cpi]
@@ -81,18 +102,7 @@ pub fn handle_create_vesting_escrow(
         update_recipient_mode,
         cancel_mode,
     } = params;
-
-    require!(
-        cliff_time >= vesting_start_time,
-        LockerError::InvalidVestingStartTime
-    );
-
-    require!(
-        UpdateRecipientMode::try_from(update_recipient_mode).is_ok(),
-        LockerError::InvalidUpdateRecipientMode,
-    );
-
-    require!(frequency != 0, LockerError::FrequencyIsZero);
+    params.validate()?;
 
     let mut escrow = ctx.accounts.escrow.load_init()?;
     escrow.init(

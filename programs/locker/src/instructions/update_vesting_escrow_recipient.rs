@@ -5,7 +5,10 @@ use crate::*;
 #[event_cpi]
 pub struct UpdateVestingEscrowRecipientCtx<'info> {
     /// Escrow.
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = escrow.load() ?.cancelled_at == 0 @ LockerError::AlreadyCancelled
+    )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
     /// Escrow metadata.
@@ -27,34 +30,8 @@ pub fn handle_update_vesting_escrow_recipient(
     let mut escrow = ctx.accounts.escrow.load_mut()?;
     let old_recipient = escrow.recipient;
     let signer = ctx.accounts.signer.key();
-    let update_recipient_mode =
-        UpdateRecipientMode::try_from(escrow.update_recipient_mode).unwrap();
-
-    match update_recipient_mode {
-        UpdateRecipientMode::NeitherCreatorOrRecipient => {
-            return Err(LockerError::NotPermitToDoThisAction.into());
-        }
-        UpdateRecipientMode::OnlyCreator => {
-            require!(
-                signer == escrow.creator,
-                LockerError::NotPermitToDoThisAction
-            );
-        }
-        UpdateRecipientMode::OnlyRecipient => {
-            require!(
-                signer == escrow.recipient,
-                LockerError::NotPermitToDoThisAction
-            );
-        }
-        UpdateRecipientMode::EitherCreatorAndRecipient => {
-            require!(
-                signer == escrow.creator || signer == escrow.recipient,
-                LockerError::NotPermitToDoThisAction
-            );
-        }
-    }
-
-    escrow.update_recipient(new_recipient)?;
+    escrow.validate_update_actor(signer)?;
+    escrow.update_recipient(new_recipient);
 
     if let Some(recipient_email) = new_recipient_email {
         if let Some(escrow_metadata) = &mut ctx.accounts.escrow_metadata {

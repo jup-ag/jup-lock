@@ -25,7 +25,7 @@ pub fn transfer_to_escrow<'info>(
     Ok(())
 }
 
-pub fn transfer_to_recipient<'info>(
+pub fn transfer_to_user<'info>(
     escrow: &AccountLoader<'info, VestingEscrow>,
     escrow_token: &Account<'info, TokenAccount>,
     recipient_token: &Account<'info, TokenAccount>,
