@@ -1,7 +1,8 @@
-use anchor_spl::token::{Token, TokenAccount, Transfer};
+use anchor_spl::token::{Token, TokenAccount};
 
 use crate::*;
 use crate::safe_math::SafeMath;
+use crate::util::token::transfer_to_escrow;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 /// Accounts for [locker::create_vesting_escrow].
@@ -110,15 +111,11 @@ pub fn handle_create_vesting_escrow(
         cancel_mode,
     );
 
-    anchor_spl::token::transfer(
-        CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            Transfer {
-                from: ctx.accounts.sender_token.to_account_info(),
-                to: ctx.accounts.escrow_token.to_account_info(),
-                authority: ctx.accounts.sender.to_account_info(),
-            },
-        ),
+    transfer_to_escrow(
+        &ctx.accounts.sender,
+        &ctx.accounts.sender_token,
+        &ctx.accounts.escrow_token,
+        &ctx.accounts.token_program,
         params.get_total_deposit_amount()?,
     )?;
 

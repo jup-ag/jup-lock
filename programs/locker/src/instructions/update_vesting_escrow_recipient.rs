@@ -54,7 +54,7 @@ pub fn handle_update_vesting_escrow_recipient(
         }
     }
 
-    escrow.update_recipient(new_recipient);
+    escrow.update_recipient(new_recipient)?;
 
     if let Some(recipient_email) = new_recipient_email {
         if let Some(escrow_metadata) = &mut ctx.accounts.escrow_metadata {

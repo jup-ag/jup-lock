@@ -26,7 +26,7 @@ pub enum LockerError {
 
     #[msg("Invalid creator token account")]
     InvalidCreatorTokenAccount,
-    
+
     #[msg("Invalid escrow metadata")]
     InvalidEscrowMetadata,
 

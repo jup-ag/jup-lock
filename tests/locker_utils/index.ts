@@ -142,7 +142,6 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     expect(escrowState.base.toString()).eq(baseKP.publicKey.toString());
     expect(escrowState.updateRecipientMode).eq(updateRecipientMode);
     expect(escrowState.cancelMode).eq(cancelMode);
-    expect(escrowState.cancelled).eq(0);
   }
 
   return escrow;
@@ -279,6 +278,7 @@ export interface CancelVestingPlanParams {
   isAssertion: boolean;
   tokenMint: web3.PublicKey;
   escrow: web3.PublicKey;
+  creator: web3.PublicKey;
   creatorToken: web3.PublicKey;
   recipientToken: web3.PublicKey;
   signer: web3.Keypair;
@@ -289,8 +289,15 @@ export async function cancelVestingPlan(
   claimable_amount: number,
   total_amount: number
 ) {
-  let { isAssertion, tokenMint, escrow, creatorToken, recipientToken, signer } =
-    params;
+  let {
+    isAssertion,
+    creator,
+    tokenMint,
+    escrow,
+    creatorToken,
+    recipientToken,
+    signer,
+  } = params;
   const program = createLockerProgram(new Wallet(signer));
   const escrowState = await program.account.vestingEscrow.fetch(escrow);
 
@@ -317,6 +324,7 @@ export async function cancelVestingPlan(
       escrowToken,
       creatorToken: creatorToken,
       recipientToken: recipientToken,
+      creator,
       signer: signer.publicKey,
       tokenProgram: TOKEN_PROGRAM_ID,
       systemProgram: web3.SystemProgram.programId,
@@ -325,12 +333,6 @@ export async function cancelVestingPlan(
 
   if (isAssertion) {
     const escrowState = await program.account.vestingEscrow.fetch(escrow);
-    expect(escrowState.cancelled).eq(1);
-
-    const escrow_balance = (
-      await program.provider.connection.getTokenAccountBalance(escrowToken)
-    ).value.amount;
-    expect(escrow_balance).eq("0");
 
     const creator_token_balance = (
       await program.provider.connection.getTokenAccountBalance(creatorToken)

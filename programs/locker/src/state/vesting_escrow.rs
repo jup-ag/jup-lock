@@ -40,10 +40,8 @@ pub struct VestingEscrow {
     pub update_recipient_mode: u8,
     /// cancel_mode
     pub cancel_mode: u8,
-    /// cancel_mode
-    pub cancelled: u8,
     /// padding
-    pub padding_0: [u8; 4],
+    pub padding_0: [u8; 5],
     /// cliff time
     pub cliff_time: u64,
     /// frequency
@@ -58,8 +56,12 @@ pub struct VestingEscrow {
     pub total_claimed_amount: u64,
     /// vesting start time
     pub vesting_start_time: u64,
+    /// cancelled_at
+    pub cancelled_at: u64,
     /// buffer
-    pub buffer: [u128; 6],
+    pub padding_1: [u64; 1],
+    /// buffer
+    pub buffer: [u128; 5],
 }
 
 const_assert_eq!(VestingEscrow::INIT_SPACE, 288); //  32 * 4 + 8 * 8 + 16 * 6
@@ -94,7 +96,7 @@ impl VestingEscrow {
         self.escrow_bump = escrow_bump;
         self.update_recipient_mode = update_recipient_mode;
         self.cancel_mode = cancel_mode;
-        self.cancelled = 0;
+        self.cancelled_at = 0;
     }
 
     pub fn get_max_unlocked_amount(&self, current_ts: u64) -> Result<u64> {
@@ -119,11 +121,13 @@ impl VestingEscrow {
         Ok(claimable_amount)
     }
 
-    pub fn get_total_deposit_amount(&self) -> Result<u64> {
-        let deposit_amount = self
+    pub fn get_locked_amount(&self, current_ts: u64) -> Result<u64> {
+        let total_deposit_amount = self
             .cliff_unlock_amount
             .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
-        Ok(deposit_amount)
+
+        let locked_amount = total_deposit_amount.safe_sub(self.get_claimable_amount(current_ts)?)?;
+        Ok(locked_amount)
     }
 
     pub fn accumulate_claimed_amount(&mut self, claimed_amount: u64) -> Result<()> {
@@ -131,26 +135,59 @@ impl VestingEscrow {
         Ok(())
     }
 
-    pub fn update_recipient(&mut self, new_recipient: Pubkey) {
-        self.recipient = new_recipient;
+    pub fn claim(&mut self, max_amount: u64) -> Result<u64> {
+        require!(
+            self.cancelled_at == 0,
+            LockerError::AlreadyCancelled
+        );
+
+        let current_ts = Clock::get()?.unix_timestamp as u64;
+        let claimable_amount = self.get_claimable_amount(current_ts)?;
+
+        let amount = claimable_amount.min(max_amount);
+        self.accumulate_claimed_amount(amount)?;
+
+        Ok(amount)
     }
 
-    pub fn validate_cancel_actor(self, signer: Pubkey) -> Result<bool> {
+    pub fn update_recipient(&mut self, new_recipient: Pubkey) -> Result<()> {
+        require!(
+            self.cancelled_at == 0,
+            LockerError::AlreadyCancelled
+        );
+
+        self.recipient = new_recipient;
+
+        Ok(())
+    }
+
+    pub fn validate_cancel_actor(self, signer: Pubkey) -> Result<()> {
         let cancel_mode = CancelMode::try_from(self.cancel_mode).unwrap();
         match cancel_mode {
             CancelMode::NeitherCreatorOrRecipient => {
-                return Ok(false);
+                return Err(LockerError::NotPermitToDoThisAction.into());
             }
             CancelMode::OnlyCreator => {
-                Ok(signer == self.creator)
+                require!(
+                    signer == self.creator,
+                    LockerError::NotPermitToDoThisAction
+                );
             }
             CancelMode::OnlyRecipient => {
-                Ok(signer == self.recipient)
+                require!(
+                    signer == self.recipient,
+                    LockerError::NotPermitToDoThisAction
+                );
             }
             CancelMode::EitherCreatorAndRecipient => {
-                Ok(signer == self.creator || signer == self.recipient)
+                require!(
+                    signer == self.creator || signer == self.recipient,
+                    LockerError::NotPermitToDoThisAction
+                );
             }
         }
+
+        Ok(())
     }
 }
 

@@ -1225,6 +1225,8 @@ dependencies = [
  "bytemuck",
  "num_enum 0.7.2",
  "proptest",
+ "solana-program",
+ "spl-token",
  "static_assertions",
 ]
 
