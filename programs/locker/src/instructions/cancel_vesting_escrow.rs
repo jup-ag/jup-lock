@@ -95,7 +95,7 @@ pub fn handle_cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result
         .amount
         .safe_sub(claimable_amount)?;
     escrow.cancelled_at = current_ts;
-    require!(escrow.cancelled_at > 0, LockerError::TimestampZero);
+    require!(escrow.cancelled_at > 0, LockerError::CancelledAtIsZero);
     drop(escrow);
 
     // Transfer the claimable amount to the recipient
@@ -107,7 +107,7 @@ pub fn handle_cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result
         claimable_amount,
     )?;
 
-    // Transfer the locked amount to the sender
+    // Transfer the remaining amount to the sender
     transfer_to_user(
         &ctx.accounts.escrow,
         &ctx.accounts.escrow_token,
