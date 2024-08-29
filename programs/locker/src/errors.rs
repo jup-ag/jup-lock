@@ -9,9 +9,6 @@ pub enum LockerError {
     #[msg("Frequency is zero")]
     FrequencyIsZero,
 
-    #[msg("Unauthorized")]
-    Unauthorized,
-
     #[msg("Invalid escrow token address")]
     InvalidEscrowTokenAddress,
 
