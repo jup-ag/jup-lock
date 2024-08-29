@@ -3,7 +3,7 @@ use anchor_spl::token_2022::spl_token_2022;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::util::{calculate_transfer_fee_included_amount, transfer_to_escrow_v2, validate_mint};
-use crate::TokenProgramFLag::{UseSplToken, UseToken2022};
+use crate::TokenProgramFlag::{UseSplToken, UseToken2022};
 use crate::*;
 
 #[event_cpi]

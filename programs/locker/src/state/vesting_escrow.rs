@@ -25,7 +25,7 @@ pub enum CancelMode {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]
-pub enum TokenProgramFLag {
+pub enum TokenProgramFlag {
     UseSplToken,  //0
     UseToken2022, //1
 }
