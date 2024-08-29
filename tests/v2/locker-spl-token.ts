@@ -125,6 +125,7 @@ describe("[V2] Full flow With SPL Token", () => {
       numberOfPeriod: new BN(2),
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
+      cancelMode: 0,
       tokenProgram: TOKEN_PROGRAM_ID,
     });
     while (true) {

@@ -83,7 +83,7 @@ export async function createMintTransaction(
     withdrawWithheldAuthority
   );
 
-  mintTransaction.add(...instructions);
+  if (instructions.length > 0) mintTransaction.add(...instructions);
 
   mintTransaction.add(
     createInitializeMintInstruction(

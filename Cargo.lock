@@ -1264,6 +1264,7 @@ dependencies = [
  "num_enum 0.7.2",
  "proptest",
  "solana-program",
+ "spl-pod",
  "spl-token 3.5.0",
  "static_assertions",
 ]

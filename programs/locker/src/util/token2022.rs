@@ -2,10 +2,15 @@ use anchor_lang::prelude::*;
 use anchor_spl::memo;
 use anchor_spl::memo::{BuildMemo, Memo};
 use anchor_spl::token::Token;
-use anchor_spl::token_2022::spl_token_2022::{self, extension::{self, StateWithExtensions}};
-use anchor_spl::token_2022::spl_token_2022::extension::transfer_fee::{MAX_FEE_BASIS_POINTS, TransferFee, TransferFeeConfig};
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::token_2022::spl_token_2022::extension::transfer_fee::{
+    TransferFee, TransferFeeConfig, MAX_FEE_BASIS_POINTS,
+};
+use anchor_spl::token_2022::spl_token_2022::{
+    self,
+    extension::{self, StateWithExtensions},
+};
 use anchor_spl::token_interface::spl_token_2022::extension::BaseStateWithExtensions;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::{LockerError, VestingEscrow};
 
@@ -28,9 +33,9 @@ pub fn transfer_to_escrow_v2<'a, 'c: 'info, 'info>(
     let instruction = spl_token_2022::instruction::transfer_checked(
         token_program.key,
         &sender_token.key(),
-        &token_mint.key(), // mint
+        &token_mint.key(),   // mint
         &escrow_token.key(), // to
-        sender.key, // authority
+        sender.key,          // authority
         &[],
         // The transfer amount should include fee
         amount,
@@ -50,7 +55,7 @@ pub fn transfer_to_escrow_v2<'a, 'c: 'info, 'info>(
     Ok(())
 }
 
-pub fn transfer_to_recipient_v2<'c: 'info, 'info>(
+pub fn transfer_to_user_v2<'c: 'info, 'info>(
     escrow: &AccountLoader<'info, VestingEscrow>,
     token_mint: &InterfaceAccount<'info, Mint>,
     escrow_token: &InterfaceAccount<'info, TokenAccount>,
@@ -74,9 +79,9 @@ pub fn transfer_to_recipient_v2<'c: 'info, 'info>(
     let instruction = spl_token_2022::instruction::transfer_checked(
         token_program.key,
         &escrow_token.key(),
-        &token_mint.key(), // mint
+        &token_mint.key(),        // mint
         &recipient_account.key(), // to
-        &escrow.key(), // authority
+        &escrow.key(),            // authority
         &[],
         amount,
         token_mint.decimals,
@@ -89,11 +94,7 @@ pub fn transfer_to_recipient_v2<'c: 'info, 'info>(
         escrow.to_account_info(),
     ];
 
-    solana_program::program::invoke_signed(
-        &instruction,
-        &account_infos,
-        &[&escrow_seeds[..]],
-    )?;
+    solana_program::program::invoke_signed(&instruction, &account_infos, &[&escrow_seeds[..]])?;
 
     Ok(())
 }
@@ -117,7 +118,8 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<bool> {
     }
 
     let token_mint_data = token_mint_info.try_borrow_data()?;
-    let token_mint_unpacked = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
+    let token_mint_unpacked =
+        StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
 
     let extensions = token_mint_unpacked.get_extension_types()?;
     for extension in extensions {
@@ -127,7 +129,9 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<bool> {
             extension::ExtensionType::TokenMetadata => {}
             extension::ExtensionType::MetadataPointer => {}
             // mint has unknown or unsupported extensions
-            _ => { return Ok(false); }
+            _ => {
+                return Ok(false);
+            }
         }
     }
 
@@ -135,20 +139,26 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<bool> {
 }
 
 // This function calculate the pre amount (with fee) require to transfer `amount` of token
-pub fn calculate_transfer_fee_included_amount(amount: u64, mint: &InterfaceAccount<Mint>) -> Result<u64> {
+pub fn calculate_transfer_fee_included_amount(
+    amount: u64,
+    mint: &InterfaceAccount<Mint>,
+) -> Result<u64> {
     let mint_info = mint.to_account_info();
     if *mint_info.owner == Token::id() {
         return Ok(amount);
     }
 
     let token_mint_data = mint_info.try_borrow_data()?;
-    let token_mint_unpacked = StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
-    let actual_amount: u64 = if let Ok(transfer_fee_config) = token_mint_unpacked.get_extension::<TransferFeeConfig>() {
-        let transfer_fee = transfer_fee_config.get_epoch_fee(Clock::get()?.epoch);
-        calculate_pre_fee_amount(transfer_fee, amount).ok_or(LockerError::TransferFeeCalculationFailure)?
-    } else {
-        amount
-    };
+    let token_mint_unpacked =
+        StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
+    let actual_amount: u64 =
+        if let Ok(transfer_fee_config) = token_mint_unpacked.get_extension::<TransferFeeConfig>() {
+            let transfer_fee = transfer_fee_config.get_epoch_fee(Clock::get()?.epoch);
+            calculate_pre_fee_amount(transfer_fee, amount)
+                .ok_or(LockerError::TransferFeeCalculationFailure)?
+        } else {
+            amount
+        };
 
     Ok(actual_amount)
 }
@@ -161,8 +171,10 @@ pub fn is_transfer_memo_required(token_account: &InterfaceAccount<TokenAccount>)
     }
 
     let token_account_data = token_account_info.try_borrow_data()?;
-    let token_account_unpacked = StateWithExtensions::<spl_token_2022::state::Account>::unpack(&token_account_data)?;
-    let extension = token_account_unpacked.get_extension::<extension::memo_transfer::MemoTransfer>();
+    let token_account_unpacked =
+        StateWithExtensions::<spl_token_2022::state::Account>::unpack(&token_account_data)?;
+    let extension =
+        token_account_unpacked.get_extension::<extension::memo_transfer::MemoTransfer>();
 
     return if let Ok(memo_transfer) = extension {
         Ok(memo_transfer.require_incoming_transfer_memos.into())

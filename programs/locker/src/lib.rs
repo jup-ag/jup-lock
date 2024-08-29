@@ -80,5 +80,9 @@ pub mod locker {
         handle_claim_v2(ctx, max_amount)
     }
 
+    pub fn cancel_vesting_escrow_v2(ctx: Context<CancelVestingEscrowV2>) -> Result<()> {
+        handle_cancel_vesting_escrow_v2(ctx)
+    }
+
     // TODO add function to close escrow after all token has been claimed
 }

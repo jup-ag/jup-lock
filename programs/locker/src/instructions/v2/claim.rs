@@ -5,28 +5,42 @@ use anchor_spl::token_interface::{
 
 use crate::*;
 use crate::constants::transfer_memo;
-use crate::util::{MemoTransferContext, transfer_to_recipient_v2};
+use crate::util::{MemoTransferContext, transfer_to_user_v2};
 
 #[event_cpi]
 #[derive(Accounts)]
 pub struct ClaimV2<'info> {
-    #[account(mut, has_one = recipient)]
+    #[account(
+        mut, 
+        has_one = recipient,
+        constraint = escrow.load()?.cancelled_at == 0 @ LockerError::AlreadyCancelled
+    )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
-    pub mint: Box<InterfaceAccount<'info, Mint>>,
+    pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    pub memo_program: Program<'info, Memo>,
-
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = token_mint,
+        associated_token::authority = escrow,
+        associated_token::token_program = token_program
+    )]
     pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
     #[account(mut)]
     pub recipient: Signer<'info>,
 
     #[account(
-        mut, constraint = recipient_token.key() != escrow_token.key() @ LockerError::InvalidRecipientTokenAccount
+        mut,
+        constraint = recipient_token.key() != escrow_token.key() @ LockerError::InvalidRecipientTokenAccount,
+        associated_token::mint = token_mint,
+        associated_token::authority = recipient,
+        associated_token::token_program = token_program
     )]
     pub recipient_token: Box<InterfaceAccount<'info, TokenAccount>>,
+
+    /// Memo program.
+    pub memo_program: Program<'info, Memo>,
 
     /// Token program.
     pub token_program: Interface<'info, TokenInterface>,
@@ -37,23 +51,13 @@ pub fn handle_claim_v2<'c: 'info, 'info>(
     max_amount: u64,
 ) -> Result<()> {
     let mut escrow = ctx.accounts.escrow.load_mut()?;
-    let escrow_token = anchor_spl::associated_token::get_associated_token_address_with_program_id(
-        &ctx.accounts.escrow.key(),
-        &escrow.token_mint,
-        &ctx.accounts.token_program.key,
-    );
-
-    require!(
-        escrow_token == ctx.accounts.escrow_token.key(),
-        LockerError::InvalidEscrowTokenAddress
-    );
 
     let amount = escrow.claim(max_amount)?;
     drop(escrow);
 
-    transfer_to_recipient_v2(
+    transfer_to_user_v2(
         &ctx.accounts.escrow,
-        &ctx.accounts.mint,
+        &ctx.accounts.token_mint,
         &ctx.accounts.escrow_token,
         &ctx.accounts.recipient_token,
         &ctx.accounts.token_program,

@@ -110,6 +110,7 @@ describe("[V2] Test supported/unsupported Token Mint", () => {
         numberOfPeriod: new BN(2),
         recipient: RecipientKP.publicKey,
         updateRecipientMode: 0,
+        cancelMode: 0,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
       });
     } catch (error) {

@@ -78,6 +78,7 @@ describe("[V2] Test full flow With token 2022", () => {
       numberOfPeriod: new BN(2),
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
+      cancelMode: 0,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
 

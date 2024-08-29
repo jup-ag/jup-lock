@@ -2,6 +2,7 @@ use anchor_spl::token::{Token, TokenAccount};
 
 use crate::safe_math::SafeMath;
 use crate::util::token::transfer_to_escrow;
+use crate::TokenProgramFLag::UseSplToken;
 use crate::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -133,7 +134,7 @@ pub fn handle_create_vesting_escrow(
         ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         ctx.bumps.escrow,
-        TokenProgramFLag::UseSplToken,
+        UseSplToken,
     )?;
 
     transfer_to_escrow(

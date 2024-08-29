@@ -157,6 +157,7 @@ describe("[V2] Update recipient", () => {
       numberOfPeriod: new BN(2),
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
+      cancelMode: 0,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
     console.log("Update recipient");
@@ -210,6 +211,7 @@ describe("[V2] Update recipient", () => {
       numberOfPeriod: new BN(2),
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 1,
+      cancelMode: 0,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
     console.log("Update recipient");
@@ -257,6 +259,7 @@ describe("[V2] Update recipient", () => {
       numberOfPeriod: new BN(2),
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 2,
+      cancelMode: 0,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
     console.log("Update recipient");
@@ -304,6 +307,7 @@ describe("[V2] Update recipient", () => {
       numberOfPeriod: new BN(2),
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 3,
+      cancelMode: 0,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
     console.log("Update recipient");
@@ -344,6 +348,7 @@ describe("[V2] Update recipient", () => {
       numberOfPeriod: new BN(2),
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 3,
+      cancelMode: 0,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
 

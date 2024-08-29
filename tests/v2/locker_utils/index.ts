@@ -1,4 +1,11 @@
-import { AnchorProvider, BN, Program, Wallet, web3 } from "@coral-xyz/anchor";
+import {
+  AnchorError,
+  AnchorProvider,
+  BN,
+  Program,
+  Wallet,
+  web3,
+} from "@coral-xyz/anchor";
 import { IDL as LockerIDL, Locker } from "../../../target/types/locker";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -52,6 +59,7 @@ export interface CreateVestingPlanParams {
   numberOfPeriod: BN;
   recipient: web3.PublicKey;
   updateRecipientMode: number;
+  cancelMode: number;
   tokenProgram: web3.PublicKey;
 }
 
@@ -68,6 +76,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     numberOfPeriod,
     recipient,
     updateRecipientMode,
+    cancelMode,
     tokenProgram,
   } = params;
   const program = createLockerProgram(new Wallet(ownerKeypair));
@@ -101,6 +110,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
       amountPerPeriod,
       numberOfPeriod,
       updateRecipientMode,
+      cancelMode,
     })
     .accounts({
       base: baseKP.publicKey,
@@ -187,7 +197,7 @@ export async function claimToken(params: ClaimTokenParams) {
     .claimV2(maxAmount)
     .accounts({
       tokenProgram,
-      mint: tokenMint,
+      tokenMint: tokenMint,
       memoProgram: MEMO_PROGRAM,
       escrow,
       escrowToken,
@@ -290,5 +300,91 @@ export async function updateRecipient(params: UpdateRecipientParams) {
         newRecipientEmail.toString()
       );
     }
+  }
+}
+
+export interface CancelVestingPlanParams {
+  isAssertion: boolean;
+  tokenMint: web3.PublicKey;
+  escrow: web3.PublicKey;
+  rentReceiver: web3.PublicKey;
+  creatorToken: web3.PublicKey;
+  recipientToken: web3.PublicKey;
+  signer: web3.Keypair;
+  tokenProgram: web3.PublicKey;
+}
+
+export async function cancelVestingPlan(
+  params: CancelVestingPlanParams,
+  claimable_amount: number,
+  total_amount: number
+) {
+  let {
+    isAssertion,
+    tokenMint,
+    escrow,
+    rentReceiver,
+    creatorToken,
+    recipientToken,
+    signer,
+    tokenProgram,
+  } = params;
+  const program = createLockerProgram(new Wallet(signer));
+  const escrowState = await program.account.vestingEscrow.fetch(escrow);
+
+  const escrowToken = getAssociatedTokenAddressSync(
+    escrowState.tokenMint,
+    escrow,
+    true,
+    tokenProgram,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  const creator_token_balance_before = (
+    await program.provider.connection.getTokenAccountBalance(creatorToken)
+  ).value.amount;
+
+  const recipient_token_balance_before = (
+    await program.provider.connection.getTokenAccountBalance(recipientToken)
+  ).value.amount;
+
+  await program.methods
+    .cancelVestingEscrowV2()
+    .accounts({
+      escrow,
+      tokenMint,
+      escrowToken,
+      rentReceiver,
+      creatorToken: creatorToken,
+      recipientToken: recipientToken,
+      signer: signer.publicKey,
+      tokenProgram,
+      memoProgram: MEMO_PROGRAM,
+      systemProgram: web3.SystemProgram.programId,
+    })
+    .rpc();
+
+  if (isAssertion) {
+    const escrowState = await program.account.vestingEscrow.fetch(escrow);
+    expect(escrowState.cancelledAt.toNumber()).greaterThan(0);
+
+    const escrowTokenAccount = await program.provider.connection.getAccountInfo(
+      escrowToken
+    );
+    expect(escrowTokenAccount).eq(null);
+
+    const creator_token_balance = (
+      await program.provider.connection.getTokenAccountBalance(creatorToken)
+    ).value.amount;
+    expect(
+      parseInt(creator_token_balance_before) + total_amount - claimable_amount
+    ).eq(parseInt(creator_token_balance));
+
+    const recipient_token_balance = (
+      await program.provider.connection.getTokenAccountBalance(recipientToken)
+    ).value.amount;
+    expect(parseInt(recipient_token_balance_before) + claimable_amount).eq(
+      parseInt(recipient_token_balance)
+    );
   }
 }
