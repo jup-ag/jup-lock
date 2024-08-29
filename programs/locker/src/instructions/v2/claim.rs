@@ -32,10 +32,7 @@ pub struct ClaimV2<'info> {
 
     #[account(
         mut,
-        constraint = recipient_token.key() != escrow_token.key() @ LockerError::InvalidRecipientTokenAccount,
-        associated_token::mint = token_mint,
-        associated_token::authority = recipient,
-        associated_token::token_program = token_program
+        constraint = recipient_token.key() != escrow_token.key() @ LockerError::InvalidRecipientTokenAccount
     )]
     pub recipient_token: Box<InterfaceAccount<'info, TokenAccount>>,
 

@@ -11,9 +11,13 @@ use crate::*;
 /// Accounts for [locker::cancel_vesting_escrow].
 #[derive(Accounts)]
 #[event_cpi]
-pub struct CancelVestingEscrowV2<'info> {
+pub struct CancelVestingEscrow<'info> {
     /// Escrow.
-    #[account(mut)]
+    #[account(
+        mut,
+        has_one = token_mint,
+        constraint = escrow.load()?.cancelled_at == 0 @ LockerError::AlreadyCancelled
+    )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
     pub token_mint: Box<InterfaceAccount<'info, Mint>>,
@@ -26,10 +30,20 @@ pub struct CancelVestingEscrowV2<'info> {
     )]
     pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = token_mint,
+        associated_token::authority = escrow.load()?.creator,
+        associated_token::token_program = token_program
+    )]
     pub creator_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = token_mint,
+        associated_token::authority = escrow.load()?.recipient,
+        associated_token::token_program = token_program
+    )]
     pub recipient_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// CHECKED: the creator will receive the rent back
@@ -50,7 +64,7 @@ pub struct CancelVestingEscrowV2<'info> {
     pub system_program: Program<'info, System>,
 }
 
-impl<'info> CancelVestingEscrowV2<'info> {
+impl<'info> CancelVestingEscrow<'info> {
     fn close_escrow_token(&self) -> Result<()> {
         let escrow = self.escrow.load()?;
         let escrow_seeds = escrow_seeds!(escrow);
@@ -69,7 +83,7 @@ impl<'info> CancelVestingEscrowV2<'info> {
     }
 }
 
-pub fn handle_cancel_vesting_escrow_v2(ctx: Context<CancelVestingEscrowV2>) -> Result<()> {
+pub fn handle_cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result<()> {
     let mut escrow = ctx.accounts.escrow.load_mut()?;
     let signer = ctx.accounts.signer.key();
     escrow.validate_cancel_actor(signer)?;

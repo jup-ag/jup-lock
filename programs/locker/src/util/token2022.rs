@@ -141,9 +141,9 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<bool> {
 // This function calculate the pre amount (with fee) require to transfer `amount` of token
 pub fn calculate_transfer_fee_included_amount(
     amount: u64,
-    mint: &InterfaceAccount<Mint>,
+    token_mint: &InterfaceAccount<Mint>,
 ) -> Result<u64> {
-    let mint_info = mint.to_account_info();
+    let mint_info = token_mint.to_account_info();
     if *mint_info.owner == Token::id() {
         return Ok(amount);
     }

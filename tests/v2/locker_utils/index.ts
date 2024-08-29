@@ -117,7 +117,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
       senderToken,
       escrowToken,
       recipient,
-      mint: tokenMint,
+      tokenMint,
       sender: ownerKeypair.publicKey,
       tokenProgram,
       systemProgram: web3.SystemProgram.programId,
@@ -349,7 +349,7 @@ export async function cancelVestingPlan(
   ).value.amount;
 
   await program.methods
-    .cancelVestingEscrowV2()
+    .cancelVestingEscrow()
     .accounts({
       escrow,
       tokenMint,

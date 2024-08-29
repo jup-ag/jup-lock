@@ -61,10 +61,6 @@ pub mod locker {
         handle_update_vesting_escrow_recipient(ctx, new_recipient, new_recipient_email)
     }
 
-    pub fn cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result<()> {
-        handle_cancel_vesting_escrow(ctx)
-    }
-
     // V2 instructions
     pub fn create_vesting_escrow_v2<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
@@ -80,8 +76,9 @@ pub mod locker {
         handle_claim_v2(ctx, max_amount)
     }
 
-    pub fn cancel_vesting_escrow_v2(ctx: Context<CancelVestingEscrowV2>) -> Result<()> {
-        handle_cancel_vesting_escrow_v2(ctx)
+    // New instructions that support both spl-token and spl-token-2022
+    pub fn cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result<()> {
+        handle_cancel_vesting_escrow(ctx)
     }
 
     // TODO add function to close escrow after all token has been claimed

@@ -217,15 +217,15 @@ function createExtensionMintIx(
 
 export function createInitializeExtraAccountMetaListInstruction(
   payer: web3.PublicKey,
-  mint: web3.PublicKey
+  tokenMint: web3.PublicKey
 ): web3.TransactionInstruction {
   // create ExtraAccountMetaList account
   const [extraAccountMetaListPDA] = web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("extra-account-metas"), mint.toBuffer()],
+    [Buffer.from("extra-account-metas"), tokenMint.toBuffer()],
     TEST_TRANSFER_HOOK_PROGRAM_ID
   );
   const [counterAccountPDA] = web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("counter"), mint.toBuffer()],
+    [Buffer.from("counter"), tokenMint.toBuffer()],
     TEST_TRANSFER_HOOK_PROGRAM_ID
   );
 
@@ -234,7 +234,7 @@ export function createInitializeExtraAccountMetaListInstruction(
     keys: [
       { pubkey: payer, isSigner: true, isWritable: true },
       { pubkey: extraAccountMetaListPDA, isSigner: false, isWritable: true },
-      { pubkey: mint, isSigner: false, isWritable: false },
+      { pubkey: tokenMint, isSigner: false, isWritable: false },
       { pubkey: counterAccountPDA, isSigner: false, isWritable: true },
       {
         pubkey: TOKEN_2022_PROGRAM_ID,

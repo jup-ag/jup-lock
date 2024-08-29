@@ -24,6 +24,8 @@ pub struct CreateVestingEscrowV2<'info> {
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
+    pub token_mint: Box<InterfaceAccount<'info, Mint>>,
+
     #[account(
         mut,
         associated_token::mint = sender_token.mint,
@@ -37,8 +39,6 @@ pub struct CreateVestingEscrowV2<'info> {
 
     #[account(mut)]
     pub sender_token: Box<InterfaceAccount<'info, TokenAccount>>,
-
-    pub mint: Box<InterfaceAccount<'info, Mint>>,
 
     /// CHECK: recipient account
     pub recipient: UncheckedAccount<'info>,
@@ -55,11 +55,11 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
     params: &CreateVestingEscrowParameters,
 ) -> Result<()> {
     require!(
-        validate_mint(&ctx.accounts.mint).unwrap(),
+        validate_mint(&ctx.accounts.token_mint).unwrap(),
         LockerError::UnsupportedMint,
     );
 
-    let token_mint_info = ctx.accounts.mint.to_account_info();
+    let token_mint_info = ctx.accounts.token_mint.to_account_info();
     let token_program_flag = match *token_mint_info.owner {
         spl_token::ID => Ok(UseSplToken),
         spl_token_2022::ID => Ok(UseToken2022),
@@ -78,13 +78,13 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
 
     transfer_to_escrow_v2(
         &ctx.accounts.sender,
-        &ctx.accounts.mint,
+        &ctx.accounts.token_mint,
         &ctx.accounts.sender_token,
         &ctx.accounts.escrow_token,
         &ctx.accounts.token_program,
         calculate_transfer_fee_included_amount(
             params.get_total_deposit_amount()?,
-            &ctx.accounts.mint,
+            &ctx.accounts.token_mint,
         )?,
     )?;
 
