@@ -1,8 +1,10 @@
-use crate::safe_math::SafeMath;
-use crate::*;
-use anchor_spl::token::{Token, TokenAccount, Transfer};
-#[derive(AnchorSerialize, AnchorDeserialize)]
+use anchor_spl::token::{Token, TokenAccount};
 
+use crate::safe_math::SafeMath;
+use crate::util::token::transfer_to_escrow;
+use crate::*;
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
 /// Accounts for [locker::create_vesting_escrow].
 pub struct CreateVestingEscrowParameters {
     pub vesting_start_time: u64,
@@ -12,6 +14,7 @@ pub struct CreateVestingEscrowParameters {
     pub amount_per_period: u64,
     pub number_of_period: u64,
     pub update_recipient_mode: u8,
+    pub cancel_mode: u8,
 }
 
 impl CreateVestingEscrowParameters {
@@ -20,6 +23,27 @@ impl CreateVestingEscrowParameters {
             .cliff_unlock_amount
             .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
         Ok(total_amount)
+    }
+
+    fn validate(&self) -> Result<()> {
+        require!(
+            self.cliff_time >= self.vesting_start_time,
+            LockerError::InvalidVestingStartTime
+        );
+
+        require!(
+            UpdateRecipientMode::try_from(self.update_recipient_mode).is_ok(),
+            LockerError::InvalidUpdateRecipientMode,
+        );
+
+        require!(
+            CancelMode::try_from(self.cancel_mode).is_ok(),
+            LockerError::InvalidCancelMode,
+        );
+
+        require!(self.frequency != 0, LockerError::FrequencyIsZero);
+
+        Ok(())
     }
 }
 
@@ -32,8 +56,8 @@ pub struct CreateVestingEscrowCtx<'info> {
     #[account(
         init,
         seeds = [
-            b"escrow".as_ref(),
-            base.key().as_ref(),
+        b"escrow".as_ref(),
+        base.key().as_ref(),
         ],
         bump,
         payer = sender,
@@ -76,19 +100,9 @@ pub fn handle_create_vesting_escrow(
         amount_per_period,
         number_of_period,
         update_recipient_mode,
+        cancel_mode,
     } = params;
-
-    require!(
-        cliff_time >= vesting_start_time,
-        LockerError::InvalidVestingStartTime
-    );
-
-    require!(
-        UpdateRecipientMode::try_from(update_recipient_mode).is_ok(),
-        LockerError::InvalidUpdateRecipientMode,
-    );
-
-    require!(frequency != 0, LockerError::FrequencyIsZero);
+    params.validate()?;
 
     let mut escrow = ctx.accounts.escrow.load_init()?;
     escrow.init(
@@ -104,17 +118,14 @@ pub fn handle_create_vesting_escrow(
         ctx.accounts.base.key(),
         *ctx.bumps.get("escrow").unwrap(),
         update_recipient_mode,
+        cancel_mode,
     );
 
-    anchor_spl::token::transfer(
-        CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            Transfer {
-                from: ctx.accounts.sender_token.to_account_info(),
-                to: ctx.accounts.escrow_token.to_account_info(),
-                authority: ctx.accounts.sender.to_account_info(),
-            },
-        ),
+    transfer_to_escrow(
+        &ctx.accounts.sender,
+        &ctx.accounts.sender_token,
+        &ctx.accounts.escrow_token,
+        &ctx.accounts.token_program,
         params.get_total_deposit_amount()?,
     )?;
 
@@ -128,6 +139,7 @@ pub fn handle_create_vesting_escrow(
         escrow: ctx.accounts.escrow.key(),
         update_recipient_mode,
         vesting_start_time,
+        cancel_mode,
     });
     Ok(())
 }

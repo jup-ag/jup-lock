@@ -15,15 +15,27 @@ pub enum LockerError {
     #[msg("Invalid update recipient mode")]
     InvalidUpdateRecipientMode,
 
+    #[msg("Invalid cancel mode")]
+    InvalidCancelMode,
+
     #[msg("Not permit to do this action")]
     NotPermitToDoThisAction,
 
     #[msg("Invalid recipient token account")]
     InvalidRecipientTokenAccount,
 
+    #[msg("Invalid creator token account")]
+    InvalidCreatorTokenAccount,
+
     #[msg("Invalid escrow metadata")]
     InvalidEscrowMetadata,
 
     #[msg("Invalid vesting start time")]
     InvalidVestingStartTime,
+
+    #[msg("Already cancelled")]
+    AlreadyCancelled,
+
+    #[msg("Cancelled timestamp is zero")]
+    CancelledAtIsZero,
 }

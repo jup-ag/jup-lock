@@ -2,29 +2,38 @@ import * as anchor from "@coral-xyz/anchor";
 import { web3 } from "@coral-xyz/anchor";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
-  createMint,
-  getOrCreateAssociatedTokenAccount,
+  createAssociatedTokenAccountIdempotent,
+  createInitializeMint2Instruction,
   mintTo,
+  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { BN } from "bn.js";
+import { createAndFundWallet, getCurrentBlockTime, sleep } from "./common";
 import {
-  createAndFundWallet,
-  getCurrentBlockTime,
-  sleep,
-} from "./common";
-import { claimToken, createLockerProgram, createVestingPlan } from "./locker_utils";
-
+  claimToken,
+  createLockerProgram,
+  createVestingPlan,
+} from "./locker_utils";
+import {
+  sendAndConfirmTransaction,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 
 let provider = anchor.AnchorProvider.env();
-provider.opts.commitment = 'confirmed';
+provider.opts.commitment = "confirmed";
 
 describe("Full flow", () => {
   const tokenDecimal = 8;
+  let mintAuthority: web3.Keypair;
+  let mintKeypair: web3.Keypair;
   let TOKEN: web3.PublicKey;
+
   let UserKP: web3.Keypair;
-  let ReceipentKP: web3.Keypair;
-  let ReceipentToken: web3.PublicKey;
+  let RecipientKP: web3.Keypair;
+  let RecipientToken: web3.PublicKey;
+
+  let mintAmount: bigint;
 
   before(async () => {
     {
@@ -33,71 +42,80 @@ describe("Full flow", () => {
     }
     {
       const result = await createAndFundWallet(provider.connection);
-      ReceipentKP = result.keypair;
+      RecipientKP = result.keypair;
     }
 
-    TOKEN = await createMint(
+    mintAuthority = new web3.Keypair();
+    mintKeypair = new web3.Keypair();
+    TOKEN = mintKeypair.publicKey;
+
+    mintAmount = BigInt(1_000_000 * Math.pow(10, tokenDecimal)); // Mint 1,000,000 tokens
+
+    // Step 2 - Create a New Token
+    const mintLamports =
+      await provider.connection.getMinimumBalanceForRentExemption(82);
+    const mintTransaction = new Transaction().add(
+      SystemProgram.createAccount({
+        fromPubkey: UserKP.publicKey,
+        newAccountPubkey: TOKEN,
+        space: 82,
+        lamports: mintLamports,
+        programId: TOKEN_PROGRAM_ID,
+      }),
+      createInitializeMint2Instruction(
+        TOKEN, // Mint account
+        tokenDecimal, // Decimals
+        mintAuthority.publicKey, // Mint authority
+        null, // Freeze authority
+        TOKEN_PROGRAM_ID // Token program ID
+      )
+    );
+    await sendAndConfirmTransaction(
       provider.connection,
-      UserKP,
-      UserKP.publicKey,
-      null,
-      tokenDecimal,
-      web3.Keypair.generate(),
-      {
-        commitment: "confirmed",
-      },
-      TOKEN_PROGRAM_ID
+      mintTransaction,
+      [UserKP, mintKeypair],
+      undefined
     );
 
-    const userToken = await getOrCreateAssociatedTokenAccount(
+    const userToken = await createAssociatedTokenAccountIdempotent(
       provider.connection,
       UserKP,
       TOKEN,
       UserKP.publicKey,
-      false,
-      "confirmed",
-      {
-        commitment: "confirmed",
-      },
+      {},
       TOKEN_PROGRAM_ID,
       ASSOCIATED_TOKEN_PROGRAM_ID
     );
-    // userBTC = userTokenX.address;
 
-    const receipentToken = await getOrCreateAssociatedTokenAccount(
-      provider.connection,
-      UserKP,
-      TOKEN,
-      ReceipentKP.publicKey,
-      false,
-      "confirmed",
-      {
-        commitment: "confirmed",
-      },
-      TOKEN_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
-    );
-    ReceipentToken = receipentToken.address;
     await mintTo(
       provider.connection,
       UserKP,
       TOKEN,
-      userToken.address,
-      UserKP.publicKey,
-      100 * 10 ** tokenDecimal,
+      userToken,
+      mintAuthority,
+      mintAmount,
       [],
-      {
-        commitment: "confirmed",
-      },
+      undefined,
       TOKEN_PROGRAM_ID
     );
-  });
 
+    RecipientToken = await createAssociatedTokenAccountIdempotent(
+      provider.connection,
+      UserKP,
+      TOKEN,
+      RecipientKP.publicKey,
+      {},
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
+    );
+  });
 
   it("Full flow", async () => {
     console.log("Create vesting plan");
     const program = createLockerProgram(new anchor.Wallet(UserKP));
-    let currentBlockTime = await getCurrentBlockTime(program.provider.connection);
+    let currentBlockTime = await getCurrentBlockTime(
+      program.provider.connection
+    );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
     let escrow = await createVestingPlan({
       vestingStartTime: new BN(0),
@@ -109,12 +127,15 @@ describe("Full flow", () => {
       cliffUnlockAmount: new BN(100_000),
       amountPerPeriod: new BN(50_000),
       numberOfPeriod: new BN(2),
-      recipient: ReceipentKP.publicKey,
+      recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
+      cancelMode: 0,
     });
 
     while (true) {
-      const currentBlockTime = await getCurrentBlockTime(program.provider.connection);
+      const currentBlockTime = await getCurrentBlockTime(
+        program.provider.connection
+      );
       if (currentBlockTime > cliffTime.toNumber()) {
         break;
       } else {
@@ -125,11 +146,55 @@ describe("Full flow", () => {
 
     console.log("Claim token");
     await claimToken({
-      recipient: ReceipentKP,
-      recipientToken: ReceipentToken,
+      recipient: RecipientKP,
+      recipientToken: RecipientToken,
       escrow,
       maxAmount: new BN(1_000_000),
       isAssertion: true,
-    })
+    });
+  });
+
+  it("Full flow with Cancel", async () => {
+    console.log("Create vesting plan");
+    const program = createLockerProgram(new anchor.Wallet(UserKP));
+    let currentBlockTime = await getCurrentBlockTime(
+      program.provider.connection
+    );
+    const cliffTime = new BN(currentBlockTime).add(new BN(5));
+    let escrow = await createVestingPlan({
+      vestingStartTime: new BN(0),
+      ownerKeypair: UserKP,
+      tokenMint: TOKEN,
+      isAssertion: true,
+      cliffTime,
+      frequency: new BN(1),
+      cliffUnlockAmount: new BN(100_000),
+      amountPerPeriod: new BN(50_000),
+      numberOfPeriod: new BN(2),
+      recipient: RecipientKP.publicKey,
+      updateRecipientMode: 0,
+      cancelMode: 0,
+    });
+
+    while (true) {
+      const currentBlockTime = await getCurrentBlockTime(
+        program.provider.connection
+      );
+      if (currentBlockTime > cliffTime.toNumber()) {
+        break;
+      } else {
+        await sleep(1000);
+        console.log("Wait until cliffTime");
+      }
+    }
+
+    console.log("Claim token");
+    await claimToken({
+      recipient: RecipientKP,
+      recipientToken: RecipientToken,
+      escrow,
+      maxAmount: new BN(1_000_000),
+      isAssertion: true,
+    });
   });
 });
