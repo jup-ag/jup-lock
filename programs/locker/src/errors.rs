@@ -36,6 +36,6 @@ pub enum LockerError {
     #[msg("Already cancelled")]
     AlreadyCancelled,
 
-    #[msg("Timestamp is zero")]
+    #[msg("Cancelled timestamp is zero")]
     CancelledAtIsZero,
 }
