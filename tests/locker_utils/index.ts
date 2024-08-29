@@ -324,6 +324,7 @@ export async function cancelVestingPlan(
       escrowToken,
       creatorToken: creatorToken,
       recipientToken: recipientToken,
+      tokenMint,
       rentReceiver,
       signer: signer.publicKey,
       tokenProgram: TOKEN_PROGRAM_ID,

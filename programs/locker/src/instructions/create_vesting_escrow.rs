@@ -1,8 +1,8 @@
 use anchor_spl::token::{Token, TokenAccount};
 
-use crate::*;
 use crate::safe_math::SafeMath;
 use crate::util::token::transfer_to_escrow;
+use crate::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
 /// Accounts for [locker::create_vesting_escrow].

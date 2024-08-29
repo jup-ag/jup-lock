@@ -96,7 +96,6 @@ impl VestingEscrow {
         self.escrow_bump = escrow_bump;
         self.update_recipient_mode = update_recipient_mode;
         self.cancel_mode = cancel_mode;
-        self.cancelled_at = 0;
     }
 
     pub fn get_max_unlocked_amount(&self, current_ts: u64) -> Result<u64> {
@@ -141,63 +140,31 @@ impl VestingEscrow {
     }
 
     pub fn validate_cancel_actor(self, signer: Pubkey) -> Result<()> {
-        let cancel_mode = CancelMode::try_from(self.cancel_mode).unwrap();
-        match cancel_mode {
-            CancelMode::NeitherCreatorOrRecipient => {
-                return Err(LockerError::NotPermitToDoThisAction.into());
-            }
-            CancelMode::OnlyCreator => {
-                require!(
-                    signer == self.creator,
-                    LockerError::NotPermitToDoThisAction
-                );
-            }
-            CancelMode::OnlyRecipient => {
-                require!(
-                    signer == self.recipient,
-                    LockerError::NotPermitToDoThisAction
-                );
-            }
-            CancelMode::EitherCreatorAndRecipient => {
-                require!(
-                    signer == self.creator || signer == self.recipient,
-                    LockerError::NotPermitToDoThisAction
-                );
-            }
-        }
+        require!(
+            self.cancel_mode & self.signer_flag(signer) > 0,
+            LockerError::NotPermitToDoThisAction
+        );
 
         Ok(())
     }
 
     pub fn validate_update_actor(self, signer: Pubkey) -> Result<()> {
-        let update_recipient_mode =
-            UpdateRecipientMode::try_from(self.update_recipient_mode).unwrap();
-
-        match update_recipient_mode {
-            UpdateRecipientMode::NeitherCreatorOrRecipient => {
-                return Err(LockerError::NotPermitToDoThisAction.into());
-            }
-            UpdateRecipientMode::OnlyCreator => {
-                require!(
-                signer == self.creator,
-                LockerError::NotPermitToDoThisAction
-            );
-            }
-            UpdateRecipientMode::OnlyRecipient => {
-                require!(
-                signer == self.recipient,
-                LockerError::NotPermitToDoThisAction
-            );
-            }
-            UpdateRecipientMode::EitherCreatorAndRecipient => {
-                require!(
-                signer == self.creator || signer == self.recipient,
-                LockerError::NotPermitToDoThisAction
-            );
-            }
-        }
+        require!(
+            self.update_recipient_mode & self.signer_flag(signer) > 0,
+            LockerError::NotPermitToDoThisAction
+        );
 
         Ok(())
+    }
+
+    fn signer_flag(&self, signer: Pubkey) -> u8 {
+        if signer == self.creator {
+            0x1
+        } else if signer == self.recipient {
+            0x2
+        } else {
+            0x0
+        }
     }
 }
 

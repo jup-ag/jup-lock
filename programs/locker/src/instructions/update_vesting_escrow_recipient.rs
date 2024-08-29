@@ -7,7 +7,7 @@ pub struct UpdateVestingEscrowRecipientCtx<'info> {
     /// Escrow.
     #[account(
         mut,
-        constraint = escrow.load() ?.cancelled_at == 0 @ LockerError::AlreadyCancelled
+        constraint = escrow.load()?.cancelled_at == 0 @ LockerError::AlreadyCancelled
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
@@ -18,6 +18,7 @@ pub struct UpdateVestingEscrowRecipientCtx<'info> {
     /// Signer.
     #[account(mut)]
     pub signer: Signer<'info>,
+
     /// System program.
     pub system_program: Program<'info, System>,
 }

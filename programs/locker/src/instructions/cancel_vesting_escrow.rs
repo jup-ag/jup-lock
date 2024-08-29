@@ -1,10 +1,10 @@
-use anchor_spl::token::{Token, TokenAccount};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 use solana_program::program::invoke_signed;
 use spl_token::instruction::close_account;
 
-use crate::*;
 use crate::safe_math::SafeMath;
 use crate::util::token::transfer_to_user;
+use crate::*;
 
 /// Accounts for [locker::cancel_vesting_escrow].
 #[derive(Accounts)]
@@ -13,30 +13,33 @@ pub struct CancelVestingEscrow<'info> {
     /// Escrow.
     #[account(
         mut,
-        constraint = escrow.load() ?.cancelled_at == 0 @ LockerError::AlreadyCancelled
+        has_one = token_mint,
+        constraint = escrow.load()?.cancelled_at == 0 @ LockerError::AlreadyCancelled
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
     #[account(
         mut,
-        associated_token::mint = escrow.load() ?.token_mint,
+        associated_token::mint = token_mint,
         associated_token::authority = escrow
     )]
     pub escrow_token: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
-        associated_token::mint = escrow.load() ?.token_mint,
-        associated_token::authority = escrow.load() ?.creator
+        associated_token::mint = token_mint,
+        associated_token::authority = escrow.load()?.creator
     )]
     pub creator_token: Box<Account<'info, TokenAccount>>,
 
     #[account(
         mut,
-        associated_token::mint = escrow.load() ?.token_mint,
-        associated_token::authority = escrow.load() ?.recipient
+        associated_token::mint = token_mint,
+        associated_token::authority = escrow.load()?.recipient
     )]
     pub recipient_token: Box<Account<'info, TokenAccount>>,
+
+    pub token_mint: Box<Account<'info, Mint>>,
 
     /// CHECKED: the creator will receive the rent back
     #[account(mut)]
@@ -79,19 +82,20 @@ impl<'info> CancelVestingEscrow<'info> {
     }
 }
 
-pub fn handle_cancel_vesting_escrow(
-    ctx: Context<CancelVestingEscrow>
-) -> Result<()> {
+pub fn handle_cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result<()> {
     let mut escrow = ctx.accounts.escrow.load_mut()?;
     let signer = ctx.accounts.signer.key();
     escrow.validate_cancel_actor(signer)?;
 
     let current_ts = Clock::get()?.unix_timestamp as u64;
-    require!(current_ts > 0, LockerError::TimestampZero);
-
     let claimable_amount = escrow.get_claimable_amount(current_ts)?;
-    let remaining_amount = ctx.accounts.escrow_token.amount.safe_sub(claimable_amount)?;
+    let remaining_amount = ctx
+        .accounts
+        .escrow_token
+        .amount
+        .safe_sub(claimable_amount)?;
     escrow.cancelled_at = current_ts;
+    require!(escrow.cancelled_at > 0, LockerError::TimestampZero);
     drop(escrow);
 
     // Transfer the claimable amount to the recipient
