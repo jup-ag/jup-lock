@@ -4,6 +4,8 @@ on:
   pull_request:
     branches:
       - main
+      - staging
+
 env:
   SOLANA_CLI_VERSION: 1.18.21
   NODE_VERSION: 18.14.2
