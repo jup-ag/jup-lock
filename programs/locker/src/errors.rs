@@ -39,14 +39,8 @@ pub enum LockerError {
     #[msg("Cancelled timestamp is zero")]
     CancelledAtIsZero,
 
-    #[msg("Invalid mint account")]
-    InvalidMintAccount,
-
     #[msg("Invalid token programId")]
     IncorrectTokenProgramId,
-
-    #[msg("Parse token extensions failure")]
-    ParseTokenExtensionsFailure,
 
     #[msg("Calculate transfer fee failure")]
     TransferFeeCalculationFailure,
