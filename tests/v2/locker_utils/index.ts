@@ -360,7 +360,6 @@ export async function cancelVestingPlan(
       signer: signer.publicKey,
       tokenProgram,
       memoProgram: MEMO_PROGRAM,
-      systemProgram: web3.SystemProgram.programId,
     })
     .rpc();
 

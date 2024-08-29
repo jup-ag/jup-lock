@@ -59,9 +59,6 @@ pub struct CancelVestingEscrow<'info> {
 
     /// Token program.
     pub token_program: Interface<'info, TokenInterface>,
-
-    /// System program.
-    pub system_program: Program<'info, System>,
 }
 
 impl<'info> CancelVestingEscrow<'info> {

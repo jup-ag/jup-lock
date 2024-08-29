@@ -75,7 +75,7 @@ impl CreateVestingEscrowParameters {
             escrow_bump,
             self.update_recipient_mode,
             self.cancel_mode,
-            token_program_flag as u8,
+            token_program_flag.into(),
         );
 
         Ok(())
