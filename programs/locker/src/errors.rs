@@ -39,7 +39,7 @@ pub enum LockerError {
     #[msg("Cancelled timestamp is zero")]
     CancelledAtIsZero,
 
-    #[msg("Invalid token programId")]
+    #[msg("Invalid token program ID")]
     IncorrectTokenProgramId,
 
     #[msg("Calculate transfer fee failure")]

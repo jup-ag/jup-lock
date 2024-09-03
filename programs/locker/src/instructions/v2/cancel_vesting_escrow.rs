@@ -2,8 +2,8 @@ use anchor_spl::memo::Memo;
 use anchor_spl::token_interface::{
     close_account, CloseAccount, Mint, TokenAccount, TokenInterface,
 };
+use util::TRANSFER_MEMO_CANCEL_VESTING;
 
-use crate::constants::transfer_memo;
 use crate::safe_math::SafeMath;
 use crate::util::{transfer_to_user_v2, MemoTransferContext};
 use crate::*;
@@ -105,12 +105,12 @@ pub fn handle_cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result
         &ctx.accounts.token_program,
         Some(MemoTransferContext {
             memo_program: &ctx.accounts.memo_program,
-            memo: transfer_memo::TRANSFER_MEMO_CANCEL_VESTING.as_bytes(),
+            memo: TRANSFER_MEMO_CANCEL_VESTING.as_bytes(),
         }),
         claimable_amount,
     )?;
 
-    // Transfer the remaining amount to the sender
+    // Transfer the remaining amount to the creator
     transfer_to_user_v2(
         &ctx.accounts.escrow,
         &ctx.accounts.token_mint,
@@ -119,7 +119,7 @@ pub fn handle_cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result
         &ctx.accounts.token_program,
         Some(MemoTransferContext {
             memo_program: &ctx.accounts.memo_program,
-            memo: transfer_memo::TRANSFER_MEMO_CANCEL_VESTING.as_bytes(),
+            memo: TRANSFER_MEMO_CANCEL_VESTING.as_bytes(),
         }),
         remaining_amount,
     )?;

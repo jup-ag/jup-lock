@@ -14,6 +14,9 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::{LockerError, VestingEscrow};
 
+pub const TRANSFER_MEMO_CLAIM_VESTING: &str = "Jup-Lock ClaimVesting";
+pub const TRANSFER_MEMO_CANCEL_VESTING: &str = "Jup-Lock CancelVesting";
+
 const ONE_IN_BASIS_POINTS: u128 = MAX_FEE_BASIS_POINTS as u128;
 
 #[derive(Clone, Copy)]
@@ -99,22 +102,22 @@ pub fn transfer_to_user_v2<'c: 'info, 'info>(
     Ok(())
 }
 
-pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<bool> {
+pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<()> {
     let token_mint_info = token_mint.to_account_info();
 
     // mint owned by Token Program is supported by default
     if *token_mint_info.owner == Token::id() {
-        return Ok(true);
+        return Ok(());
     }
 
     // seems like other programs don't like to support token-2022 native_mint :)
     if spl_token_2022::native_mint::check_id(&token_mint.key()) {
-        return Ok(false);
+        return Err(LockerError::UnsupportedMint.into());
     }
 
     // reject if mint has freeze_authority, unless its token badge is initialized
     if token_mint.freeze_authority.is_some() {
-        return Ok(false);
+        return Err(LockerError::UnsupportedMint.into());
     }
 
     let token_mint_data = token_mint_info.try_borrow_data()?;
@@ -130,12 +133,12 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<bool> {
             extension::ExtensionType::MetadataPointer => {}
             // mint has unknown or unsupported extensions
             _ => {
-                return Ok(false);
+                return Err(LockerError::UnsupportedMint.into());
             }
         }
     }
 
-    return Ok(true);
+    return Ok(());
 }
 
 // This function calculate the pre amount (with fee) require to transfer `amount` of token
@@ -211,12 +214,6 @@ pub fn calculate_pre_fee_amount(transfer_fee: &TransferFee, post_fee_amount: u64
     }
 }
 
-/// Calculate the fee that would produce the given output
-pub fn calculate_inverse_fee(transfer_fee: &TransferFee, post_fee_amount: u64) -> Option<u64> {
-    let pre_fee_amount = calculate_pre_fee_amount(&transfer_fee, post_fee_amount)?;
-    transfer_fee.calculate_fee(pre_fee_amount)
-}
-
 #[cfg(test)]
 mod token2022_tests {
     use proptest::prelude::*;
@@ -239,7 +236,7 @@ mod token2022_tests {
             };
             let fee = transfer_fee.calculate_fee(amount_in).unwrap();
             let amount_out = amount_in.checked_sub(fee).unwrap();
-            let fee_exact_out = calculate_inverse_fee(&transfer_fee, amount_out).unwrap();
+            let fee_exact_out = calculate_pre_fee_amount(&transfer_fee, amount_out).unwrap().checked_sub(amount_out).unwrap();
             assert!(fee_exact_out >= fee);
             if fee_exact_out - fee > 0 {
                 println!("dif {} {} {} {} {}",fee_exact_out - fee, fee, fee_exact_out, maximum_fee, amount_in);

@@ -15,8 +15,8 @@ pub struct CreateVestingEscrowV2<'info> {
     #[account(
         init,
         seeds = [
-        b"escrow".as_ref(),
-        base.key().as_ref(),
+            b"escrow".as_ref(),
+            base.key().as_ref(),
         ],
         bump,
         payer = sender,
@@ -28,7 +28,7 @@ pub struct CreateVestingEscrowV2<'info> {
 
     #[account(
         mut,
-        associated_token::mint = sender_token.mint,
+        associated_token::mint = token_mint,
         associated_token::authority = escrow,
         associated_token::token_program = token_program
     )]
@@ -37,7 +37,12 @@ pub struct CreateVestingEscrowV2<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        associated_token::mint = token_mint,
+        associated_token::authority = sender,
+        associated_token::token_program = token_program
+    )]
     pub sender_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// CHECK: recipient account
@@ -54,10 +59,8 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
     params: &CreateVestingEscrowParameters,
 ) -> Result<()> {
-    require!(
-        validate_mint(&ctx.accounts.token_mint).unwrap(),
-        LockerError::UnsupportedMint,
-    );
+    // Validate if token_mint is supported
+    validate_mint(&ctx.accounts.token_mint)?;
 
     let token_mint_info = ctx.accounts.token_mint.to_account_info();
     let token_program_flag = match *token_mint_info.owner {

@@ -20,8 +20,6 @@ pub mod events;
 
 pub mod util;
 
-pub mod constants;
-
 #[cfg(feature = "localnet")]
 declare_id!("2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg");
 

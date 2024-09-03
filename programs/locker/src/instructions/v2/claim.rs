@@ -2,9 +2,9 @@ use anchor_spl::memo::Memo;
 use anchor_spl::token_interface::{
     Mint, TokenAccount, TokenInterface,
 };
+use util::TRANSFER_MEMO_CLAIM_VESTING;
 
 use crate::*;
-use crate::constants::transfer_memo;
 use crate::util::{MemoTransferContext, transfer_to_user_v2};
 
 #[event_cpi]
@@ -12,6 +12,7 @@ use crate::util::{MemoTransferContext, transfer_to_user_v2};
 pub struct ClaimV2<'info> {
     #[account(
         mut, 
+        has_one = token_mint,
         has_one = recipient,
         constraint = escrow.load()?.cancelled_at == 0 @ LockerError::AlreadyCancelled
     )]
@@ -60,7 +61,7 @@ pub fn handle_claim_v2<'c: 'info, 'info>(
         &ctx.accounts.token_program,
         Some(MemoTransferContext {
             memo_program: &ctx.accounts.memo_program,
-            memo: transfer_memo::TRANSFER_MEMO_CLAIM_VESTING.as_bytes(),
+            memo: TRANSFER_MEMO_CLAIM_VESTING.as_bytes(),
         }),
         amount,
     )?;
