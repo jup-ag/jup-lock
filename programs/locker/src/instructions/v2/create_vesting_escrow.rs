@@ -37,12 +37,7 @@ pub struct CreateVestingEscrowV2<'info> {
     #[account(mut)]
     pub sender: Signer<'info>,
 
-    #[account(
-        mut,
-        associated_token::mint = token_mint,
-        associated_token::authority = sender,
-        associated_token::token_program = token_program
-    )]
+    #[account(mut)]
     pub sender_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// CHECK: recipient account
