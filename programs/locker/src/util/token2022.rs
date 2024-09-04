@@ -32,8 +32,9 @@ pub fn transfer_to_escrow_v2<'a, 'c: 'info, 'info>(
     escrow_token: &InterfaceAccount<'info, TokenAccount>,
     token_program: &Interface<'info, TokenInterface>,
     amount: u64,
+    transfer_hook_accounts: Option<&'c [AccountInfo<'info>]>,
 ) -> Result<()> {
-    let instruction = spl_token_2022::instruction::transfer_checked(
+    let mut instruction = spl_token_2022::instruction::transfer_checked(
         token_program.key,
         &sender_token.key(),
         &token_mint.key(),   // mint
@@ -45,13 +46,36 @@ pub fn transfer_to_escrow_v2<'a, 'c: 'info, 'info>(
         token_mint.decimals,
     )?;
 
-    let account_infos = vec![
-        token_program.to_account_info(),
+    let mut account_infos = vec![
         sender_token.to_account_info(),
         token_mint.to_account_info(),
         escrow_token.to_account_info(),
         sender.to_account_info(),
     ];
+
+    // TransferHook extension
+    if let Some(hook_program_id) = get_transfer_hook_program_id(token_mint)? {
+        let Some(transfer_hook_accounts) = transfer_hook_accounts else {
+            return Err(LockerError::NoTransferHookProgram.into());
+        };
+
+        spl_transfer_hook_interface::onchain::add_extra_accounts_for_execute_cpi(
+            &mut instruction,
+            &mut account_infos,
+            &hook_program_id,
+            sender_token.to_account_info(),
+            token_mint.to_account_info(),
+            escrow_token.to_account_info(),
+            sender.to_account_info(),
+            amount,
+            transfer_hook_accounts,
+        )?;
+    } else {
+        require!(
+            transfer_hook_accounts.is_none(),
+            LockerError::NoTransferHookProgram
+        );
+    }
 
     solana_program::program::invoke(&instruction, &account_infos)?;
 
@@ -66,6 +90,7 @@ pub fn transfer_to_user_v2<'c: 'info, 'info>(
     token_program: &Interface<'info, TokenInterface>,
     memo_transfer_context: Option<MemoTransferContext<'_, 'info>>,
     amount: u64,
+    transfer_hook_accounts: Option<&'c [AccountInfo<'info>]>,
 ) -> Result<()> {
     let escrow_state = escrow.load()?;
     let escrow_seeds = escrow_seeds!(escrow_state);
@@ -79,7 +104,7 @@ pub fn transfer_to_user_v2<'c: 'info, 'info>(
         }
     }
 
-    let instruction = spl_token_2022::instruction::transfer_checked(
+    let mut instruction = spl_token_2022::instruction::transfer_checked(
         token_program.key,
         &escrow_token.key(),
         &token_mint.key(),        // mint
@@ -90,12 +115,36 @@ pub fn transfer_to_user_v2<'c: 'info, 'info>(
         token_mint.decimals,
     )?;
 
-    let account_infos = vec![
+    let mut account_infos = vec![
         escrow_token.to_account_info(),
         token_mint.to_account_info(),
         recipient_account.to_account_info(),
         escrow.to_account_info(),
     ];
+
+    // TransferHook extension
+    if let Some(hook_program_id) = get_transfer_hook_program_id(token_mint)? {
+        let Some(transfer_hook_accounts) = transfer_hook_accounts else {
+            return Err(LockerError::NoTransferHookProgram.into());
+        };
+
+        spl_transfer_hook_interface::onchain::add_extra_accounts_for_execute_cpi(
+            &mut instruction,
+            &mut account_infos,
+            &hook_program_id,
+            escrow_token.to_account_info(),
+            token_mint.to_account_info(),
+            recipient_account.to_account_info(),
+            escrow.to_account_info(),
+            amount,
+            transfer_hook_accounts,
+        )?;
+    } else {
+        require!(
+            transfer_hook_accounts.is_none(),
+            LockerError::NoTransferHookProgram
+        );
+    }
 
     solana_program::program::invoke_signed(&instruction, &account_infos, &[&escrow_seeds[..]])?;
 
@@ -131,6 +180,20 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<()> {
             extension::ExtensionType::TransferFeeConfig => {}
             extension::ExtensionType::TokenMetadata => {}
             extension::ExtensionType::MetadataPointer => {}
+            // partially supported
+            extension::ExtensionType::ConfidentialTransferMint => {
+                // Supported, but non-confidential transfer only
+                //
+                // According to the document (https://solana.com/developers/guides/token-extensions/getting-started#what-extensions-are-compatible-with-each-other)
+                // We prioritize TransferHook
+            }
+            extension::ExtensionType::ConfidentialTransferFeeConfig => {
+                // Supported, but non-confidential transfer only
+            }
+            // supported if token badge is initialized
+            extension::ExtensionType::PermanentDelegate => {}
+            extension::ExtensionType::TransferHook => {}
+            extension::ExtensionType::MintCloseAuthority => {}
             // mint has unknown or unsupported extensions
             _ => {
                 return Err(LockerError::UnsupportedMint.into());
@@ -138,7 +201,7 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<()> {
         }
     }
 
-    return Ok(());
+    Ok(())
 }
 
 // This function calculate the pre amount (with fee) require to transfer `amount` of token
@@ -179,11 +242,27 @@ pub fn is_transfer_memo_required(token_account: &InterfaceAccount<TokenAccount>)
     let extension =
         token_account_unpacked.get_extension::<extension::memo_transfer::MemoTransfer>();
 
-    return if let Ok(memo_transfer) = extension {
+    if let Ok(memo_transfer) = extension {
         Ok(memo_transfer.require_incoming_transfer_memos.into())
     } else {
         Ok(false)
-    };
+    }
+}
+
+fn get_transfer_hook_program_id<'info>(
+    token_mint: &InterfaceAccount<'info, Mint>,
+) -> Result<Option<Pubkey>> {
+    let token_mint_info = token_mint.to_account_info();
+    if *token_mint_info.owner == Token::id() {
+        return Ok(None);
+    }
+
+    let token_mint_data = token_mint_info.try_borrow_data()?;
+    let token_mint_unpacked =
+        StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
+    Ok(extension::transfer_hook::get_program_id(
+        &token_mint_unpacked,
+    ))
 }
 
 pub fn calculate_pre_fee_amount(transfer_fee: &TransferFee, post_fee_amount: u64) -> Option<u64> {

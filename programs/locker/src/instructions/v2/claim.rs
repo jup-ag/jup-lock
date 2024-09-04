@@ -2,7 +2,7 @@ use anchor_spl::memo::Memo;
 use anchor_spl::token_interface::{
     Mint, TokenAccount, TokenInterface,
 };
-use util::TRANSFER_MEMO_CLAIM_VESTING;
+use util::{parse_remaining_accounts, AccountsType, ParsedRemainingAccounts, TRANSFER_MEMO_CLAIM_VESTING};
 
 use crate::*;
 use crate::util::{MemoTransferContext, transfer_to_user_v2};
@@ -45,13 +45,27 @@ pub struct ClaimV2<'info> {
 }
 
 pub fn handle_claim_v2<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ClaimV2<'info>>,
+    mut ctx: Context<'_, '_, 'c, 'info, ClaimV2<'info>>,
     max_amount: u64,
+    remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     let mut escrow = ctx.accounts.escrow.load_mut()?;
 
     let amount = escrow.claim(max_amount)?;
     drop(escrow);
+
+    // Process remaining accounts
+    let remaining_accounts = if remaining_accounts_info.is_none() {
+        ParsedRemainingAccounts::default()
+    } else {
+        parse_remaining_accounts(
+            &mut ctx.remaining_accounts,
+            &remaining_accounts_info.unwrap().slices,
+            &[
+                AccountsType::TransferHookClaim,
+            ],
+        )?
+    };
 
     transfer_to_user_v2(
         &ctx.accounts.escrow,
@@ -64,6 +78,7 @@ pub fn handle_claim_v2<'c: 'info, 'info>(
             memo: TRANSFER_MEMO_CLAIM_VESTING.as_bytes(),
         }),
         amount,
+        remaining_accounts.transfer_hook_claim,
     )?;
 
     let current_ts = Clock::get()?.unix_timestamp as u64;

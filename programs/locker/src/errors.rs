@@ -47,4 +47,16 @@ pub enum LockerError {
 
     #[msg("Unsupported mint")]
     UnsupportedMint,
+
+    #[msg("Invalid remaining accounts")]
+    InvalidRemainingAccountSlice,
+
+    #[msg("Insufficient remaining accounts")]
+    InsufficientRemainingAccounts,
+
+    #[msg("Same accounts type is provided more than once")]
+    DuplicatedRemainingAccountTypes,
+
+    #[msg("Unable to call transfer hook without extra accounts")]
+    NoTransferHookProgram,
 }

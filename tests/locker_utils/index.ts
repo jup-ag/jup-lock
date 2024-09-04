@@ -141,6 +141,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     );
     expect(escrowState.base.toString()).eq(baseKP.publicKey.toString());
     expect(escrowState.updateRecipientMode).eq(updateRecipientMode);
+    expect(escrowState.tokenProgramFlag).eq(0);
     expect(escrowState.cancelMode).eq(cancelMode);
   }
 

@@ -2,7 +2,9 @@ use anchor_spl::memo::Memo;
 use anchor_spl::token_interface::{
     close_account, CloseAccount, Mint, TokenAccount, TokenInterface,
 };
-use util::TRANSFER_MEMO_CANCEL_VESTING;
+use util::{
+    parse_remaining_accounts, AccountsType, ParsedRemainingAccounts, TRANSFER_MEMO_CANCEL_VESTING,
+};
 
 use crate::safe_math::SafeMath;
 use crate::util::{transfer_to_user_v2, MemoTransferContext};
@@ -80,7 +82,10 @@ impl<'info> CancelVestingEscrow<'info> {
     }
 }
 
-pub fn handle_cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result<()> {
+pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
+    mut ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrow<'info>>,
+    remaining_accounts_info: Option<RemainingAccountsInfo>,
+) -> Result<()> {
     let mut escrow = ctx.accounts.escrow.load_mut()?;
     let signer = ctx.accounts.signer.key();
     escrow.validate_cancel_actor(signer)?;
@@ -96,6 +101,17 @@ pub fn handle_cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result
     require!(escrow.cancelled_at > 0, LockerError::CancelledAtIsZero);
     drop(escrow);
 
+    // Process remaining accounts
+    let remaining_accounts = if remaining_accounts_info.is_none() {
+        ParsedRemainingAccounts::default()
+    } else {
+        parse_remaining_accounts(
+            &mut ctx.remaining_accounts,
+            &remaining_accounts_info.unwrap().slices,
+            &[AccountsType::TransferHookCancel],
+        )?
+    };
+
     // Transfer the claimable amount to the recipient
     transfer_to_user_v2(
         &ctx.accounts.escrow,
@@ -108,6 +124,7 @@ pub fn handle_cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result
             memo: TRANSFER_MEMO_CANCEL_VESTING.as_bytes(),
         }),
         claimable_amount,
+        remaining_accounts.transfer_hook_cancel,
     )?;
 
     // Transfer the remaining amount to the creator
@@ -122,6 +139,7 @@ pub fn handle_cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result
             memo: TRANSFER_MEMO_CANCEL_VESTING.as_bytes(),
         }),
         remaining_amount,
+        remaining_accounts.transfer_hook_cancel,
     )?;
 
     ctx.accounts.close_escrow_token()?;

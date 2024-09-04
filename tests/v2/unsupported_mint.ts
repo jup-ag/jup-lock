@@ -66,7 +66,7 @@ describe("[V2] Test supported/unsupported Token Mint", () => {
     await check(TOKEN);
   });
 
-  it("[FAIL] unsupported PermanentDelegate", async () => {
+  it("supported PermanentDelegate", async () => {
     extensions = [ExtensionType.PermanentDelegate];
 
     TOKEN = await createMintTransaction(provider, UserKP, extensions);
@@ -74,7 +74,7 @@ describe("[V2] Test supported/unsupported Token Mint", () => {
     await check(TOKEN);
   });
 
-  it("[FAIL] unsupported MintCloseAuthority", async () => {
+  it("supported MintCloseAuthority", async () => {
     extensions = [ExtensionType.MintCloseAuthority];
 
     TOKEN = await createMintTransaction(provider, UserKP, extensions);
@@ -82,7 +82,7 @@ describe("[V2] Test supported/unsupported Token Mint", () => {
     await check(TOKEN);
   });
 
-  it("[FAIL] unsupported TransferHook", async () => {
+  it("supported TransferHook", async () => {
     extensions = [ExtensionType.TransferHook];
 
     TOKEN = await createMintTransaction(provider, UserKP, extensions);

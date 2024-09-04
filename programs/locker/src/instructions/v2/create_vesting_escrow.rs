@@ -2,7 +2,10 @@ use anchor_spl::token::spl_token;
 use anchor_spl::token_2022::spl_token_2022;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
-use crate::util::{calculate_transfer_fee_included_amount, transfer_to_escrow_v2, validate_mint};
+use crate::util::{
+    calculate_transfer_fee_included_amount, parse_remaining_accounts, transfer_to_escrow_v2,
+    validate_mint, AccountsType, ParsedRemainingAccounts,
+};
 use crate::TokenProgramFlag::{UseSplToken, UseToken2022};
 use crate::*;
 
@@ -51,8 +54,9 @@ pub struct CreateVestingEscrowV2<'info> {
 }
 
 pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
+    mut ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
     params: &CreateVestingEscrowParameters,
+    remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     // Validate if token_mint is supported
     validate_mint(&ctx.accounts.token_mint)?;
@@ -74,6 +78,17 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
         token_program_flag,
     )?;
 
+    // Process remaining accounts
+    let remaining_accounts = if remaining_accounts_info.is_none() {
+        ParsedRemainingAccounts::default()
+    } else {
+        parse_remaining_accounts(
+            &mut ctx.remaining_accounts,
+            &remaining_accounts_info.unwrap().slices,
+            &[AccountsType::TransferHookInput],
+        )?
+    };
+
     transfer_to_escrow_v2(
         &ctx.accounts.sender,
         &ctx.accounts.token_mint,
@@ -84,6 +99,7 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
             params.get_total_deposit_amount()?,
             &ctx.accounts.token_mint,
         )?,
+        remaining_accounts.transfer_hook_input,
     )?;
 
     let &CreateVestingEscrowParameters {

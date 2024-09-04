@@ -47,7 +47,7 @@ describe("[V2] Cancel", () => {
     }
 
     // Define the extensions to be used by the mint
-    extensions = [];
+    extensions = [ExtensionType.TransferHook];
 
     TOKEN = await createMintTransaction(
       provider,

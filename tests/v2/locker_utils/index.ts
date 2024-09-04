@@ -11,9 +11,16 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
+  TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { expect } from "chai";
+import {
+  RemainingAccountsBuilder,
+  RemainingAccountsType,
+} from "../utils/remaining-accounts";
+import { TokenExtensionUtil } from "../utils/token-extensions";
+import { AccountMeta } from "@solana/web3.js";
 
 export const LOCKER_PROGRAM_ID = new web3.PublicKey(
   "2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg"
@@ -101,17 +108,41 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
 
+  let remainingAccountsInfo = null;
+  let remainingAccounts: AccountMeta[] = [];
+  if (tokenProgram == TOKEN_2022_PROGRAM_ID) {
+    let inputTransferHookAccounts =
+      await TokenExtensionUtil.getExtraAccountMetasForTransferHook(
+        program.provider.connection,
+        tokenMint,
+        senderToken,
+        escrowToken,
+        ownerKeypair.publicKey,
+        TOKEN_2022_PROGRAM_ID
+      );
+
+    [remainingAccountsInfo, remainingAccounts] = new RemainingAccountsBuilder()
+      .addSlice(
+        RemainingAccountsType.TransferHookInput,
+        inputTransferHookAccounts
+      )
+      .build();
+  }
+
   await program.methods
-    .createVestingEscrowV2({
-      vestingStartTime,
-      cliffTime,
-      frequency,
-      cliffUnlockAmount,
-      amountPerPeriod,
-      numberOfPeriod,
-      updateRecipientMode,
-      cancelMode,
-    })
+    .createVestingEscrowV2(
+      {
+        vestingStartTime,
+        cliffTime,
+        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
+        updateRecipientMode,
+        cancelMode,
+      },
+      remainingAccountsInfo
+    )
     .accounts({
       base: baseKP.publicKey,
       senderToken,
@@ -123,6 +154,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
       systemProgram: web3.SystemProgram.programId,
       escrow,
     })
+    .remainingAccounts(remainingAccounts ? remainingAccounts : [])
     .preInstructions([
       createAssociatedTokenAccountInstruction(
         ownerKeypair.publicKey,
@@ -193,8 +225,29 @@ export async function claimToken(params: ClaimTokenParams) {
     ASSOCIATED_TOKEN_PROGRAM_ID
   );
 
+  let remainingAccountsInfo = null;
+  let remainingAccounts: AccountMeta[] = [];
+  if (tokenProgram == TOKEN_2022_PROGRAM_ID) {
+    let claimTransferHookAccounts =
+      await TokenExtensionUtil.getExtraAccountMetasForTransferHook(
+        program.provider.connection,
+        escrowState.tokenMint,
+        escrowToken,
+        recipientToken,
+        escrow,
+        TOKEN_2022_PROGRAM_ID
+      );
+
+    [remainingAccountsInfo, remainingAccounts] = new RemainingAccountsBuilder()
+      .addSlice(
+        RemainingAccountsType.TransferHookClaim,
+        claimTransferHookAccounts
+      )
+      .build();
+  }
+
   const tx = await program.methods
-    .claimV2(maxAmount)
+    .claimV2(maxAmount, remainingAccountsInfo)
     .accounts({
       tokenProgram,
       tokenMint: tokenMint,
@@ -204,6 +257,7 @@ export async function claimToken(params: ClaimTokenParams) {
       recipient: recipient.publicKey,
       recipientToken,
     })
+    .remainingAccounts(remainingAccounts ? remainingAccounts : [])
     .rpc();
 
   console.log("   claim token signature", tx);
@@ -348,8 +402,29 @@ export async function cancelVestingPlan(
     await program.provider.connection.getTokenAccountBalance(recipientToken)
   ).value.amount;
 
+  let remainingAccountsInfo = null;
+  let remainingAccounts: AccountMeta[] = [];
+  if (tokenProgram == TOKEN_2022_PROGRAM_ID) {
+    let cancelTransferHookAccounts =
+      await TokenExtensionUtil.getExtraAccountMetasForTransferHook(
+        program.provider.connection,
+        escrowState.tokenMint,
+        escrowToken,
+        recipientToken,
+        escrow,
+        TOKEN_2022_PROGRAM_ID
+      );
+
+    [remainingAccountsInfo, remainingAccounts] = new RemainingAccountsBuilder()
+      .addSlice(
+        RemainingAccountsType.TransferHookCancel,
+        cancelTransferHookAccounts
+      )
+      .build();
+  }
+
   await program.methods
-    .cancelVestingEscrow()
+    .cancelVestingEscrow(remainingAccountsInfo)
     .accounts({
       escrow,
       tokenMint,
@@ -361,6 +436,7 @@ export async function cancelVestingPlan(
       tokenProgram,
       memoProgram: MEMO_PROGRAM,
     })
+    .remainingAccounts(remainingAccounts ? remainingAccounts : [])
     .rpc();
 
   if (isAssertion) {

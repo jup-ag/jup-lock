@@ -5,6 +5,8 @@ pub use events::*;
 pub use instructions::*;
 pub use state::*;
 
+use crate::util::RemainingAccountsInfo;
+
 #[macro_use]
 pub mod macros;
 
@@ -63,20 +65,25 @@ pub mod locker {
     pub fn create_vesting_escrow_v2<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
         params: CreateVestingEscrowParameters,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
     ) -> Result<()> {
-        handle_create_vesting_escrow_v2(ctx, &params)
+        handle_create_vesting_escrow_v2(ctx, &params, remaining_accounts_info)
     }
 
     pub fn claim_v2<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ClaimV2<'info>>,
         max_amount: u64,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
     ) -> Result<()> {
-        handle_claim_v2(ctx, max_amount)
+        handle_claim_v2(ctx, max_amount, remaining_accounts_info)
     }
 
     // New instructions that support both spl-token and spl-token-2022
-    pub fn cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result<()> {
-        handle_cancel_vesting_escrow(ctx)
+    pub fn cancel_vesting_escrow<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrow<'info>>,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_cancel_vesting_escrow(ctx, remaining_accounts_info)
     }
 
     // TODO add function to close escrow after all token has been claimed

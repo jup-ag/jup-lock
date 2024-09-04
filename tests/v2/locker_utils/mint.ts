@@ -20,6 +20,7 @@ import {
   mintTo,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
+import { TEST_TRANSFER_HOOK_PROGRAM_ID } from "../utils/token-extensions";
 
 export const ADMIN = web3.Keypair.fromSecretKey(
   Uint8Array.from([
@@ -28,10 +29,6 @@ export const ADMIN = web3.Keypair.fromSecretKey(
     166, 240, 58, 250, 204, 125, 228, 56, 121, 32, 22, 54, 214, 133, 148, 40,
     149, 8, 60, 74, 23, 212, 222, 54, 125, 78, 2, 203, 157, 229,
   ])
-);
-
-export const TEST_TRANSFER_HOOK_PROGRAM_ID = new web3.PublicKey(
-  "EBZDYx7599krFc4m2govwBdZcicr4GgepqC78m71nsHS"
 );
 
 let feeBasisPoints: number;
