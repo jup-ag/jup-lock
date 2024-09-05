@@ -23,9 +23,9 @@ import {
 import {
   createEscrowMetadata,
   createLockerProgram,
-  createVestingPlan,
   updateRecipient,
-} from "../locker_utils/token_2022";
+} from "../locker_utils";
+import { createVestingPlanV2 } from "../locker_utils";
 
 const provider = anchor.AnchorProvider.env();
 
@@ -145,7 +145,7 @@ describe("[V2] Update recipient", () => {
     );
 
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -199,7 +199,7 @@ describe("[V2] Update recipient", () => {
     );
 
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -247,7 +247,7 @@ describe("[V2] Update recipient", () => {
     );
 
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -295,7 +295,7 @@ describe("[V2] Update recipient", () => {
     );
 
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -336,7 +336,7 @@ describe("[V2] Update recipient", () => {
     );
 
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,

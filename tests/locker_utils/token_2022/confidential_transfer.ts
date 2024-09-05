@@ -1,11 +1,3 @@
-import {
-  AnchorError,
-  AnchorProvider,
-  BN,
-  Program,
-  Wallet,
-  web3,
-} from "@coral-xyz/anchor";
 import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import { struct, u8 } from "@solana/buffer-layout";
 import { publicKey } from "@solana/buffer-layout-utils";

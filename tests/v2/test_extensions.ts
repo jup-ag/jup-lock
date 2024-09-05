@@ -8,10 +8,10 @@ import {
 import { BN } from "bn.js";
 import { createAndFundWallet, getCurrentBlockTime, sleep } from "../common";
 import {
-  claimToken,
+  claimTokenV2,
+  createVestingPlanV2,
   createLockerProgram,
-  createVestingPlan,
-} from "../locker_utils/token_2022";
+} from "../locker_utils";
 import { assert } from "chai";
 import { ADMIN, createMintTransaction } from "../locker_utils/token_2022/mint";
 
@@ -137,7 +137,7 @@ describe("[V2] Test supported/unsupported Token Mint", () => {
 
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
     try {
-      let escrow = await createVestingPlan({
+      let escrow = await createVestingPlanV2({
         ownerKeypair: UserKP,
         vestingStartTime: new BN(0),
         tokenMint: TOKEN,
@@ -176,10 +176,9 @@ describe("[V2] Test supported/unsupported Token Mint", () => {
 
       console.log("Claim token");
       try {
-        await claimToken({
+        await claimTokenV2({
           recipient: RecipientKP,
           recipientToken: RecipientToken,
-          tokenMint: TOKEN,
           escrow,
           maxAmount: new BN(1_000_000),
           isAssertion: true,

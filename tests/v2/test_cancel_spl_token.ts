@@ -16,9 +16,9 @@ import {
 } from "../common";
 import {
   cancelVestingPlan,
+  createVestingPlanV2,
   createLockerProgram,
-  createVestingPlan,
-} from "../locker_utils/token_2022";
+} from "../locker_utils";
 import {
   sendAndConfirmTransaction,
   SystemProgram,
@@ -121,7 +121,7 @@ describe("[V2] Cancel with SPL Token", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -144,13 +144,11 @@ describe("[V2] Cancel with SPL Token", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
             recipientToken: RecipientToken,
             signer: UserKP,
-            tokenProgram: TOKEN_PROGRAM_ID,
           },
           0,
           200_000
@@ -165,13 +163,11 @@ describe("[V2] Cancel with SPL Token", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
             recipientToken: RecipientToken,
             signer: RecipientKP,
-            tokenProgram: TOKEN_PROGRAM_ID,
           },
           0,
           200_000
@@ -189,7 +185,7 @@ describe("[V2] Cancel with SPL Token", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -211,13 +207,11 @@ describe("[V2] Cancel with SPL Token", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
             recipientToken: RecipientToken,
             signer: RecipientKP,
-            tokenProgram: TOKEN_PROGRAM_ID,
           },
           0,
           200_000
@@ -230,13 +224,11 @@ describe("[V2] Cancel with SPL Token", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
         recipientToken: RecipientToken,
         signer: UserKP,
-        tokenProgram: TOKEN_PROGRAM_ID,
       },
       0,
       200_000
@@ -250,7 +242,7 @@ describe("[V2] Cancel with SPL Token", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -272,13 +264,11 @@ describe("[V2] Cancel with SPL Token", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
             recipientToken: RecipientToken,
             signer: UserKP,
-            tokenProgram: TOKEN_PROGRAM_ID,
           },
           0,
           200_000
@@ -291,13 +281,11 @@ describe("[V2] Cancel with SPL Token", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
         recipientToken: RecipientToken,
         signer: RecipientKP,
-        tokenProgram: TOKEN_PROGRAM_ID,
       },
       0,
       200_000
@@ -311,7 +299,7 @@ describe("[V2] Cancel with SPL Token", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -330,13 +318,11 @@ describe("[V2] Cancel with SPL Token", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
         recipientToken: RecipientToken,
         signer: UserKP,
-        tokenProgram: TOKEN_PROGRAM_ID,
       },
       0,
       200_000
@@ -350,7 +336,7 @@ describe("[V2] Cancel with SPL Token", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -369,13 +355,11 @@ describe("[V2] Cancel with SPL Token", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
         recipientToken: RecipientToken,
         signer: RecipientKP,
-        tokenProgram: TOKEN_PROGRAM_ID,
       },
       0,
       200_000
@@ -389,7 +373,7 @@ describe("[V2] Cancel with SPL Token", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -421,13 +405,11 @@ describe("[V2] Cancel with SPL Token", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
         recipientToken: RecipientToken,
         signer: UserKP,
-        tokenProgram: TOKEN_PROGRAM_ID,
       },
       100_000,
       200_000

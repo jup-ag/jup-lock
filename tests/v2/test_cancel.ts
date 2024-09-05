@@ -15,10 +15,10 @@ import {
   sleep,
 } from "../common";
 import {
+  createVestingPlanV2,
   cancelVestingPlan,
   createLockerProgram,
-  createVestingPlan,
-} from "../locker_utils/token_2022";
+} from "../locker_utils";
 import { ADMIN, createMintTransaction } from "../locker_utils/token_2022/mint";
 
 const provider = anchor.AnchorProvider.env();
@@ -81,7 +81,7 @@ describe("[V2] Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -103,13 +103,11 @@ describe("[V2] Cancel", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
             recipientToken: RecipientToken,
             signer: UserKP,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
           },
           0,
           200_000
@@ -124,13 +122,11 @@ describe("[V2] Cancel", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
             recipientToken: RecipientToken,
             signer: RecipientKP,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
           },
           0,
           200_000
@@ -148,7 +144,7 @@ describe("[V2] Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -170,13 +166,11 @@ describe("[V2] Cancel", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
             recipientToken: RecipientToken,
             signer: RecipientKP,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
           },
           0,
           200_000
@@ -189,13 +183,11 @@ describe("[V2] Cancel", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
         recipientToken: RecipientToken,
         signer: UserKP,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
       },
       0,
       200_000
@@ -209,7 +201,7 @@ describe("[V2] Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -231,13 +223,11 @@ describe("[V2] Cancel", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
             recipientToken: RecipientToken,
             signer: UserKP,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
           },
           0,
           200_000
@@ -250,13 +240,11 @@ describe("[V2] Cancel", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
         recipientToken: RecipientToken,
         signer: RecipientKP,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
       },
       0,
       200_000
@@ -270,7 +258,7 @@ describe("[V2] Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -289,13 +277,11 @@ describe("[V2] Cancel", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
         recipientToken: RecipientToken,
         signer: UserKP,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
       },
       0,
       200_000
@@ -309,7 +295,7 @@ describe("[V2] Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -328,13 +314,11 @@ describe("[V2] Cancel", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
         recipientToken: RecipientToken,
         signer: RecipientKP,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
       },
       0,
       200_000
@@ -348,7 +332,7 @@ describe("[V2] Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -380,13 +364,11 @@ describe("[V2] Cancel", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
         recipientToken: RecipientToken,
         signer: UserKP,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
       },
       100_000,
       200_000
