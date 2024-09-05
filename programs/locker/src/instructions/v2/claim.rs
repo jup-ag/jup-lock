@@ -10,6 +10,7 @@ use crate::util::{MemoTransferContext, transfer_to_user_v2};
 #[event_cpi]
 #[derive(Accounts)]
 pub struct ClaimV2<'info> {
+    /// Escrow.
     #[account(
         mut, 
         has_one = token_mint,
@@ -18,8 +19,10 @@ pub struct ClaimV2<'info> {
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
+    /// Mint.
     pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Escrow Token Account.
     #[account(
         mut,
         associated_token::mint = token_mint,
@@ -28,9 +31,11 @@ pub struct ClaimV2<'info> {
     )]
     pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Recipient.
     #[account(mut)]
     pub recipient: Signer<'info>,
 
+    /// Recipient Token Account.
     #[account(
         mut,
         constraint = recipient_token.key() != escrow_token.key() @ LockerError::InvalidRecipientTokenAccount
@@ -45,7 +50,7 @@ pub struct ClaimV2<'info> {
 }
 
 pub fn handle_claim_v2<'c: 'info, 'info>(
-    mut ctx: Context<'_, '_, 'c, 'info, ClaimV2<'info>>,
+    ctx: Context<'_, '_, 'c, 'info, ClaimV2<'info>>,
     max_amount: u64,
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
@@ -55,16 +60,16 @@ pub fn handle_claim_v2<'c: 'info, 'info>(
     drop(escrow);
 
     // Process remaining accounts
-    let remaining_accounts = if remaining_accounts_info.is_none() {
-        ParsedRemainingAccounts::default()
-    } else {
-        parse_remaining_accounts(
-            &mut ctx.remaining_accounts,
-            &remaining_accounts_info.unwrap().slices,
+    let mut remaining_accounts = &ctx.remaining_accounts[..];
+    let parsed_transfer_hook_accounts = match remaining_accounts_info {
+        Some(info) => parse_remaining_accounts(
+            &mut remaining_accounts,
+            &info.slices,
             &[
-                AccountsType::TransferHookClaim,
+                AccountsType::TransferHookEscrow,
             ],
-        )?
+        )?,
+        None => ParsedRemainingAccounts::default(),        
     };
 
     transfer_to_user_v2(
@@ -78,7 +83,7 @@ pub fn handle_claim_v2<'c: 'info, 'info>(
             memo: TRANSFER_MEMO_CLAIM_VESTING.as_bytes(),
         }),
         amount,
-        remaining_accounts.transfer_hook_claim,
+        parsed_transfer_hook_accounts.transfer_hook_escrow,
     )?;
 
     let current_ts = Clock::get()?.unix_timestamp as u64;

@@ -11,8 +11,8 @@ import {
   claimToken,
   createLockerProgram,
   createVestingPlan,
-} from "./locker_utils";
-import { ADMIN, createMintTransaction } from "./locker_utils/mint";
+} from "../locker_utils/token_2022";
+import { ADMIN, createMintTransaction } from "../locker_utils/token_2022/mint";
 
 const provider = anchor.AnchorProvider.env();
 

@@ -18,8 +18,8 @@ import { expect } from "chai";
 import {
   RemainingAccountsBuilder,
   RemainingAccountsType,
-} from "../utils/remaining-accounts";
-import { TokenExtensionUtil } from "../utils/token-extensions";
+} from "./remaining-accounts";
+import { TokenExtensionUtil } from "./token-extensions";
 import { AccountMeta } from "@solana/web3.js";
 
 export const LOCKER_PROGRAM_ID = new web3.PublicKey(
@@ -123,7 +123,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
 
     [remainingAccountsInfo, remainingAccounts] = new RemainingAccountsBuilder()
       .addSlice(
-        RemainingAccountsType.TransferHookInput,
+        RemainingAccountsType.TransferHookEscrow,
         inputTransferHookAccounts
       )
       .build();
@@ -217,6 +217,8 @@ export async function claimToken(params: ClaimTokenParams) {
   const program = createLockerProgram(new Wallet(recipient));
   const escrowState = await program.account.vestingEscrow.fetch(escrow);
 
+  // Note: escrowState => các params còn lại
+
   const escrowToken = getAssociatedTokenAddressSync(
     escrowState.tokenMint,
     escrow,
@@ -240,7 +242,7 @@ export async function claimToken(params: ClaimTokenParams) {
 
     [remainingAccountsInfo, remainingAccounts] = new RemainingAccountsBuilder()
       .addSlice(
-        RemainingAccountsType.TransferHookClaim,
+        RemainingAccountsType.TransferHookEscrow,
         claimTransferHookAccounts
       )
       .build();
@@ -417,7 +419,7 @@ export async function cancelVestingPlan(
 
     [remainingAccountsInfo, remainingAccounts] = new RemainingAccountsBuilder()
       .addSlice(
-        RemainingAccountsType.TransferHookCancel,
+        RemainingAccountsType.TransferHookEscrow,
         cancelTransferHookAccounts
       )
       .build();

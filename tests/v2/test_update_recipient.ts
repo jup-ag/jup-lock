@@ -25,7 +25,7 @@ import {
   createLockerProgram,
   createVestingPlan,
   updateRecipient,
-} from "./locker_utils";
+} from "../locker_utils/token_2022";
 
 const provider = anchor.AnchorProvider.env();
 

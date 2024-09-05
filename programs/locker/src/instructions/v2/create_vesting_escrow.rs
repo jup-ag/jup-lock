@@ -12,9 +12,11 @@ use crate::*;
 #[event_cpi]
 #[derive(Accounts)]
 pub struct CreateVestingEscrowV2<'info> {
+    // Base.
     #[account(mut)]
     pub base: Signer<'info>,
 
+    // Escrow.
     #[account(
         init,
         seeds = [
@@ -27,8 +29,10 @@ pub struct CreateVestingEscrowV2<'info> {
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
+    // Mint.
     pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    // Escrow Token Account.
     #[account(
         mut,
         associated_token::mint = token_mint,
@@ -37,9 +41,11 @@ pub struct CreateVestingEscrowV2<'info> {
     )]
     pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    // Sender.
     #[account(mut)]
     pub sender: Signer<'info>,
 
+    // Sender Token Account.
     #[account(mut)]
     pub sender_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -49,12 +55,12 @@ pub struct CreateVestingEscrowV2<'info> {
     /// Token program.
     pub token_program: Interface<'info, TokenInterface>,
 
-    // system program
+    // system program.
     pub system_program: Program<'info, System>,
 }
 
 pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
-    mut ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
+    ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
     params: &CreateVestingEscrowParameters,
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
@@ -79,14 +85,14 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
     )?;
 
     // Process remaining accounts
-    let remaining_accounts = if remaining_accounts_info.is_none() {
-        ParsedRemainingAccounts::default()
-    } else {
-        parse_remaining_accounts(
-            &mut ctx.remaining_accounts,
-            &remaining_accounts_info.unwrap().slices,
-            &[AccountsType::TransferHookInput],
-        )?
+    let mut remaining_accounts = &ctx.remaining_accounts[..];
+    let parsed_transfer_hook_accounts = match remaining_accounts_info {
+        Some(info) => parse_remaining_accounts(
+            &mut remaining_accounts,
+            &info.slices,
+            &[AccountsType::TransferHookEscrow],
+        )?,
+        None => ParsedRemainingAccounts::default(),
     };
 
     transfer_to_escrow_v2(
@@ -99,7 +105,7 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
             params.get_total_deposit_amount()?,
             &ctx.accounts.token_mint,
         )?,
-        remaining_accounts.transfer_hook_input,
+        parsed_transfer_hook_accounts.transfer_hook_escrow,
     )?;
 
     let &CreateVestingEscrowParameters {

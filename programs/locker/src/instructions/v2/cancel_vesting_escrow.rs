@@ -22,8 +22,10 @@ pub struct CancelVestingEscrow<'info> {
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
+    /// Mint.
     pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
+    /// Escrow Token Account.
     #[account(
         mut,
         associated_token::mint = token_mint,
@@ -32,6 +34,7 @@ pub struct CancelVestingEscrow<'info> {
     )]
     pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Creator Token Account.
     #[account(
         mut,
         associated_token::mint = token_mint,
@@ -40,6 +43,7 @@ pub struct CancelVestingEscrow<'info> {
     )]
     pub creator_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
+    /// Receipient Token Account.
     #[account(
         mut,
         associated_token::mint = token_mint,
@@ -48,7 +52,7 @@ pub struct CancelVestingEscrow<'info> {
     )]
     pub recipient_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    /// CHECKED: the creator will receive the rent back
+    /// CHECKED: The Token Account will receive the rent
     #[account(mut)]
     pub rent_receiver: UncheckedAccount<'info>,
 
@@ -83,7 +87,7 @@ impl<'info> CancelVestingEscrow<'info> {
 }
 
 pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
-    mut ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrow<'info>>,
+    ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrow<'info>>,
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     let mut escrow = ctx.accounts.escrow.load_mut()?;
@@ -102,14 +106,14 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
     drop(escrow);
 
     // Process remaining accounts
-    let remaining_accounts = if remaining_accounts_info.is_none() {
-        ParsedRemainingAccounts::default()
-    } else {
-        parse_remaining_accounts(
-            &mut ctx.remaining_accounts,
-            &remaining_accounts_info.unwrap().slices,
-            &[AccountsType::TransferHookCancel],
-        )?
+    let mut remaining_accounts = &ctx.remaining_accounts[..];
+    let parsed_transfer_hook_accounts = match remaining_accounts_info {
+        Some(info) => parse_remaining_accounts(
+            &mut remaining_accounts,
+            &info.slices,
+            &[AccountsType::TransferHookEscrow],
+        )?,
+        None => ParsedRemainingAccounts::default(),
     };
 
     // Transfer the claimable amount to the recipient
@@ -124,7 +128,7 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
             memo: TRANSFER_MEMO_CANCEL_VESTING.as_bytes(),
         }),
         claimable_amount,
-        remaining_accounts.transfer_hook_cancel,
+        parsed_transfer_hook_accounts.transfer_hook_escrow,
     )?;
 
     // Transfer the remaining amount to the creator
@@ -139,7 +143,7 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
             memo: TRANSFER_MEMO_CANCEL_VESTING.as_bytes(),
         }),
         remaining_amount,
-        remaining_accounts.transfer_hook_cancel,
+        parsed_transfer_hook_accounts.transfer_hook_escrow,
     )?;
 
     ctx.accounts.close_escrow_token()?;

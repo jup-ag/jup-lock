@@ -6,6 +6,7 @@ use crate::*;
 #[event_cpi]
 #[derive(Accounts)]
 pub struct ClaimCtx<'info> {
+    /// Escrow.
     #[account(
         mut,
         has_one = recipient,
@@ -13,6 +14,7 @@ pub struct ClaimCtx<'info> {
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
+    /// Escrow Token Account.
     #[account(
         mut,
         associated_token::mint = escrow.load()?.token_mint,
@@ -20,9 +22,11 @@ pub struct ClaimCtx<'info> {
     )]
     pub escrow_token: Box<Account<'info, TokenAccount>>,
 
+    /// Recipient.
     #[account(mut)]
     pub recipient: Signer<'info>,
 
+    /// Recipient Token Account.
     #[account(
         mut,
         constraint = recipient_token.key() != escrow_token.key() @ LockerError::InvalidRecipientTokenAccount

@@ -17,10 +17,17 @@ import {
   createInitializeTransferHookInstruction,
   ExtensionType,
   getMintLen,
+  getTypeLen,
   mintTo,
+  thawAccount,
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
-import { TEST_TRANSFER_HOOK_PROGRAM_ID } from "../utils/token-extensions";
+import { TEST_TRANSFER_HOOK_PROGRAM_ID } from "./token-extensions";
+import { createAndFundWallet } from "../../common";
+import {
+  createInitializeConfidentialTransferFeeConfigInstruction,
+  createInitializeConfidentialTransferMintInstruction,
+} from "./confidential_transfer";
 
 export const ADMIN = web3.Keypair.fromSecretKey(
   Uint8Array.from([
@@ -36,6 +43,8 @@ let maxFee: bigint;
 
 const tokenDecimal = 8;
 
+let mintAuthority: web3.Keypair;
+
 export async function createMintTransaction(
   provider: AnchorProvider,
   UserKP: web3.Keypair,
@@ -50,17 +59,30 @@ export async function createMintTransaction(
   // Define the amount to be minted and the amount to be transferred, accounting for decimals
   let mintAmount = BigInt(1_000_000 * Math.pow(10, tokenDecimal)); // Mint 1,000,000 tokens
 
-  let mintLen = getMintLen(extensions);
-  const mintLamports =
-    await provider.connection.getMinimumBalanceForRentExemption(mintLen);
-
-  let mintAuthority = new web3.Keypair();
+  mintAuthority = new web3.Keypair();
   let mintKeypair = new web3.Keypair();
   let TOKEN = mintKeypair.publicKey;
+
+  {
+    await createAndFundWallet(provider.connection, mintAuthority);
+  }
 
   // Generate keys for transfer fee config authority and withdrawal authority
   let transferFeeConfigAuthority = new web3.Keypair();
   let withdrawWithheldAuthority = new web3.Keypair();
+
+  let { instructions, postInstructions, additionalLength } =
+    createExtensionMintIx(
+      extensions,
+      UserKP,
+      TOKEN,
+      transferFeeConfigAuthority,
+      withdrawWithheldAuthority
+    );
+
+  let mintLen = getMintLen(extensions) + additionalLength;
+  const mintLamports =
+    await provider.connection.getMinimumBalanceForRentExemption(mintLen);
 
   const mintTransaction = new Transaction().add(
     SystemProgram.createAccount({
@@ -70,14 +92,6 @@ export async function createMintTransaction(
       lamports: mintLamports,
       programId: TOKEN_2022_PROGRAM_ID,
     })
-  );
-
-  let { instructions, postInstructions } = createExtensionMintIx(
-    extensions,
-    UserKP,
-    TOKEN,
-    transferFeeConfigAuthority,
-    withdrawWithheldAuthority
   );
 
   if (instructions.length > 0) mintTransaction.add(...instructions);
@@ -110,6 +124,19 @@ export async function createMintTransaction(
   );
 
   if (shouldMint) {
+    if (extensions.indexOf(ExtensionType.DefaultAccountState) != -1) {
+      await thawAccount(
+        provider.connection,
+        mintAuthority, // Transaction fee payer
+        userToken, // Token Account to unfreeze
+        TOKEN, // Mint Account address
+        mintAuthority.publicKey, // Freeze Authority
+        undefined, // Additional signers
+        undefined, // Confirmation options
+        TOKEN_2022_PROGRAM_ID // Token Extension Program ID
+      );
+    }
+
     await mintTo(
       provider.connection,
       UserKP,
@@ -135,9 +162,12 @@ function createExtensionMintIx(
 ): {
   instructions: web3.TransactionInstruction[];
   postInstructions: web3.TransactionInstruction[];
+  additionalLength: number;
 } {
   const ix = [];
   const postIx = [];
+  let confidentialTransferMintSizePatch = 0;
+  let confidentialTransferFeeConfigSizePatch = 0;
 
   if (extensions.includes(ExtensionType.TransferFeeConfig)) {
     ix.push(
@@ -209,7 +239,49 @@ function createExtensionMintIx(
     );
   }
 
-  return { instructions: ix, postInstructions: postIx };
+  if (extensions.includes(ExtensionType.ConfidentialTransferMint)) {
+    confidentialTransferMintSizePatch =
+      65 - getTypeLen(ExtensionType.ConfidentialTransferMint);
+    ix.push(
+      createInitializeConfidentialTransferMintInstruction(
+        TOKEN,
+        mintAuthority.publicKey
+      )
+    );
+  }
+
+  // ConfidentialTransferFeeConfig
+  // When both TransferFeeConfig and ConfidentialTransferMint are enabled, ConfidentialTransferFeeConfig is also required
+
+  if (
+    extensions.includes(ExtensionType.TransferFeeConfig) &&
+    extensions.includes(ExtensionType.ConfidentialTransferMint)
+  ) {
+    // fixedLengthExtensions.push(ExtensionType.ConfidentialTransferFeeConfig);
+    // [May 25, 2024] ExtensionType.ConfidentialTransferFeeConfig is not yet supported in spl-token
+    // ConfidentialTransferFeeConfig struct fields:
+    //   - authority: OptionalNonZeroPubkey (32 bytes)
+    //   - withdraw_withheld_authority_elgamal_pubkey: ElGamalPubkey (32 bytes)
+    //   - harvest_to_mint_enabled: bool (1 byte)
+    //   - withheld_amount: EncryptedWithheldAmount (64 bytes)
+    confidentialTransferFeeConfigSizePatch = 2 + 2 + 129; // type + length + data
+    ix.push(
+      createInitializeConfidentialTransferFeeConfigInstruction(
+        TOKEN,
+        mintAuthority.publicKey,
+        mintAuthority.publicKey,
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+  }
+
+  return {
+    instructions: ix,
+    postInstructions: postIx,
+    additionalLength:
+      confidentialTransferMintSizePatch +
+      confidentialTransferFeeConfigSizePatch,
+  };
 }
 
 export function createInitializeExtraAccountMetaListInstruction(

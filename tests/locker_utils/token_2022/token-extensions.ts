@@ -45,6 +45,7 @@ export class TokenExtensionUtil {
       ],
     });
 
+    // Note:
     await addExtraAccountMetasForExecute(
       connection,
       instruction,

@@ -1,15 +1,10 @@
 import { AccountMeta } from "@solana/web3.js";
 
 export enum RemainingAccountsType {
-  TransferHookInput = "transferHookInput",
-  TransferHookClaim = "transferHookClaim",
-  TransferHookCancel = "transferHookCancel",
+  TransferHookEscrow = "transferHookEscrow",
 }
 
-type RemainingAccountsAnchorType =
-  | { transferHookInput: {} }
-  | { transferHookClaim: {} }
-  | { transferHookCancel: {} };
+type RemainingAccountsAnchorType = { transferHookEscrow: {} };
 
 export type RemainingAccountsSliceData = {
   accountsType: RemainingAccountsAnchorType;

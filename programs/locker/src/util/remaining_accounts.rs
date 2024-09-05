@@ -4,9 +4,7 @@ use crate::LockerError;
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone, PartialEq, Eq)]
 pub enum AccountsType {
-    TransferHookInput,
-    TransferHookClaim,
-    TransferHookCancel,
+    TransferHookEscrow,
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize, Clone)]
@@ -22,9 +20,7 @@ pub struct RemainingAccountsInfo {
 
 #[derive(Default)]
 pub struct ParsedRemainingAccounts<'a, 'info> {
-    pub transfer_hook_input: Option<&'a [AccountInfo<'info>]>,
-    pub transfer_hook_claim: Option<&'a [AccountInfo<'info>]>,
-    pub transfer_hook_cancel: Option<&'a [AccountInfo<'info>]>,
+    pub transfer_hook_escrow: Option<&'a [AccountInfo<'info>]>,
 }
 
 pub fn parse_remaining_accounts<'a, 'info>(
@@ -56,23 +52,11 @@ pub fn parse_remaining_accounts<'a, 'info>(
         *remaining_accounts = &remaining_accounts[end_idx..];
 
         match slice.accounts_type {
-            AccountsType::TransferHookInput => {
-                if parsed_remaining_accounts.transfer_hook_input.is_some() {
+            AccountsType::TransferHookEscrow => {
+                if parsed_remaining_accounts.transfer_hook_escrow.is_some() {
                     return Err(LockerError::DuplicatedRemainingAccountTypes.into());
                 }
-                parsed_remaining_accounts.transfer_hook_input = Some(accounts);
-            }
-            AccountsType::TransferHookClaim => {
-                if parsed_remaining_accounts.transfer_hook_claim.is_some() {
-                    return Err(LockerError::DuplicatedRemainingAccountTypes.into());
-                }
-                parsed_remaining_accounts.transfer_hook_claim = Some(accounts);
-            }
-            AccountsType::TransferHookCancel => {
-                if parsed_remaining_accounts.transfer_hook_cancel.is_some() {
-                    return Err(LockerError::DuplicatedRemainingAccountTypes.into());
-                }
-                parsed_remaining_accounts.transfer_hook_cancel = Some(accounts);
+                parsed_remaining_accounts.transfer_hook_escrow = Some(accounts);
             }
         }
     }

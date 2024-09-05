@@ -18,7 +18,7 @@ import {
   cancelVestingPlan,
   createLockerProgram,
   createVestingPlan,
-} from "./locker_utils";
+} from "../locker_utils/token_2022";
 import {
   sendAndConfirmTransaction,
   SystemProgram,

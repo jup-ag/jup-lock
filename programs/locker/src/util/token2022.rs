@@ -14,9 +14,6 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::{LockerError, VestingEscrow};
 
-pub const TRANSFER_MEMO_CLAIM_VESTING: &str = "Jup-Lock ClaimVesting";
-pub const TRANSFER_MEMO_CANCEL_VESTING: &str = "Jup-Lock CancelVesting";
-
 const ONE_IN_BASIS_POINTS: u128 = MAX_FEE_BASIS_POINTS as u128;
 
 #[derive(Clone, Copy)]
@@ -159,16 +156,6 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<()> {
         return Ok(());
     }
 
-    // seems like other programs don't like to support token-2022 native_mint :)
-    if spl_token_2022::native_mint::check_id(&token_mint.key()) {
-        return Err(LockerError::UnsupportedMint.into());
-    }
-
-    // reject if mint has freeze_authority, unless its token badge is initialized
-    if token_mint.freeze_authority.is_some() {
-        return Err(LockerError::UnsupportedMint.into());
-    }
-
     let token_mint_data = token_mint_info.try_borrow_data()?;
     let token_mint_unpacked =
         StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
@@ -183,17 +170,15 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<()> {
             // partially supported
             extension::ExtensionType::ConfidentialTransferMint => {
                 // Supported, but non-confidential transfer only
-                //
-                // According to the document (https://solana.com/developers/guides/token-extensions/getting-started#what-extensions-are-compatible-with-each-other)
-                // We prioritize TransferHook
             }
             extension::ExtensionType::ConfidentialTransferFeeConfig => {
                 // Supported, but non-confidential transfer only
             }
-            // supported if token badge is initialized
+            // supported with risks that creator should be aware of
             extension::ExtensionType::PermanentDelegate => {}
             extension::ExtensionType::TransferHook => {}
             extension::ExtensionType::MintCloseAuthority => {}
+            extension::ExtensionType::DefaultAccountState => {}
             // mint has unknown or unsupported extensions
             _ => {
                 return Err(LockerError::UnsupportedMint.into());
