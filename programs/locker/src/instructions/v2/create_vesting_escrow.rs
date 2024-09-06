@@ -12,11 +12,11 @@ use crate::*;
 #[event_cpi]
 #[derive(Accounts)]
 pub struct CreateVestingEscrowV2<'info> {
-    // Base.
+    /// Base.
     #[account(mut)]
     pub base: Signer<'info>,
 
-    // Escrow.
+    /// Escrow.
     #[account(
         init,
         seeds = [
@@ -32,7 +32,7 @@ pub struct CreateVestingEscrowV2<'info> {
     // Mint.
     pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    // Escrow Token Account.
+    /// Escrow Token Account.
     #[account(
         mut,
         associated_token::mint = token_mint,
@@ -41,11 +41,11 @@ pub struct CreateVestingEscrowV2<'info> {
     )]
     pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
-    // Sender.
+    /// Sender.
     #[account(mut)]
     pub sender: Signer<'info>,
 
-    // Sender Token Account.
+    /// Sender Token Account.
     #[account(mut)]
     pub sender_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
@@ -55,7 +55,7 @@ pub struct CreateVestingEscrowV2<'info> {
     /// Token program.
     pub token_program: Interface<'info, TokenInterface>,
 
-    // system program.
+    /// system program.
     pub system_program: Program<'info, System>,
 }
 

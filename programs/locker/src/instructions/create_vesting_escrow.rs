@@ -85,11 +85,11 @@ impl CreateVestingEscrowParameters {
 #[event_cpi]
 #[derive(Accounts)]
 pub struct CreateVestingEscrowCtx<'info> {
-    // Base.
+    /// Base.
     #[account(mut)]
     pub base: Signer<'info>,
 
-    // Escrow.
+    /// Escrow.
     #[account(
         init,
         seeds = [
@@ -102,7 +102,7 @@ pub struct CreateVestingEscrowCtx<'info> {
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
-    // Escrow Token Account.
+    /// Escrow Token Account.
     #[account(
         mut,
         associated_token::mint = sender_token.mint,
@@ -110,11 +110,11 @@ pub struct CreateVestingEscrowCtx<'info> {
     )]
     pub escrow_token: Box<Account<'info, TokenAccount>>,
 
-    // Sender.
+    /// Sender.
     #[account(mut)]
     pub sender: Signer<'info>,
 
-    // Sender Token Account.
+    /// Sender Token Account.
     #[account(mut)]
     pub sender_token: Box<Account<'info, TokenAccount>>,
 
@@ -124,7 +124,7 @@ pub struct CreateVestingEscrowCtx<'info> {
     /// Token program.
     pub token_program: Program<'info, Token>,
 
-    // system program.
+    /// system program.
     pub system_program: Program<'info, System>,
 }
 
