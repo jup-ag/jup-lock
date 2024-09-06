@@ -5,6 +5,8 @@ pub use events::*;
 pub use instructions::*;
 pub use state::*;
 
+use crate::util::RemainingAccountsInfo;
+
 #[macro_use]
 pub mod macros;
 
@@ -17,6 +19,7 @@ pub mod errors;
 pub mod safe_math;
 
 pub mod events;
+
 pub mod util;
 
 #[cfg(feature = "localnet")]
@@ -32,6 +35,20 @@ declare_id!("LocpQgucEQHbqNABEYvBvwoxCPsSbG91A1QaQhQQqjn");
 pub mod locker {
     use super::*;
 
+    /// Create a vesting escrow for the given params
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * params - The params needed by instruction.
+    ///   * vesting_start_time - The creation time of this escrow
+    ///   * cliff_time - Trade cliff time of the escrow
+    ///   * frequency - How frequent the claimable amount will be updated
+    ///   * cliff_unlock_amount - The amount unlocked after cliff time
+    ///   * amount_per_period - The amount unlocked per vesting period
+    ///   * number_of_period - The total number of vesting period
+    ///   * update_recipient_mode - Decide who can update the recipient of the escrow
+    ///   * cancel_mode - Decide who can cancel the the escrow
+    ///
     pub fn create_vesting_escrow(
         ctx: Context<CreateVestingEscrowCtx>,
         params: CreateVestingEscrowParameters,
@@ -39,10 +56,26 @@ pub mod locker {
         handle_create_vesting_escrow(ctx, &params)
     }
 
+    /// Claim maximum amount from the vesting escrow
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * max_amount - The maximum amount claimed by the recipient
+    ///
     pub fn claim(ctx: Context<ClaimCtx>, max_amount: u64) -> Result<()> {
         handle_claim(ctx, max_amount)
     }
 
+    /// Create vesting escrow metadata
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * params - The params needed by instruction.
+    ///   * name - The name of the vesting escrow
+    ///   * description - The description of the vesting escrow
+    ///   * creator_email - The email of the creator
+    ///   * recipient_email - The email of the recipient
+    ///
     pub fn create_vesting_escrow_metadata(
         ctx: Context<CreateVestingEscrowMetadataCtx>,
         params: CreateVestingEscrowMetadataParameters,
@@ -50,6 +83,13 @@ pub mod locker {
         handle_create_vesting_escrow_metadata(ctx, &params)
     }
 
+    /// Update vesting escrow metadata
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * new_recipient - The address of the new recipient
+    /// * new_recipient_email - The email of the new recipient
+    ///
     pub fn update_vesting_escrow_recipient(
         ctx: Context<UpdateVestingEscrowRecipientCtx>,
         new_recipient: Pubkey,
@@ -58,9 +98,61 @@ pub mod locker {
         handle_update_vesting_escrow_recipient(ctx, new_recipient, new_recipient_email)
     }
 
-    pub fn cancel_vesting_escrow(ctx: Context<CancelVestingEscrow>) -> Result<()> {
-        handle_cancel_vesting_escrow(ctx)
+    // V2 instructions
+
+    /// Create a vesting escrow for the given params
+    /// This instruction supports both splToken and token2022
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * params - The params needed by instruction.
+    ///   * vesting_start_time - The creation time of this escrow
+    ///   * cliff_time - Trade cliff time of the escrow
+    ///   * frequency - How frequent the claimable amount will be updated
+    ///   * cliff_unlock_amount - The amount unlocked after cliff time
+    ///   * amount_per_period - The amount unlocked per vesting period
+    ///   * number_of_period - The total number of vesting period
+    ///   * update_recipient_mode - Decide who can update the recipient of the escrow
+    ///   * cancel_mode - Decide who can cancel the the escrow
+    /// * remaining_accounts_info: additional accounts needed by instruction
+    ///
+    pub fn create_vesting_escrow_v2<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
+        params: CreateVestingEscrowParameters,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_create_vesting_escrow_v2(ctx, &params, remaining_accounts_info)
     }
 
-    // TODO add function to close escrow after all token has been claimed
+    /// Claim maximum amount from the vesting escrow
+    /// This instruction supports both splToken and token2022
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * max_amount - The maximum amount claimed by the recipient
+    /// * remaining_accounts_info: additional accounts needed by instruction
+    ///
+    pub fn claim_v2<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ClaimV2<'info>>,
+        max_amount: u64,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_claim_v2(ctx, max_amount, remaining_accounts_info)
+    }
+
+    /// Cancel a vesting escrow.
+    ///   - The claimable token will be transferred to recipient
+    ///   - The remaining token will be transferred to the creator
+    /// This instruction supports both splToken and token2022
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * remaining_accounts_info: additional accounts needed by instruction
+    ///
+    pub fn cancel_vesting_escrow<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrow<'info>>,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_cancel_vesting_escrow(ctx, remaining_accounts_info)
+    }
 }
