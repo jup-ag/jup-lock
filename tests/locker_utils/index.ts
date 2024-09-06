@@ -13,7 +13,7 @@ import {
   RemainingAccountsBuilder,
   RemainingAccountsType,
 } from "./token_2022/remaining-accounts";
-import { AccountMeta } from "@solana/web3.js";
+import { AccountMeta, ComputeBudgetProgram } from "@solana/web3.js";
 
 export const LOCKER_PROGRAM_ID = new web3.PublicKey(
   "2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg"
@@ -563,6 +563,11 @@ export async function cancelVestingPlan(
       tokenProgram,
       memoProgram: MEMO_PROGRAM,
     })
+    .preInstructions([
+      ComputeBudgetProgram.setComputeUnitLimit({
+        units: 400_000,
+      }),
+    ])
     .remainingAccounts(remainingAccounts ? remainingAccounts : [])
     .rpc();
 
