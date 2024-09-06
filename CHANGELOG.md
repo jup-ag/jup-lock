@@ -21,12 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-## Program [0.3.0] [PR #5](https://github.com/jup-ag/jup-lock/pull/5)
+## Program [0.3.0] [PR #5](https://github.com/jup-ag/jup-lock/pull/5) [PR #15](https://github.com/jup-ag/jup-lock/pull/15)
+
+### Breaking Changes
+
+- Endpoint `create_vesting_escrow` add `cancel_mode` to indicates who can cancel the escrow.
 
 ### Added
 
 - escrow state add `token_program_flag` to indicates the token program used within the escrow.
-- escrow state add `cancel_mode` to indicates who can cancel the escrow.
+- escrow state add `cancelled_at` to indicates the timestamp of the cancellation.
 - Add new instruction `cancel_vesting_escrow`, which will cancel the escrow and close the `escrow_token` token account. The claimable amount will be transferred to recipient and the remaining amount will be transferred to creator. The instruction supports both `splToken` and `token2022`.
 - Add new v2 instructions to support `token2022` extensions, including: `TransferFeeConfig`, `TokenMetadata`, `MetadataPointer`, `ConfidentialTransferMint`, `ConfidentialTransferFeeConfig`, `PermanentDelegate`, `TransferHook`, `MintCloseAuthority`, `DefaultAccountState` for Token Mint and `MemoTransfer` for Token Account extensions
   - `create_vesting_escrow_v2` to create the escrow relevant accounts.
