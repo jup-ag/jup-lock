@@ -19,7 +19,7 @@ pub struct UpdateVestingEscrowRecipientCtx<'info> {
     #[account(mut)]
     pub signer: Signer<'info>,
 
-    /// System program.
+    /// system program.
     pub system_program: Program<'info, System>,
 }
 

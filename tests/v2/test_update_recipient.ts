@@ -1,33 +1,54 @@
 import * as anchor from "@coral-xyz/anchor";
 import { web3 } from "@coral-xyz/anchor";
 import {
-  ASSOCIATED_TOKEN_PROGRAM_ID,
-  createMint,
-  getOrCreateAssociatedTokenAccount,
+  createAssociatedTokenAccountIdempotent,
+  createInitializeMintInstruction,
+  createInitializeTransferFeeConfigInstruction,
+  ExtensionType,
+  getMintLen,
   mintTo,
-  TOKEN_PROGRAM_ID,
+  TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 import { BN } from "bn.js";
 import {
   createAndFundWallet,
   getCurrentBlockTime,
   invokeAndAssertError,
-} from "./common";
+} from "../common";
+import {
+  sendAndConfirmTransaction,
+  SystemProgram,
+  Transaction,
+} from "@solana/web3.js";
 import {
   createEscrowMetadata,
   createLockerProgram,
-  createVestingPlan,
   updateRecipient,
-} from "./locker_utils";
+} from "../locker_utils";
+import { createVestingPlanV2 } from "../locker_utils";
 
 const provider = anchor.AnchorProvider.env();
-provider.opts.commitment = "confirmed";
 
-describe("Update recipient", () => {
+describe("[V2] Update recipient", () => {
   const tokenDecimal = 8;
-  let TOKEN: web3.PublicKey;
   let UserKP: web3.Keypair;
-  let ReceipentKP: web3.Keypair;
+  let RecipientKP: web3.Keypair;
+  let mintAuthority: web3.Keypair;
+  let mintKeypair: web3.Keypair;
+  let TOKEN: web3.PublicKey;
+
+  let transferFeeConfigAuthority: web3.Keypair;
+  let withdrawWithheldAuthority: web3.Keypair;
+
+  let extensions: ExtensionType[];
+  let mintLen: number;
+
+  let feeBasisPoints: number;
+  let maxFee: bigint;
+
+  // Define the amount to be minted and the amount to be transferred, accounting for decimals
+  let mintAmount: bigint;
+  let transferAmount: bigint;
 
   before(async () => {
     {
@@ -36,58 +57,95 @@ describe("Update recipient", () => {
     }
     {
       const result = await createAndFundWallet(provider.connection);
-      ReceipentKP = result.keypair;
+      RecipientKP = result.keypair;
     }
 
-    TOKEN = await createMint(
+    mintAuthority = new web3.Keypair();
+    mintKeypair = new web3.Keypair();
+    TOKEN = mintKeypair.publicKey;
+
+    // Generate keys for transfer fee config authority and withdrawal authority
+    transferFeeConfigAuthority = new web3.Keypair();
+    withdrawWithheldAuthority = new web3.Keypair();
+
+    // Define the extensions to be used by the mint
+    extensions = [ExtensionType.TransferFeeConfig];
+
+    // Calculate the length of the mint
+    mintLen = getMintLen(extensions);
+
+    // Set the decimals, fee basis points, and maximum fee
+    feeBasisPoints = 100; // 1%
+    maxFee = BigInt(9 * Math.pow(10, tokenDecimal)); // 9 tokens
+
+    // Define the amount to be minted and the amount to be transferred, accounting for decimals
+    mintAmount = BigInt(1_000_000 * Math.pow(10, tokenDecimal)); // Mint 1,000,000 tokens
+    transferAmount = BigInt(1_000 * Math.pow(10, tokenDecimal)); // Transfer 1,000 tokens
+
+    // Step 2 - Create a New Token
+    const mintLamports =
+      await provider.connection.getMinimumBalanceForRentExemption(mintLen);
+    const mintTransaction = new Transaction().add(
+      SystemProgram.createAccount({
+        fromPubkey: UserKP.publicKey,
+        newAccountPubkey: TOKEN,
+        space: mintLen,
+        lamports: mintLamports,
+        programId: TOKEN_2022_PROGRAM_ID,
+      }),
+      createInitializeTransferFeeConfigInstruction(
+        TOKEN,
+        transferFeeConfigAuthority.publicKey,
+        withdrawWithheldAuthority.publicKey,
+        feeBasisPoints,
+        maxFee,
+        TOKEN_2022_PROGRAM_ID
+      ),
+      createInitializeMintInstruction(
+        TOKEN,
+        tokenDecimal,
+        mintAuthority.publicKey,
+        null,
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+    await sendAndConfirmTransaction(
       provider.connection,
-      UserKP,
-      UserKP.publicKey,
-      null,
-      tokenDecimal,
-      web3.Keypair.generate(),
-      {
-        commitment: "confirmed",
-      },
-      TOKEN_PROGRAM_ID
+      mintTransaction,
+      [UserKP, mintKeypair],
+      undefined
     );
 
-    const userToken = await getOrCreateAssociatedTokenAccount(
+    const userToken = await createAssociatedTokenAccountIdempotent(
       provider.connection,
       UserKP,
       TOKEN,
       UserKP.publicKey,
-      false,
-      "confirmed",
-      {
-        commitment: "confirmed",
-      },
-      TOKEN_PROGRAM_ID,
-      ASSOCIATED_TOKEN_PROGRAM_ID
+      {},
+      TOKEN_2022_PROGRAM_ID
     );
-    // userBTC = userTokenX.address;
-    await mintTo(
+    const mintSig = await mintTo(
       provider.connection,
       UserKP,
       TOKEN,
-      userToken.address,
-      UserKP.publicKey,
-      100 * 10 ** tokenDecimal,
+      userToken,
+      mintAuthority,
+      mintAmount,
       [],
-      {
-        commitment: "confirmed",
-      },
-      TOKEN_PROGRAM_ID
+      undefined,
+      TOKEN_2022_PROGRAM_ID
     );
   });
+
   it("No one is able to update", async () => {
     console.log("Create vesting plan");
     const program = createLockerProgram(new anchor.Wallet(UserKP));
     let currentBlockTime = await getCurrentBlockTime(
       program.provider.connection
     );
+
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -97,9 +155,10 @@ describe("Update recipient", () => {
       cliffUnlockAmount: new BN(100_000),
       amountPerPeriod: new BN(50_000),
       numberOfPeriod: new BN(2),
-      recipient: ReceipentKP.publicKey,
+      recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
       cancelMode: 0,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
     console.log("Update recipient");
     const newRecipient = web3.Keypair.generate();
@@ -123,7 +182,7 @@ describe("Update recipient", () => {
           escrow,
           newRecipient: newRecipient.publicKey,
           isAssertion: true,
-          signer: ReceipentKP,
+          signer: RecipientKP,
           newRecipientEmail: null,
         });
       },
@@ -138,8 +197,9 @@ describe("Update recipient", () => {
     let currentBlockTime = await getCurrentBlockTime(
       program.provider.connection
     );
+
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -149,9 +209,10 @@ describe("Update recipient", () => {
       cliffUnlockAmount: new BN(100_000),
       amountPerPeriod: new BN(50_000),
       numberOfPeriod: new BN(2),
-      recipient: ReceipentKP.publicKey,
+      recipient: RecipientKP.publicKey,
       updateRecipientMode: 1,
       cancelMode: 0,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
     console.log("Update recipient");
     const newRecipient = web3.Keypair.generate();
@@ -161,7 +222,7 @@ describe("Update recipient", () => {
           escrow,
           newRecipient: newRecipient.publicKey,
           isAssertion: true,
-          signer: ReceipentKP,
+          signer: RecipientKP,
           newRecipientEmail: null,
         });
       },
@@ -184,8 +245,9 @@ describe("Update recipient", () => {
     let currentBlockTime = await getCurrentBlockTime(
       program.provider.connection
     );
+
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -195,9 +257,10 @@ describe("Update recipient", () => {
       cliffUnlockAmount: new BN(100_000),
       amountPerPeriod: new BN(50_000),
       numberOfPeriod: new BN(2),
-      recipient: ReceipentKP.publicKey,
+      recipient: RecipientKP.publicKey,
       updateRecipientMode: 2,
       cancelMode: 0,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
     console.log("Update recipient");
     const newRecipient = web3.Keypair.generate();
@@ -219,7 +282,7 @@ describe("Update recipient", () => {
       escrow,
       newRecipient: newRecipient.publicKey,
       isAssertion: true,
-      signer: ReceipentKP,
+      signer: RecipientKP,
       newRecipientEmail: null,
     });
   });
@@ -230,8 +293,9 @@ describe("Update recipient", () => {
     let currentBlockTime = await getCurrentBlockTime(
       program.provider.connection
     );
+
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -241,14 +305,15 @@ describe("Update recipient", () => {
       cliffUnlockAmount: new BN(100_000),
       amountPerPeriod: new BN(50_000),
       numberOfPeriod: new BN(2),
-      recipient: ReceipentKP.publicKey,
+      recipient: RecipientKP.publicKey,
       updateRecipientMode: 3,
       cancelMode: 0,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
     console.log("Update recipient");
     await updateRecipient({
       escrow,
-      newRecipient: ReceipentKP.publicKey,
+      newRecipient: RecipientKP.publicKey,
       isAssertion: true,
       signer: UserKP,
       newRecipientEmail: null,
@@ -256,9 +321,9 @@ describe("Update recipient", () => {
 
     await updateRecipient({
       escrow,
-      newRecipient: ReceipentKP.publicKey,
+      newRecipient: RecipientKP.publicKey,
       isAssertion: true,
-      signer: ReceipentKP,
+      signer: RecipientKP,
       newRecipientEmail: null,
     });
   });
@@ -269,20 +334,22 @@ describe("Update recipient", () => {
     let currentBlockTime = await getCurrentBlockTime(
       program.provider.connection
     );
+
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
-      tokenMint: TOKEN,
       vestingStartTime: new BN(0),
+      tokenMint: TOKEN,
       isAssertion: true,
       cliffTime,
       frequency: new BN(1),
       cliffUnlockAmount: new BN(100_000),
       amountPerPeriod: new BN(50_000),
       numberOfPeriod: new BN(2),
-      recipient: ReceipentKP.publicKey,
+      recipient: RecipientKP.publicKey,
       updateRecipientMode: 3,
       cancelMode: 0,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
     });
 
     console.log("Create escrow metadata");
@@ -299,7 +366,7 @@ describe("Update recipient", () => {
     console.log("Update recipient with bigger email size");
     await updateRecipient({
       escrow,
-      newRecipient: ReceipentKP.publicKey,
+      newRecipient: RecipientKP.publicKey,
       isAssertion: true,
       signer: UserKP,
       newRecipientEmail: "maximillian@raccoons.dev",
@@ -308,7 +375,7 @@ describe("Update recipient", () => {
     console.log("Update recipient with smaller email size");
     await updateRecipient({
       escrow,
-      newRecipient: ReceipentKP.publicKey,
+      newRecipient: RecipientKP.publicKey,
       isAssertion: true,
       signer: UserKP,
       newRecipientEmail: "max@raccoons.dev",

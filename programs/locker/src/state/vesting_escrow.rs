@@ -23,6 +23,13 @@ pub enum CancelMode {
     EitherCreatorAndRecipient, //3
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u8)]
+pub enum TokenProgramFlag {
+    UseSplToken,  //0
+    UseToken2022, //1
+}
+
 #[account(zero_copy)]
 #[derive(Default, InitSpace, Debug)]
 pub struct VestingEscrow {
@@ -40,8 +47,10 @@ pub struct VestingEscrow {
     pub update_recipient_mode: u8,
     /// cancel_mode
     pub cancel_mode: u8,
+    /// token program flag
+    pub token_program_flag: u8,
     /// padding
-    pub padding_0: [u8; 5],
+    pub padding_0: [u8; 4],
     /// cliff time
     pub cliff_time: u64,
     /// frequency
@@ -82,6 +91,7 @@ impl VestingEscrow {
         escrow_bump: u8,
         update_recipient_mode: u8,
         cancel_mode: u8,
+        token_program_flag: u8,
     ) {
         self.vesting_start_time = vesting_start_time;
         self.cliff_time = cliff_time;
@@ -96,6 +106,7 @@ impl VestingEscrow {
         self.escrow_bump = escrow_bump;
         self.update_recipient_mode = update_recipient_mode;
         self.cancel_mode = cancel_mode;
+        self.token_program_flag = token_program_flag;
     }
 
     pub fn get_max_unlocked_amount(&self, current_ts: u64) -> Result<u64> {

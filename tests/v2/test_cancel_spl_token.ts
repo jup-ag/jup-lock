@@ -13,12 +13,12 @@ import {
   getCurrentBlockTime,
   invokeAndAssertError,
   sleep,
-} from "./common";
+} from "../common";
 import {
   cancelVestingPlan,
+  createVestingPlanV2,
   createLockerProgram,
-  createVestingPlan,
-} from "./locker_utils";
+} from "../locker_utils";
 import {
   sendAndConfirmTransaction,
   SystemProgram,
@@ -28,7 +28,7 @@ import {
 const provider = anchor.AnchorProvider.env();
 provider.opts.commitment = "confirmed";
 
-describe("Cancel", () => {
+describe("[V2] Cancel with SPL Token", () => {
   const tokenDecimal = 8;
   let mintAuthority: web3.Keypair;
   let mintKeypair: web3.Keypair;
@@ -121,7 +121,7 @@ describe("Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -134,6 +134,7 @@ describe("Cancel", () => {
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
       cancelMode: 0,
+      tokenProgram: TOKEN_PROGRAM_ID,
     });
 
     console.log("Cancel vesting plan");
@@ -143,7 +144,6 @@ describe("Cancel", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
@@ -163,7 +163,6 @@ describe("Cancel", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
@@ -186,7 +185,7 @@ describe("Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -199,6 +198,7 @@ describe("Cancel", () => {
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
       cancelMode: 1,
+      tokenProgram: TOKEN_PROGRAM_ID,
     });
     console.log("Cancel Vesting Plan");
     const newRecipient = web3.Keypair.generate();
@@ -207,7 +207,6 @@ describe("Cancel", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
@@ -225,7 +224,6 @@ describe("Cancel", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
@@ -244,7 +242,7 @@ describe("Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -257,6 +255,7 @@ describe("Cancel", () => {
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
       cancelMode: 2,
+      tokenProgram: TOKEN_PROGRAM_ID,
     });
     console.log("Cancel Vesting Plan");
     const newRecipient = web3.Keypair.generate();
@@ -265,7 +264,6 @@ describe("Cancel", () => {
         await cancelVestingPlan(
           {
             escrow,
-            tokenMint: TOKEN,
             isAssertion: true,
             rentReceiver: UserKP.publicKey,
             creatorToken: UserToken,
@@ -283,7 +281,6 @@ describe("Cancel", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
@@ -302,7 +299,7 @@ describe("Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -315,12 +312,12 @@ describe("Cancel", () => {
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
       cancelMode: 3,
+      tokenProgram: TOKEN_PROGRAM_ID,
     });
     console.log("Cancel Vesting Plan");
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
@@ -339,7 +336,7 @@ describe("Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -352,12 +349,12 @@ describe("Cancel", () => {
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
       cancelMode: 3,
+      tokenProgram: TOKEN_PROGRAM_ID,
     });
     console.log("Cancel Vesting Plan");
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,
@@ -376,7 +373,7 @@ describe("Cancel", () => {
       program.provider.connection
     );
     const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    let escrow = await createVestingPlanV2({
       ownerKeypair: UserKP,
       vestingStartTime: new BN(0),
       tokenMint: TOKEN,
@@ -389,6 +386,7 @@ describe("Cancel", () => {
       recipient: RecipientKP.publicKey,
       updateRecipientMode: 0,
       cancelMode: 1,
+      tokenProgram: TOKEN_PROGRAM_ID,
     });
 
     while (true) {
@@ -407,7 +405,6 @@ describe("Cancel", () => {
     await cancelVestingPlan(
       {
         escrow,
-        tokenMint: TOKEN,
         isAssertion: true,
         rentReceiver: UserKP.publicKey,
         creatorToken: UserToken,

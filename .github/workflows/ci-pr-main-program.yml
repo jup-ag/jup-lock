@@ -4,10 +4,12 @@ on:
   pull_request:
     branches:
       - main
+      - staging
+
 env:
-  SOLANA_CLI_VERSION: 1.16.25
+  SOLANA_CLI_VERSION: 1.18.21
   NODE_VERSION: 18.14.2
-  ANCHOR_CLI_VERSION: 0.28.0
+  ANCHOR_CLI_VERSION: 0.29.0
 
 jobs:
   program_changed_files:
@@ -32,12 +34,11 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       # Install rust + toolchain
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: clippy
+      - run: rustup toolchain install stable --component clippy
       # Cache rust, cargo
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "v1"
       - run: cargo test --package locker
         shell: bash
 
@@ -51,12 +52,11 @@ jobs:
       - uses: ./.github/actions/setup-dep
       - uses: ./.github/actions/setup-anchor
       # Install rust + toolchain
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          components: clippy
+      - run: rustup toolchain install stable --component clippy
       # Cache rust, cargo
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: "v1"
       # Cache node_modules
       - uses: actions/cache@v2
         id: cache-node-modules
