@@ -9,6 +9,8 @@ import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountIdempotent,
   createInitializeDefaultAccountStateInstruction,
+  createInitializeGroupMemberPointerInstruction,
+  createInitializeGroupPointerInstruction,
   createInitializeInterestBearingMintInstruction,
   createInitializeMintCloseAuthorityInstruction,
   createInitializeMintInstruction,
@@ -71,7 +73,7 @@ export async function createMintTransaction(
   let transferFeeConfigAuthority = new web3.Keypair();
   let withdrawWithheldAuthority = new web3.Keypair();
 
-  let { instructions, postInstructions, additionalLength } =
+  let { instructions, postInstructions, additionalLength, rentReserveSpace } =
     createExtensionMintIx(
       extensions,
       UserKP,
@@ -82,7 +84,9 @@ export async function createMintTransaction(
 
   let mintLen = getMintLen(extensions) + additionalLength;
   const mintLamports =
-    await provider.connection.getMinimumBalanceForRentExemption(mintLen);
+    await provider.connection.getMinimumBalanceForRentExemption(
+      mintLen + rentReserveSpace
+    );
 
   const mintTransaction = new Transaction().add(
     SystemProgram.createAccount({
@@ -163,11 +167,13 @@ function createExtensionMintIx(
   instructions: web3.TransactionInstruction[];
   postInstructions: web3.TransactionInstruction[];
   additionalLength: number;
+  rentReserveSpace: number;
 } {
   const ix = [];
   const postIx = [];
   let confidentialTransferMintSizePatch = 0;
   let confidentialTransferFeeConfigSizePatch = 0;
+  let groupPointerSize = 0;
 
   if (extensions.includes(ExtensionType.TransferFeeConfig)) {
     ix.push(
@@ -275,12 +281,47 @@ function createExtensionMintIx(
     );
   }
 
+  if (extensions.includes(ExtensionType.GroupPointer)) {
+    // groupPointerSize = TOKEN_GROUP_SIZE;
+    ix.push(
+      createInitializeGroupPointerInstruction(
+        TOKEN,
+        UserKP.publicKey,
+        TOKEN,
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+
+    // postIx.push(
+    //   createInitializeGroupInstruction({
+    //     group: TOKEN,
+    //     maxSize: 10,
+    //     mint: TOKEN,
+    //     mintAuthority: UserKP.publicKey,
+    //     programId: TOKEN_2022_PROGRAM_ID,
+    //     updateAuthority: UserKP.publicKey,
+    //   })
+    // );
+  }
+
+  if (extensions.includes(ExtensionType.GroupMemberPointer)) {
+    ix.push(
+      createInitializeGroupMemberPointerInstruction(
+        TOKEN,
+        UserKP.publicKey,
+        TOKEN,
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+  }
+
   return {
     instructions: ix,
     postInstructions: postIx,
     additionalLength:
       confidentialTransferMintSizePatch +
       confidentialTransferFeeConfigSizePatch,
+    rentReserveSpace: groupPointerSize,
   };
 }
 
