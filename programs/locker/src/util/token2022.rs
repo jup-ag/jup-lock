@@ -2,15 +2,15 @@ use anchor_lang::prelude::*;
 use anchor_spl::memo;
 use anchor_spl::memo::{BuildMemo, Memo};
 use anchor_spl::token::Token;
-use anchor_spl::token_2022::spl_token_2022::extension::transfer_fee::{
-    TransferFee, TransferFeeConfig, MAX_FEE_BASIS_POINTS,
-};
 use anchor_spl::token_2022::spl_token_2022::{
     self,
     extension::{self, StateWithExtensions},
 };
-use anchor_spl::token_interface::spl_token_2022::extension::BaseStateWithExtensions;
+use anchor_spl::token_2022::spl_token_2022::extension::transfer_fee::{
+    MAX_FEE_BASIS_POINTS, TransferFee, TransferFeeConfig,
+};
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use anchor_spl::token_interface::spl_token_2022::extension::BaseStateWithExtensions;
 
 use crate::{LockerError, VestingEscrow};
 
@@ -179,6 +179,10 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<()> {
             extension::ExtensionType::TransferHook => {}
             extension::ExtensionType::MintCloseAuthority => {}
             extension::ExtensionType::DefaultAccountState => {}
+            extension::ExtensionType::GroupMemberPointer => {}
+            extension::ExtensionType::GroupPointer => {}
+            extension::ExtensionType::TokenGroup => {}
+            extension::ExtensionType::TokenGroupMember => {}
             // mint has unknown or unsupported extensions
             _ => {
                 return Err(LockerError::UnsupportedMint.into());
@@ -280,8 +284,8 @@ pub fn calculate_pre_fee_amount(transfer_fee: &TransferFee, post_fee_amount: u64
 
 #[cfg(test)]
 mod token2022_tests {
+    use anchor_spl::token_interface::spl_pod::primitives::{PodU64, PodU16};
     use proptest::prelude::*;
-    use spl_pod::primitives::{PodU16, PodU64};
 
     use super::*;
 
