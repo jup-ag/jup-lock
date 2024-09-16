@@ -6,8 +6,12 @@ import {
   TOKEN_2022_PROGRAM_ID,
 } from "@solana/spl-token";
 import { BN } from "bn.js";
-import { createAndFundWallet, getCurrentBlockTime } from "../common";
-import { createLockerProgram, createVestingPlanV2 } from "../locker_utils";
+import { createAndFundWallet, getCurrentBlockTime, sleep } from "../common";
+import {
+  claimTokenV2,
+  createLockerProgram,
+  createVestingPlanV2,
+} from "../locker_utils";
 import { assert } from "chai";
 import { ADMIN, createMintTransaction } from "../locker_utils/token_2022/mint";
 
