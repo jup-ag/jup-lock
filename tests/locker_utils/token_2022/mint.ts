@@ -282,7 +282,6 @@ function createExtensionMintIx(
   }
 
   if (extensions.includes(ExtensionType.GroupPointer)) {
-    // groupPointerSize = TOKEN_GROUP_SIZE;
     ix.push(
       createInitializeGroupPointerInstruction(
         TOKEN,
@@ -292,6 +291,10 @@ function createExtensionMintIx(
       )
     );
 
+    // This extension is not yet stable
+    //  Trying this https://solana.com/developers/courses/token-extensions/group-member#lab
+    //  However, the instruction always failed with error 0xc.
+    // groupPointerSize = TOKEN_GROUP_SIZE;
     // postIx.push(
     //   createInitializeGroupInstruction({
     //     group: TOKEN,

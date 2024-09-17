@@ -181,8 +181,9 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<()> {
             extension::ExtensionType::DefaultAccountState => {}
             extension::ExtensionType::GroupMemberPointer => {}
             extension::ExtensionType::GroupPointer => {}
-            extension::ExtensionType::TokenGroup => {}
-            extension::ExtensionType::TokenGroupMember => {}
+            // Not stable yet to support
+            // extension::ExtensionType::TokenGroup => {}
+            // extension::ExtensionType::TokenGroupMember => {}
             // mint has unknown or unsupported extensions
             _ => {
                 return Err(LockerError::UnsupportedMint.into());
@@ -284,7 +285,7 @@ pub fn calculate_pre_fee_amount(transfer_fee: &TransferFee, post_fee_amount: u64
 
 #[cfg(test)]
 mod token2022_tests {
-    use anchor_spl::token_interface::spl_pod::primitives::{PodU64, PodU16};
+    use anchor_spl::token_interface::spl_pod::primitives::{PodU16, PodU64};
     use proptest::prelude::*;
 
     use super::*;
