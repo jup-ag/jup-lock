@@ -9,8 +9,8 @@ import { BN } from "bn.js";
 import { createAndFundWallet, getCurrentBlockTime, sleep } from "../common";
 import {
   claimTokenV2,
-  createVestingPlanV2,
   createLockerProgram,
+  createVestingPlanV2,
 } from "../locker_utils";
 import { assert } from "chai";
 import { ADMIN, createMintTransaction } from "../locker_utils/token_2022/mint";
@@ -123,6 +123,22 @@ describe("[V2] Test supported/unsupported Token Mint", () => {
 
   it("TransferHook", async () => {
     let extensions = [ExtensionType.TransferHook];
+
+    TOKEN = await createMintTransaction(provider, UserKP, extensions);
+
+    await check(TOKEN);
+  });
+
+  it("GroupPointer", async () => {
+    let extensions = [ExtensionType.GroupPointer];
+
+    TOKEN = await createMintTransaction(provider, UserKP, extensions);
+
+    await check(TOKEN);
+  });
+
+  it("GroupMemberPointer", async () => {
+    let extensions = [ExtensionType.GroupMemberPointer];
 
     TOKEN = await createMintTransaction(provider, UserKP, extensions);
 
