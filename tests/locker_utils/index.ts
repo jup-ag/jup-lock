@@ -1,5 +1,12 @@
-import { AnchorProvider, BN, Program, Wallet, web3 } from "@coral-xyz/anchor";
-import { IDL as LockerIDL, Locker } from "../../target/types/locker";
+import {
+  AnchorProvider,
+  BN,
+  Program,
+  Wallet,
+  web3,
+  workspace,
+} from "@coral-xyz/anchor";
+import { Locker } from "../../target/types/locker";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
   createAssociatedTokenAccountInstruction,
@@ -31,8 +38,8 @@ export function createLockerProgram(wallet?: Wallet): Program<Locker> {
     maxRetries: 3,
   });
   provider.opts.commitment = "confirmed";
-  const program = new Program<Locker>(LockerIDL, LOCKER_PROGRAM_ID, provider);
-  return program;
+
+  return workspace.Locker as Program<Locker>;
 }
 
 export function deriveEscrow(base: web3.PublicKey, programId: web3.PublicKey) {
@@ -139,7 +146,7 @@ export async function createVestingPlan(params: CreateVestingPlanParams) {
         ASSOCIATED_TOKEN_PROGRAM_ID
       ),
     ])
-    .signers([baseKP])
+    .signers([baseKP, ownerKeypair])
     .rpc();
 
   if (isAssertion) {
@@ -197,6 +204,7 @@ export async function claimToken(params: ClaimTokenParams) {
       recipient: recipient.publicKey,
       recipientToken,
     })
+    .signers([recipient])
     .rpc();
 }
 
@@ -236,6 +244,7 @@ export async function createEscrowMetadata(params: CreateEscrowMetadataParams) {
       creator: creator.publicKey,
       escrowMetadata,
     })
+    .signers([creator])
     .rpc();
 
   if (isAssertion) {
@@ -278,6 +287,7 @@ export async function updateRecipient(params: UpdateRecipientParams) {
       signer: signer.publicKey,
       systemProgram: web3.SystemProgram.programId,
     })
+    .signers([signer])
     .rpc();
 
   if (isAssertion) {
@@ -390,7 +400,7 @@ export async function createVestingPlanV2(params: CreateVestingPlanParams) {
         ASSOCIATED_TOKEN_PROGRAM_ID
       ),
     ])
-    .signers([baseKP])
+    .signers([baseKP, ownerKeypair])
     .rpc();
 
   if (isAssertion) {
@@ -569,6 +579,7 @@ export async function cancelVestingPlan(
       }),
     ])
     .remainingAccounts(remainingAccounts ? remainingAccounts : [])
+    .signers([signer])
     .rpc();
 
   if (isAssertion) {
