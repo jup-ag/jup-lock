@@ -21,6 +21,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+## Program [0.3.1] [PR #18](https://github.com/jup-ag/jup-lock/pull/18)
+
+### Changes
+
+- Bump `anchor` version to 0.30.1
+
+### Added
+
+- Add support to `GroupPointer` & `GroupMemberPointer` extension
+
 ## Program [0.3.0] [PR #5](https://github.com/jup-ag/jup-lock/pull/5) [PR #15](https://github.com/jup-ag/jup-lock/pull/15)
 
 ### Breaking Changes
