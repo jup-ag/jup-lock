@@ -9,6 +9,7 @@ pub struct EventCreateVestingEscrow {
     pub amount_per_period: u64,
     pub number_of_period: u64,
     pub update_recipient_mode: u8,
+    pub cancel_mode: u8,
     pub recipient: Pubkey,
     pub escrow: Pubkey,
 }
@@ -26,4 +27,14 @@ pub struct EventUpdateVestingEscrowRecipient {
     pub old_recipient: Pubkey,
     pub new_recipient: Pubkey,
     pub signer: Pubkey,
+}
+
+
+#[event]
+pub struct EventCancelVestingEscrow {
+    pub escrow: Pubkey,
+    pub signer: Pubkey,
+    pub claimable_amount: u64,
+    pub remaining_amount: u64,
+    pub cancelled_at: u64,
 }

@@ -16,3 +16,7 @@ wallet = "keys/localnet/admin-bossj3JvwiNK7pvjr149DqdtJxf2gdygbcmEPTkb2F1.json"
 
 [scripts]
 test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+
+[[test.genesis]]
+address = "EBZDYx7599krFc4m2govwBdZcicr4GgepqC78m71nsHS"
+program = "artifacts/transfer_hook_counter.so"

@@ -1,8 +1,9 @@
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+use static_assertions::const_assert_eq;
+
 use crate::*;
 
 use self::safe_math::SafeMath;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-use static_assertions::const_assert_eq;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]
@@ -11,6 +12,22 @@ pub enum UpdateRecipientMode {
     OnlyCreator,               //1
     OnlyRecipient,             //2
     EitherCreatorAndRecipient, //3
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u8)]
+pub enum CancelMode {
+    NeitherCreatorOrRecipient, //0
+    OnlyCreator,               //1
+    OnlyRecipient,             //2
+    EitherCreatorAndRecipient, //3
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u8)]
+pub enum TokenProgramFlag {
+    UseSplToken,  //0
+    UseToken2022, //1
 }
 
 #[account(zero_copy)]
@@ -28,8 +45,12 @@ pub struct VestingEscrow {
     pub escrow_bump: u8,
     /// update_recipient_mode
     pub update_recipient_mode: u8,
+    /// cancel_mode
+    pub cancel_mode: u8,
+    /// token program flag
+    pub token_program_flag: u8,
     /// padding
-    pub padding_0: [u8; 6],
+    pub padding_0: [u8; 4],
     /// cliff time
     pub cliff_time: u64,
     /// frequency
@@ -44,8 +65,12 @@ pub struct VestingEscrow {
     pub total_claimed_amount: u64,
     /// vesting start time
     pub vesting_start_time: u64,
+    /// cancelled_at
+    pub cancelled_at: u64,
     /// buffer
-    pub buffer: [u128; 6],
+    pub padding_1: u64,
+    /// buffer
+    pub buffer: [u128; 5],
 }
 
 const_assert_eq!(VestingEscrow::INIT_SPACE, 288); //  32 * 4 + 8 * 8 + 16 * 6
@@ -65,6 +90,8 @@ impl VestingEscrow {
         base: Pubkey,
         escrow_bump: u8,
         update_recipient_mode: u8,
+        cancel_mode: u8,
+        token_program_flag: u8,
     ) {
         self.vesting_start_time = vesting_start_time;
         self.cliff_time = cliff_time;
@@ -78,6 +105,8 @@ impl VestingEscrow {
         self.base = base;
         self.escrow_bump = escrow_bump;
         self.update_recipient_mode = update_recipient_mode;
+        self.cancel_mode = cancel_mode;
+        self.token_program_flag = token_program_flag;
     }
 
     pub fn get_max_unlocked_amount(&self, current_ts: u64) -> Result<u64> {
@@ -107,15 +136,54 @@ impl VestingEscrow {
         Ok(())
     }
 
+    pub fn claim(&mut self, max_amount: u64) -> Result<u64> {
+        let current_ts = Clock::get()?.unix_timestamp as u64;
+        let claimable_amount = self.get_claimable_amount(current_ts)?;
+
+        let amount = claimable_amount.min(max_amount);
+        self.accumulate_claimed_amount(amount)?;
+
+        Ok(amount)
+    }
+
     pub fn update_recipient(&mut self, new_recipient: Pubkey) {
         self.recipient = new_recipient;
+    }
+
+    pub fn validate_cancel_actor(self, signer: Pubkey) -> Result<()> {
+        require!(
+            self.cancel_mode & self.signer_flag(signer) > 0,
+            LockerError::NotPermitToDoThisAction
+        );
+
+        Ok(())
+    }
+
+    pub fn validate_update_actor(self, signer: Pubkey) -> Result<()> {
+        require!(
+            self.update_recipient_mode & self.signer_flag(signer) > 0,
+            LockerError::NotPermitToDoThisAction
+        );
+
+        Ok(())
+    }
+
+    fn signer_flag(&self, signer: Pubkey) -> u8 {
+        if signer == self.creator {
+            0x1
+        } else if signer == self.recipient {
+            0x2
+        } else {
+            0x0
+        }
     }
 }
 
 #[cfg(test)]
 mod escrow_test {
-    use super::*;
     use proptest::proptest;
+
+    use super::*;
 
     proptest! {
     #[test]
