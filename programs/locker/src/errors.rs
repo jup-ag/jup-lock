@@ -57,6 +57,6 @@ pub enum LockerError {
     #[msg("Same accounts type is provided more than once")]
     DuplicatedRemainingAccountTypes,
 
-    #[msg("Unable to call transfer hook without extra accounts")]
+    #[msg("Missing remaining accounts for transfer hook.")]
     NoTransferHookProgram,
 }
