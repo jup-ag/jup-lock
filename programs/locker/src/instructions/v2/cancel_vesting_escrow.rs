@@ -3,7 +3,8 @@ use anchor_spl::token_interface::{
     close_account, CloseAccount, Mint, TokenAccount, TokenInterface,
 };
 use util::{
-    parse_remaining_accounts, AccountsType, ParsedRemainingAccounts, TRANSFER_MEMO_CANCEL_VESTING,
+    harvest_fees_if_available, parse_remaining_accounts, AccountsType, ParsedRemainingAccounts,
+    TRANSFER_MEMO_CANCEL_VESTING,
 };
 
 use crate::safe_math::SafeMath;
@@ -144,6 +145,14 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
         }),
         remaining_amount,
         parsed_transfer_hook_accounts.transfer_hook_escrow,
+    )?;
+
+    // Do fee harvesting
+    harvest_fees_if_available(
+        &ctx.accounts.token_program,
+        &ctx.accounts.escrow_token,
+        &ctx.accounts.token_mint,
+        &ctx.accounts.escrow,
     )?;
 
     ctx.accounts.close_escrow_token()?;

@@ -2,15 +2,18 @@ use anchor_lang::prelude::*;
 use anchor_spl::memo;
 use anchor_spl::memo::{BuildMemo, Memo};
 use anchor_spl::token::Token;
+use anchor_spl::token_2022::spl_token_2022::extension::transfer_fee::{
+    TransferFee, TransferFeeConfig, MAX_FEE_BASIS_POINTS,
+};
 use anchor_spl::token_2022::spl_token_2022::{
     self,
     extension::{self, StateWithExtensions},
 };
-use anchor_spl::token_2022::spl_token_2022::extension::transfer_fee::{
-    MAX_FEE_BASIS_POINTS, TransferFee, TransferFeeConfig,
-};
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use anchor_spl::token_interface::spl_token_2022::extension::BaseStateWithExtensions;
+use anchor_spl::token_interface::{
+    harvest_withheld_tokens_to_mint, HarvestWithheldTokensToMint, Mint, TokenAccount,
+    TokenInterface,
+};
 
 use crate::{LockerError, VestingEscrow};
 
@@ -217,6 +220,40 @@ pub fn calculate_transfer_fee_included_amount(
         };
 
     Ok(actual_amount)
+}
+
+// This function calculate the pre amount (with fee) require to transfer `amount` of token
+pub fn harvest_fees_if_available<'c: 'info, 'info>(
+    token_program_id: &Interface<'info, TokenInterface>,
+    token_account: &InterfaceAccount<'info, TokenAccount>,
+    mint: &InterfaceAccount<'info, Mint>,
+    escrow: &AccountLoader<'info, VestingEscrow>,
+) -> Result<()> {
+    let mint_info = mint.to_account_info();
+    if *mint_info.owner == Token::id() {
+        return Result::Ok(());
+    }
+
+    let token_mint_data = mint_info.try_borrow_data()?;
+    let token_mint_unpacked =
+        StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
+    if let Ok(_transfer_fee_config) = token_mint_unpacked.get_extension::<TransferFeeConfig>() {
+        let escrow_state = escrow.load()?;
+        let escrow_seeds = escrow_seeds!(escrow_state);
+        harvest_withheld_tokens_to_mint(
+            CpiContext::new_with_signer(
+                token_program_id.to_account_info(),
+                HarvestWithheldTokensToMint {
+                    token_program_id: token_program_id.to_account_info(),
+                    mint: mint.to_account_info(),
+                },
+                &[&escrow_seeds[..]],
+            ),
+            vec![token_account.to_account_info()],
+        )?;
+    }
+
+    Ok(())
 }
 
 // Memo Extension support
