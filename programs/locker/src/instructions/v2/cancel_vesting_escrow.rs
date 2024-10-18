@@ -152,7 +152,6 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
         &ctx.accounts.token_program,
         &ctx.accounts.escrow_token,
         &ctx.accounts.token_mint,
-        &ctx.accounts.escrow,
     )?;
 
     ctx.accounts.close_escrow_token()?;

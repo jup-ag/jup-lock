@@ -227,7 +227,6 @@ pub fn harvest_fees_if_available<'c: 'info, 'info>(
     token_program_id: &Interface<'info, TokenInterface>,
     token_account: &InterfaceAccount<'info, TokenAccount>,
     mint: &InterfaceAccount<'info, Mint>,
-    escrow: &AccountLoader<'info, VestingEscrow>,
 ) -> Result<()> {
     let mint_info = mint.to_account_info();
     if *mint_info.owner == Token::id() {
@@ -238,8 +237,6 @@ pub fn harvest_fees_if_available<'c: 'info, 'info>(
     let token_mint_unpacked =
         StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
     if let Ok(_transfer_fee_config) = token_mint_unpacked.get_extension::<TransferFeeConfig>() {
-        let escrow_state = escrow.load()?;
-        let escrow_seeds = escrow_seeds!(escrow_state);
         harvest_withheld_tokens_to_mint(
             CpiContext::new_with_signer(
                 token_program_id.to_account_info(),
@@ -247,7 +244,7 @@ pub fn harvest_fees_if_available<'c: 'info, 'info>(
                     token_program_id: token_program_id.to_account_info(),
                     mint: mint.to_account_info(),
                 },
-                &[&escrow_seeds[..]],
+                &[],
             ),
             vec![token_account.to_account_info()],
         )?;
