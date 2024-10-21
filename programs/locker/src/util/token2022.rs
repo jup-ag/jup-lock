@@ -229,22 +229,28 @@ pub fn harvest_fees_if_available<'c: 'info, 'info>(
     mint: &InterfaceAccount<'info, Mint>,
 ) -> Result<()> {
     let mint_info = mint.to_account_info();
-    if *mint_info.owner == Token::id() {
+    if mint_info.owner.key() == Token::id() {
         return Result::Ok(());
     }
 
     let token_mint_data = mint_info.try_borrow_data()?;
     let token_mint_unpacked =
         StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
+    let mut is_harvestable = false;
     if let Ok(_transfer_fee_config) = token_mint_unpacked.get_extension::<TransferFeeConfig>() {
+        is_harvestable = true;
+    }
+    // need to do this because Rust says we are still borrowing the data
+    drop(token_mint_data);
+
+    if is_harvestable {
         harvest_withheld_tokens_to_mint(
-            CpiContext::new_with_signer(
+            CpiContext::new(
                 token_program_id.to_account_info(),
                 HarvestWithheldTokensToMint {
                     token_program_id: token_program_id.to_account_info(),
                     mint: mint.to_account_info(),
                 },
-                &[],
             ),
             vec![token_account.to_account_info()],
         )?;

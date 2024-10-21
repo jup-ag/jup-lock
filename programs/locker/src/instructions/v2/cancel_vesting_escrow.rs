@@ -24,6 +24,7 @@ pub struct CancelVestingEscrow<'info> {
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
     /// Mint.
+    #[account(mut)]
     pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
     /// Escrow Token Account.
