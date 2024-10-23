@@ -13,6 +13,7 @@ import {
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
   getEpochFee,
+  getMint,
   getTransferFeeConfig,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
@@ -586,7 +587,9 @@ export async function cancelVestingPlan(
     .signers([signer])
     .rpc();
 
-  const feeConfig = getTransferFeeConfig(escrowState.tokenMint);
+  const feeConfig = getTransferFeeConfig(
+    await getMint(program.provider.connection, escrowState.tokenMint)
+  );
   const epoch = BigInt(await getCurrentEpoch(program.provider.connection));
   const creator_fee = feeConfig
     ? Number(
