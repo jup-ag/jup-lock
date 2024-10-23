@@ -635,8 +635,8 @@ export async function cancelVestingPlan(
     const recipient_token_balance = (
       await program.provider.connection.getTokenAccountBalance(recipientToken)
     ).value.amount;
-    expect(parseInt(recipient_token_balance_before) + claimable_amount).eq(
-      parseInt(recipient_token_balance)
-    );
+    expect(
+      parseInt(recipient_token_balance_before) + claimable_amount - claimer_fee
+    ).eq(parseInt(recipient_token_balance));
   }
 }
