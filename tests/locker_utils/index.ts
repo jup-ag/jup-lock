@@ -588,7 +588,12 @@ export async function cancelVestingPlan(
     .rpc();
 
   const feeConfig = getTransferFeeConfig(
-    await getMint(program.provider.connection, escrowState.tokenMint)
+    await getMint(
+      program.provider.connection,
+      escrowState.tokenMint,
+      undefined,
+      TOKEN_2022_PROGRAM_ID
+    )
   );
   const epoch = BigInt(await getCurrentEpoch(program.provider.connection));
   const creator_fee = feeConfig
