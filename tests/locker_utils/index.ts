@@ -9,8 +9,11 @@ import {
 import { Locker } from "../../target/types/locker";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  calculateEpochFee,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
+  getEpochFee,
+  getTransferFeeConfig,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -21,6 +24,7 @@ import {
   RemainingAccountsType,
 } from "./token_2022/remaining-accounts";
 import { AccountMeta, ComputeBudgetProgram } from "@solana/web3.js";
+import { getCurrentEpoch } from "../common";
 
 export const LOCKER_PROGRAM_ID = new web3.PublicKey(
   "2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg"
@@ -582,6 +586,21 @@ export async function cancelVestingPlan(
     .signers([signer])
     .rpc();
 
+  const feeConfig = getTransferFeeConfig(escrowState.tokenMint);
+  const epoch = BigInt(await getCurrentEpoch(program.provider.connection));
+  const creator_fee = feeConfig
+    ? Number(
+        calculateEpochFee(
+          feeConfig,
+          epoch,
+          BigInt(total_amount - claimable_amount)
+        )
+      )
+    : 0;
+  const claimer_fee = feeConfig
+    ? Number(calculateEpochFee(feeConfig, epoch, BigInt(claimable_amount)))
+    : 0;
+
   if (isAssertion) {
     const escrowState = await program.account.vestingEscrow.fetch(escrow);
     expect(escrowState.cancelledAt.toNumber()).greaterThan(0);
@@ -595,7 +614,10 @@ export async function cancelVestingPlan(
       await program.provider.connection.getTokenAccountBalance(creatorToken)
     ).value.amount;
     expect(
-      parseInt(creator_token_balance_before) + total_amount - claimable_amount
+      parseInt(creator_token_balance_before) +
+        total_amount -
+        claimable_amount -
+        creator_fee
     ).eq(parseInt(creator_token_balance));
 
     const recipient_token_balance = (

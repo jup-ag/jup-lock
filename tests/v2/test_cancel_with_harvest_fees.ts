@@ -23,6 +23,8 @@ import { ADMIN, createMintTransaction } from "../locker_utils/token_2022/mint";
 
 const provider = anchor.AnchorProvider.env();
 provider.opts.commitment = "confirmed";
+const FEE = 100; // 100 BPS
+const MAX_FEE = 10000; 
 
 describe("[V2] Cancel, with transfer fees and harvesting", () => {
   let TOKEN: web3.PublicKey;
