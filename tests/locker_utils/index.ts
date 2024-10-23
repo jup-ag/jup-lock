@@ -587,27 +587,31 @@ export async function cancelVestingPlan(
     .signers([signer])
     .rpc();
 
-  const feeConfig = getTransferFeeConfig(
-    await getMint(
-      program.provider.connection,
-      escrowState.tokenMint,
-      undefined,
-      TOKEN_2022_PROGRAM_ID
-    )
-  );
-  const epoch = BigInt(await getCurrentEpoch(program.provider.connection));
-  const creator_fee = feeConfig
-    ? Number(
-        calculateEpochFee(
-          feeConfig,
-          epoch,
-          BigInt(total_amount - claimable_amount)
-        )
+  let creator_fee = 0;
+  let claimer_fee = 0;
+  if (tokenProgram == TOKEN_2022_PROGRAM_ID) {
+    const feeConfig = getTransferFeeConfig(
+      await getMint(
+        program.provider.connection,
+        escrowState.tokenMint,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
       )
-    : 0;
-  const claimer_fee = feeConfig
-    ? Number(calculateEpochFee(feeConfig, epoch, BigInt(claimable_amount)))
-    : 0;
+    );
+    const epoch = BigInt(await getCurrentEpoch(program.provider.connection));
+    creator_fee = feeConfig
+      ? Number(
+          calculateEpochFee(
+            feeConfig,
+            epoch,
+            BigInt(total_amount - claimable_amount)
+          )
+        )
+      : 0;
+    claimer_fee = feeConfig
+      ? Number(calculateEpochFee(feeConfig, epoch, BigInt(claimable_amount)))
+      : 0;
+  }
 
   if (isAssertion) {
     const escrowState = await program.account.vestingEscrow.fetch(escrow);
