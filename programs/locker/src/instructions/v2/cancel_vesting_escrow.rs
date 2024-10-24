@@ -1,5 +1,4 @@
 use anchor_spl::memo::Memo;
-use anchor_spl::token_2022::spl_token_2022::extension::confidential_transfer_fee::instruction::WithdrawWithheldTokensFromAccountsData;
 use anchor_spl::token_interface::{
     close_account, CloseAccount, Mint, TokenAccount, TokenInterface,
 };
