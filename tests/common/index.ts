@@ -1,5 +1,11 @@
-import { web3, Wallet } from "@coral-xyz/anchor";
-import { ASSOCIATED_TOKEN_PROGRAM_ID, createMint, getOrCreateAssociatedTokenAccount, mintTo, TOKEN_PROGRAM_ID } from "@solana/spl-token";
+import { Wallet, web3 } from "@coral-xyz/anchor";
+import {
+  ASSOCIATED_TOKEN_PROGRAM_ID,
+  createMint,
+  getOrCreateAssociatedTokenAccount,
+  mintTo,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 
 export * from "./asserter";
 
@@ -69,7 +75,13 @@ export const createMintIfNotExists = async (
   }
   return mintKeypair.publicKey;
 };
-export const mintTokenTo = async (connection: web3.Connection, mintAuthority: web3.Keypair, tokenMint: web3.PublicKey, owner: web3.PublicKey, amount: number) => {
+export const mintTokenTo = async (
+  connection: web3.Connection,
+  mintAuthority: web3.Keypair,
+  tokenMint: web3.PublicKey,
+  owner: web3.PublicKey,
+  amount: number
+) => {
   const userToken = await getOrCreateAssociatedTokenAccount(
     connection,
     mintAuthority,
@@ -97,11 +109,15 @@ export const mintTokenTo = async (connection: web3.Connection, mintAuthority: we
     },
     TOKEN_PROGRAM_ID
   );
-}
+};
 
 export const getCurrentBlockTime = async (connection: web3.Connection) => {
   // TODO fetch clock account can help to reduce rpc call
   const currentSlot = await connection.getSlot();
   const currentBlockTime = await connection.getBlockTime(currentSlot);
   return currentBlockTime;
-}
+};
+
+export const getCurrentEpoch = async (connection: web3.Connection) => {
+  return (await connection.getEpochInfo()).epoch;
+};

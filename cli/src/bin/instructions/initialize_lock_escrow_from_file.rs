@@ -39,6 +39,7 @@ fn create_lock_escrow(args: &Args, sub_args: &InitializeLockEscrowFromFileArgs) 
         frequency,
         number_of_period,
         update_recipient_mode,
+        cancel_mode,
     } = sub_args;
     let file = File::open(sub_args.wallet_path.clone())?;
     let mut rdr = csv::Reader::from_reader(file);
@@ -63,6 +64,7 @@ fn create_lock_escrow(args: &Args, sub_args: &InitializeLockEscrowFromFileArgs) 
                 amount_per_period: entry.amount_per_period,
                 number_of_period,
                 update_recipient_mode,
+                cancel_mode,
             },
         )?;
         println!(
@@ -84,6 +86,7 @@ pub struct LockEscrowForAnUserParam {
     pub amount_per_period: u64,
     pub number_of_period: u64,
     pub update_recipient_mode: u8,
+    pub cancel_mode: u8,
 }
 fn create_lock_escrow_for_an_user(
     args: &Args,
@@ -99,6 +102,7 @@ fn create_lock_escrow_for_an_user(
         amount_per_period,
         number_of_period,
         update_recipient_mode,
+        cancel_mode,
     } = sub_args;
     let client =
         RpcClient::new_with_commitment(args.rpc_url.clone(), CommitmentConfig::finalized());
@@ -157,6 +161,7 @@ fn create_lock_escrow_for_an_user(
                 amount_per_period,
                 number_of_period,
                 update_recipient_mode,
+                cancel_mode,
             },
         }
         .data(),

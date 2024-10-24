@@ -1,6 +1,6 @@
 [package]
 name = "locker"
-version = "0.2.2"
+version = "0.3.0"
 description = "Created with Anchor"
 edition = "2021"
 authors = ["andrew <andrew@raccoons.dev>"]
@@ -17,10 +17,13 @@ cpi = ["no-entrypoint"]
 default = []
 localnet = []
 staging = []
+idl-build = ["anchor-lang/idl-build", "anchor-spl/idl-build"]
 
 [dependencies]
-anchor-lang = { version = "0.28.0", features = ["event-cpi"] }
-anchor-spl = "0.28.0"
+anchor-lang = { workspace = true, features = ["event-cpi"] }
+anchor-spl = { workspace = true, features = ["memo"] }
+spl-transfer-hook-interface = "0.5.0"
+solana-program = {workspace = true}
 bytemuck = { version = "1.13.1", features = ["derive", "min_const_generics"] }
 static_assertions = "1.1.0"
 num_enum = "0.7.1"

@@ -57,6 +57,9 @@ pub struct InitializeLockEscrowFromFileArgs {
     /// update recipient mode
     #[clap(long, env)]
     pub update_recipient_mode: u8,
+    /// cancel mode
+    #[clap(long, env)]
+    pub cancel_mode: u8,
 }
 
 fn main() {

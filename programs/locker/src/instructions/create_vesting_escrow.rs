@@ -1,8 +1,11 @@
-use crate::safe_math::SafeMath;
-use crate::*;
-use anchor_spl::token::{Token, TokenAccount, Transfer};
-#[derive(AnchorSerialize, AnchorDeserialize)]
+use anchor_spl::token::{Token, TokenAccount};
 
+use crate::safe_math::SafeMath;
+use crate::util::token::transfer_to_escrow;
+use crate::TokenProgramFlag::UseSplToken;
+use crate::*;
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
 /// Accounts for [locker::create_vesting_escrow].
 pub struct CreateVestingEscrowParameters {
     pub vesting_start_time: u64,
@@ -12,6 +15,7 @@ pub struct CreateVestingEscrowParameters {
     pub amount_per_period: u64,
     pub number_of_period: u64,
     pub update_recipient_mode: u8,
+    pub cancel_mode: u8,
 }
 
 impl CreateVestingEscrowParameters {
@@ -19,16 +23,73 @@ impl CreateVestingEscrowParameters {
         let total_amount = self
             .cliff_unlock_amount
             .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
+
         Ok(total_amount)
+    }
+
+    fn validate(&self) -> Result<()> {
+        require!(
+            self.cliff_time >= self.vesting_start_time,
+            LockerError::InvalidVestingStartTime
+        );
+
+        require!(
+            UpdateRecipientMode::try_from(self.update_recipient_mode).is_ok(),
+            LockerError::InvalidUpdateRecipientMode,
+        );
+
+        require!(
+            CancelMode::try_from(self.cancel_mode).is_ok(),
+            LockerError::InvalidCancelMode,
+        );
+
+        require!(self.frequency != 0, LockerError::FrequencyIsZero);
+
+        Ok(())
+    }
+
+    pub fn init_escrow(
+        &self,
+        vesting_escrow: &AccountLoader<VestingEscrow>,
+        recipient: Pubkey,
+        token_mint: Pubkey,
+        sender: Pubkey,
+        base: Pubkey,
+        escrow_bump: u8,
+        token_program_flag: TokenProgramFlag,
+    ) -> Result<()> {
+        self.validate()?;
+
+        let mut escrow = vesting_escrow.load_init()?;
+        escrow.init(
+            self.vesting_start_time,
+            self.cliff_time,
+            self.frequency,
+            self.cliff_unlock_amount,
+            self.amount_per_period,
+            self.number_of_period,
+            recipient,
+            token_mint,
+            sender,
+            base,
+            escrow_bump,
+            self.update_recipient_mode,
+            self.cancel_mode,
+            token_program_flag.into(),
+        );
+
+        Ok(())
     }
 }
 
 #[event_cpi]
 #[derive(Accounts)]
 pub struct CreateVestingEscrowCtx<'info> {
+    /// Base.
     #[account(mut)]
     pub base: Signer<'info>,
 
+    /// Escrow.
     #[account(
         init,
         seeds = [
@@ -41,6 +102,7 @@ pub struct CreateVestingEscrowCtx<'info> {
     )]
     pub escrow: AccountLoader<'info, VestingEscrow>,
 
+    /// Escrow Token Account.
     #[account(
         mut,
         associated_token::mint = sender_token.mint,
@@ -48,19 +110,21 @@ pub struct CreateVestingEscrowCtx<'info> {
     )]
     pub escrow_token: Box<Account<'info, TokenAccount>>,
 
+    /// Sender.
     #[account(mut)]
     pub sender: Signer<'info>,
 
+    /// Sender Token Account.
     #[account(mut)]
     pub sender_token: Box<Account<'info, TokenAccount>>,
 
-    /// CHECK: recipient account
+    /// CHECK: recipient account.
     pub recipient: UncheckedAccount<'info>,
 
     /// Token program.
     pub token_program: Program<'info, Token>,
 
-    // system program
+    /// system program.
     pub system_program: Program<'info, System>,
 }
 
@@ -68,6 +132,24 @@ pub fn handle_create_vesting_escrow(
     ctx: Context<CreateVestingEscrowCtx>,
     params: &CreateVestingEscrowParameters,
 ) -> Result<()> {
+    params.init_escrow(
+        &ctx.accounts.escrow,
+        ctx.accounts.recipient.key(),
+        ctx.accounts.sender_token.mint,
+        ctx.accounts.sender.key(),
+        ctx.accounts.base.key(),
+        ctx.bumps.escrow,
+        UseSplToken,
+    )?;
+
+    transfer_to_escrow(
+        &ctx.accounts.sender,
+        &ctx.accounts.sender_token,
+        &ctx.accounts.escrow_token,
+        &ctx.accounts.token_program,
+        params.get_total_deposit_amount()?,
+    )?;
+
     let &CreateVestingEscrowParameters {
         vesting_start_time,
         cliff_time,
@@ -76,48 +158,8 @@ pub fn handle_create_vesting_escrow(
         amount_per_period,
         number_of_period,
         update_recipient_mode,
+        cancel_mode,
     } = params;
-
-    require!(
-        cliff_time >= vesting_start_time,
-        LockerError::InvalidVestingStartTime
-    );
-
-    require!(
-        UpdateRecipientMode::try_from(update_recipient_mode).is_ok(),
-        LockerError::InvalidUpdateRecipientMode,
-    );
-
-    require!(frequency != 0, LockerError::FrequencyIsZero);
-
-    let mut escrow = ctx.accounts.escrow.load_init()?;
-    escrow.init(
-        vesting_start_time,
-        cliff_time,
-        frequency,
-        cliff_unlock_amount,
-        amount_per_period,
-        number_of_period,
-        ctx.accounts.recipient.key(),
-        ctx.accounts.sender_token.mint,
-        ctx.accounts.sender.key(),
-        ctx.accounts.base.key(),
-        *ctx.bumps.get("escrow").unwrap(),
-        update_recipient_mode,
-    );
-
-    anchor_spl::token::transfer(
-        CpiContext::new(
-            ctx.accounts.token_program.to_account_info(),
-            Transfer {
-                from: ctx.accounts.sender_token.to_account_info(),
-                to: ctx.accounts.escrow_token.to_account_info(),
-                authority: ctx.accounts.sender.to_account_info(),
-            },
-        ),
-        params.get_total_deposit_amount()?,
-    )?;
-
     emit_cpi!(EventCreateVestingEscrow {
         cliff_time,
         frequency,
@@ -128,6 +170,7 @@ pub fn handle_create_vesting_escrow(
         escrow: ctx.accounts.escrow.key(),
         update_recipient_mode,
         vesting_start_time,
+        cancel_mode,
     });
     Ok(())
 }
