@@ -1,9 +1,10 @@
 use anchor_spl::memo::Memo;
+use anchor_spl::token_2022::spl_token_2022::extension::confidential_transfer_fee::instruction::WithdrawWithheldTokensFromAccountsData;
 use anchor_spl::token_interface::{
     close_account, CloseAccount, Mint, TokenAccount, TokenInterface,
 };
 use util::{
-    harvest_fees_if_available, parse_remaining_accounts, AccountsType, ParsedRemainingAccounts,
+    harvest_fees, parse_remaining_accounts, AccountsType, ParsedRemainingAccounts,
     TRANSFER_MEMO_CANCEL_VESTING,
 };
 
@@ -149,7 +150,7 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
     )?;
 
     // Do fee harvesting
-    harvest_fees_if_available(
+    harvest_fees(
         &ctx.accounts.token_program,
         &ctx.accounts.escrow_token,
         &ctx.accounts.token_mint,

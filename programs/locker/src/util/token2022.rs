@@ -222,8 +222,7 @@ pub fn calculate_transfer_fee_included_amount(
     Ok(actual_amount)
 }
 
-// This function calculate the pre amount (with fee) require to transfer `amount` of token
-pub fn harvest_fees_if_available<'c: 'info, 'info>(
+pub fn harvest_fees<'c: 'info, 'info>(
     token_program_id: &Interface<'info, TokenInterface>,
     token_account: &InterfaceAccount<'info, TokenAccount>,
     mint: &InterfaceAccount<'info, Mint>,
