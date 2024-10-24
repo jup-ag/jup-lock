@@ -117,3 +117,7 @@ export const getCurrentBlockTime = async (connection: web3.Connection) => {
   const currentBlockTime = await connection.getBlockTime(currentSlot);
   return currentBlockTime;
 };
+
+export const getCurrentEpoch = async (connection: web3.Connection) => {
+  return (await connection.getEpochInfo()).epoch;
+};

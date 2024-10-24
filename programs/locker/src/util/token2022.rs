@@ -2,15 +2,18 @@ use anchor_lang::prelude::*;
 use anchor_spl::memo;
 use anchor_spl::memo::{BuildMemo, Memo};
 use anchor_spl::token::Token;
+use anchor_spl::token_2022::spl_token_2022::extension::transfer_fee::{
+    TransferFee, TransferFeeConfig, MAX_FEE_BASIS_POINTS,
+};
 use anchor_spl::token_2022::spl_token_2022::{
     self,
     extension::{self, StateWithExtensions},
 };
-use anchor_spl::token_2022::spl_token_2022::extension::transfer_fee::{
-    MAX_FEE_BASIS_POINTS, TransferFee, TransferFeeConfig,
-};
-use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use anchor_spl::token_interface::spl_token_2022::extension::BaseStateWithExtensions;
+use anchor_spl::token_interface::{
+    harvest_withheld_tokens_to_mint, HarvestWithheldTokensToMint, Mint, TokenAccount,
+    TokenInterface,
+};
 
 use crate::{LockerError, VestingEscrow};
 
@@ -217,6 +220,42 @@ pub fn calculate_transfer_fee_included_amount(
         };
 
     Ok(actual_amount)
+}
+
+pub fn harvest_fees<'c: 'info, 'info>(
+    token_program_id: &Interface<'info, TokenInterface>,
+    token_account: &InterfaceAccount<'info, TokenAccount>,
+    mint: &InterfaceAccount<'info, Mint>,
+) -> Result<()> {
+    let mint_info = mint.to_account_info();
+    if mint_info.owner.key() == Token::id() {
+        return Result::Ok(());
+    }
+
+    let token_mint_data = mint_info.try_borrow_data()?;
+    let token_mint_unpacked =
+        StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
+    let mut is_harvestable = false;
+    if let Ok(_transfer_fee_config) = token_mint_unpacked.get_extension::<TransferFeeConfig>() {
+        is_harvestable = true;
+    }
+    // need to do this because Rust says we are still borrowing the data
+    drop(token_mint_data);
+
+    if is_harvestable {
+        harvest_withheld_tokens_to_mint(
+            CpiContext::new(
+                token_program_id.to_account_info(),
+                HarvestWithheldTokensToMint {
+                    token_program_id: token_program_id.to_account_info(),
+                    mint: mint.to_account_info(),
+                },
+            ),
+            vec![token_account.to_account_info()],
+        )?;
+    }
+
+    Ok(())
 }
 
 // Memo Extension support

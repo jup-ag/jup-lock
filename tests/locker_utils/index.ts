@@ -9,8 +9,12 @@ import {
 import { Locker } from "../../target/types/locker";
 import {
   ASSOCIATED_TOKEN_PROGRAM_ID,
+  calculateEpochFee,
   createAssociatedTokenAccountInstruction,
   getAssociatedTokenAddressSync,
+  getEpochFee,
+  getMint,
+  getTransferFeeConfig,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
@@ -21,6 +25,7 @@ import {
   RemainingAccountsType,
 } from "./token_2022/remaining-accounts";
 import { AccountMeta, ComputeBudgetProgram } from "@solana/web3.js";
+import { getCurrentEpoch } from "../common";
 
 export const LOCKER_PROGRAM_ID = new web3.PublicKey(
   "2r5VekMNiWPzi1pWwvJczrdPaZnJG59u91unSrTunwJg"
@@ -582,6 +587,32 @@ export async function cancelVestingPlan(
     .signers([signer])
     .rpc();
 
+  let creator_fee = 0;
+  let claimer_fee = 0;
+  if (tokenProgram == TOKEN_2022_PROGRAM_ID) {
+    const feeConfig = getTransferFeeConfig(
+      await getMint(
+        program.provider.connection,
+        escrowState.tokenMint,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+    const epoch = BigInt(await getCurrentEpoch(program.provider.connection));
+    creator_fee = feeConfig
+      ? Number(
+          calculateEpochFee(
+            feeConfig,
+            epoch,
+            BigInt(total_amount - claimable_amount)
+          )
+        )
+      : 0;
+    claimer_fee = feeConfig
+      ? Number(calculateEpochFee(feeConfig, epoch, BigInt(claimable_amount)))
+      : 0;
+  }
+
   if (isAssertion) {
     const escrowState = await program.account.vestingEscrow.fetch(escrow);
     expect(escrowState.cancelledAt.toNumber()).greaterThan(0);
@@ -595,14 +626,17 @@ export async function cancelVestingPlan(
       await program.provider.connection.getTokenAccountBalance(creatorToken)
     ).value.amount;
     expect(
-      parseInt(creator_token_balance_before) + total_amount - claimable_amount
+      parseInt(creator_token_balance_before) +
+        total_amount -
+        claimable_amount -
+        creator_fee
     ).eq(parseInt(creator_token_balance));
 
     const recipient_token_balance = (
       await program.provider.connection.getTokenAccountBalance(recipientToken)
     ).value.amount;
-    expect(parseInt(recipient_token_balance_before) + claimable_amount).eq(
-      parseInt(recipient_token_balance)
-    );
+    expect(
+      parseInt(recipient_token_balance_before) + claimable_amount - claimer_fee
+    ).eq(parseInt(recipient_token_balance));
   }
 }
