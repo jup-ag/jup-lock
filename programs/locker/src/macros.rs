@@ -9,9 +9,3 @@ macro_rules! escrow_seeds {
         ]
     };
 }
-
-// macro_rules! escrow_metadata_seeds {
-//     ($escrow:expr, $bump:expr) => {
-//         &[b"escrow_metadata".as_ref(), $escrow.as_ref(), &[$bump]]
-//     };
-// }
