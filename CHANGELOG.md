@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
-## Program [0.3.1] [PR #19]
+## Program [0.3.1] [PR #22](https://github.com/jup-ag/jup-lock/pull/22)
 
 ### Added
 
