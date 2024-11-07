@@ -59,4 +59,7 @@ pub enum LockerError {
 
     #[msg("Missing remaining accounts for transfer hook.")]
     NoTransferHookProgram,
+
+    #[msg("Claiming is not finished")]
+    ClaimingIsNotFinished,
 }

@@ -155,4 +155,20 @@ pub mod locker {
     ) -> Result<()> {
         handle_cancel_vesting_escrow(ctx, remaining_accounts_info)
     }
+
+    /// Close vesting escrow
+    ///  - Close vesting escrow and escrow ATA and escrow metadata if recipient already claimed all tokens
+    ///  - Rent receiver must be escrow's creator
+    /// This instruction supports both splToken and token2022
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * remaining_accounts_info: additional accounts needed by instruction
+    ///
+    pub fn close_vesting_escrow<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CloseVestingEscrow<'info>>,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_close_vesting_escrow(ctx, remaining_accounts_info)
+    }
 }

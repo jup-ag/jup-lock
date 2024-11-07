@@ -122,7 +122,7 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
     transfer_to_user_v2(
         &ctx.accounts.escrow,
         &ctx.accounts.token_mint,
-        &ctx.accounts.escrow_token,
+        &ctx.accounts.escrow_token.to_account_info(),
         &ctx.accounts.recipient_token,
         &ctx.accounts.token_program,
         Some(MemoTransferContext {
@@ -137,7 +137,7 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
     transfer_to_user_v2(
         &ctx.accounts.escrow,
         &ctx.accounts.token_mint,
-        &ctx.accounts.escrow_token,
+        &ctx.accounts.escrow_token.to_account_info(),
         &ctx.accounts.creator_token,
         &ctx.accounts.token_program,
         Some(MemoTransferContext {
@@ -151,7 +151,7 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
     // Do fee harvesting
     harvest_fees(
         &ctx.accounts.token_program,
-        &ctx.accounts.escrow_token,
+        &ctx.accounts.escrow_token.to_account_info(),
         &ctx.accounts.token_mint,
     )?;
 
