@@ -150,7 +150,7 @@ impl VestingEscrow {
         self.recipient = new_recipient;
     }
 
-    pub fn validate_cancel_actor(self, signer: Pubkey) -> Result<()> {
+    pub fn validate_cancel_actor(&self, signer: Pubkey) -> Result<()> {
         require!(
             self.cancel_mode & self.signer_flag(signer) > 0,
             LockerError::NotPermitToDoThisAction
@@ -159,7 +159,7 @@ impl VestingEscrow {
         Ok(())
     }
 
-    pub fn validate_update_actor(self, signer: Pubkey) -> Result<()> {
+    pub fn validate_update_actor(&self, signer: Pubkey) -> Result<()> {
         require!(
             self.update_recipient_mode & self.signer_flag(signer) > 0,
             LockerError::NotPermitToDoThisAction
@@ -176,6 +176,13 @@ impl VestingEscrow {
         } else {
             0x0
         }
+    }
+
+    pub fn is_claimed_full_amount(&self) -> Result<bool> {
+        let max_amount = self
+            .cliff_unlock_amount
+            .safe_add(self.number_of_period.safe_mul(self.amount_per_period)?)?;
+        Ok(self.total_claimed_amount == max_amount)
     }
 }
 

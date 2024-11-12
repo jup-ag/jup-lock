@@ -85,7 +85,7 @@ pub fn transfer_to_escrow_v2<'a, 'c: 'info, 'info>(
 pub fn transfer_to_user_v2<'c: 'info, 'info>(
     escrow: &AccountLoader<'info, VestingEscrow>,
     token_mint: &InterfaceAccount<'info, Mint>,
-    escrow_token: &InterfaceAccount<'info, TokenAccount>,
+    escrow_token: &AccountInfo<'info>,
     recipient_account: &InterfaceAccount<'info, TokenAccount>,
     token_program: &Interface<'info, TokenInterface>,
     memo_transfer_context: Option<MemoTransferContext<'_, 'info>>,
@@ -224,7 +224,7 @@ pub fn calculate_transfer_fee_included_amount(
 
 pub fn harvest_fees<'c: 'info, 'info>(
     token_program_id: &Interface<'info, TokenInterface>,
-    token_account: &InterfaceAccount<'info, TokenAccount>,
+    token_account: &AccountInfo<'info>,
     mint: &InterfaceAccount<'info, Mint>,
 ) -> Result<()> {
     let mint_info = mint.to_account_info();

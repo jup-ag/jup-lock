@@ -1,18 +1,17 @@
-use anchor_spl::memo::Memo;
-use anchor_spl::token_interface::{
-    Mint, TokenAccount, TokenInterface,
-};
-use util::{parse_remaining_accounts, AccountsType, ParsedRemainingAccounts, TRANSFER_MEMO_CLAIM_VESTING};
-
+use crate::util::{transfer_to_user_v2, MemoTransferContext};
 use crate::*;
-use crate::util::{MemoTransferContext, transfer_to_user_v2};
+use anchor_spl::memo::Memo;
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
+use util::{
+    parse_remaining_accounts, AccountsType, ParsedRemainingAccounts, TRANSFER_MEMO_CLAIM_VESTING,
+};
 
 #[event_cpi]
 #[derive(Accounts)]
 pub struct ClaimV2<'info> {
     /// Escrow.
     #[account(
-        mut, 
+        mut,
         has_one = token_mint,
         has_one = recipient,
         constraint = escrow.load()?.cancelled_at == 0 @ LockerError::AlreadyCancelled
@@ -65,17 +64,15 @@ pub fn handle_claim_v2<'c: 'info, 'info>(
         Some(info) => parse_remaining_accounts(
             &mut remaining_accounts,
             &info.slices,
-            &[
-                AccountsType::TransferHookEscrow,
-            ],
+            &[AccountsType::TransferHookEscrow],
         )?,
-        None => ParsedRemainingAccounts::default(),        
+        None => ParsedRemainingAccounts::default(),
     };
 
     transfer_to_user_v2(
         &ctx.accounts.escrow,
         &ctx.accounts.token_mint,
-        &ctx.accounts.escrow_token,
+        &ctx.accounts.escrow_token.to_account_info(),
         &ctx.accounts.recipient_token,
         &ctx.accounts.token_program,
         Some(MemoTransferContext {
