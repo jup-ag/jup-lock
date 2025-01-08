@@ -33,7 +33,7 @@ export async function createAndFundWallet(
 
 export async function createAndFundBatchWallet(
   connection: web3.Connection,
-  batchSize = 10
+  batchSize = 5
 ) {
   const batchWallet: any = [];
   while (batchWallet.length <= batchSize) {
