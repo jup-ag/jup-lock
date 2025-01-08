@@ -15,6 +15,20 @@ pub struct EventCreateVestingEscrow {
 }
 
 #[event]
+pub struct EventCreateVestingEscrowV3 {
+    pub vesting_start_time: u64,
+    pub cliff_time: u64,
+    pub frequency: u64,
+    pub cliff_unlock_amount: u64,
+    pub amount_per_period: u64,
+    pub number_of_period: u64,
+    pub update_recipient_mode: u8,
+    pub cancel_mode: u8,
+    pub root: [u8; 32],
+    pub escrow: Pubkey,
+}
+
+#[event]
 pub struct EventClaim {
     pub amount: u64,
     pub current_ts: u64,
@@ -22,10 +36,26 @@ pub struct EventClaim {
 }
 
 #[event]
+pub struct EventClaimV3 {
+    pub amount: u64,
+    pub current_ts: u64,
+    pub escrow: Pubkey,
+    pub recipient: Pubkey,
+}
+
+#[event]
 pub struct EventUpdateVestingEscrowRecipient {
     pub escrow: Pubkey,
     pub old_recipient: Pubkey,
     pub new_recipient: Pubkey,
+    pub signer: Pubkey,
+}
+
+#[event]
+pub struct EventUpdateVestingEscrowRoot {
+    pub escrow: Pubkey,
+    pub old_root: [u8; 32],
+    pub new_root: [u8; 32],
     pub signer: Pubkey,
 }
 

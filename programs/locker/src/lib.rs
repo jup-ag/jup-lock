@@ -140,6 +140,31 @@ pub mod locker {
         handle_claim_v2(ctx, max_amount, remaining_accounts_info)
     }
 
+    // V3 instructions
+    pub fn create_vesting_escrow_v3<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV3<'info>>,
+        params: CreateVestingEscrowParametersV3,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_create_vesting_escrow_v3(ctx, params, remaining_accounts_info)
+    }
+
+    pub fn claim_v3<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ClaimV3<'info>>,
+        max_amount: u64,
+        proof: Vec<[u8; 32]>,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_claim_v3(ctx, max_amount, proof, remaining_accounts_info)
+    }
+
+    pub fn update_vesting_escrow_root<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, UpdateVestingEscrowRoot<'info>>,
+        new_root: [u8; 32],
+    ) -> Result<()> {
+        handle_update_vesting_escrow_root(ctx, new_root)
+    }
+
     /// Cancel a vesting escrow.
     ///   - The claimable token will be transferred to recipient
     ///   - The remaining token will be transferred to the creator

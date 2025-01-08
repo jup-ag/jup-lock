@@ -1,4 +1,5 @@
 use num_enum::{IntoPrimitive, TryFromPrimitive};
+use solana_program::hash::hashv;
 use static_assertions::const_assert_eq;
 
 use crate::*;
@@ -69,8 +70,10 @@ pub struct VestingEscrow {
     pub cancelled_at: u64,
     /// buffer
     pub padding_1: u64,
+    // merkle tree 256 bit
+    pub root: [u8; 32],
     /// buffer
-    pub buffer: [u128; 5],
+    pub buffer: [u128; 3],
 }
 
 const_assert_eq!(VestingEscrow::INIT_SPACE, 288); //  32 * 4 + 8 * 8 + 16 * 6
@@ -100,6 +103,40 @@ impl VestingEscrow {
         self.amount_per_period = amount_per_period;
         self.number_of_period = number_of_period;
         self.recipient = recipient;
+        self.token_mint = token_mint;
+        self.creator = sender;
+        self.base = base;
+        self.escrow_bump = escrow_bump;
+        self.update_recipient_mode = update_recipient_mode;
+        self.cancel_mode = cancel_mode;
+        self.token_program_flag = token_program_flag;
+    }
+
+    pub fn batch_init(
+        &mut self,
+        vesting_start_time: u64,
+        cliff_time: u64,
+        frequency: u64,
+        cliff_unlock_amount: u64,
+        amount_per_period: u64,
+        number_of_period: u64,
+        root: [u8; 32],
+        token_mint: Pubkey,
+        sender: Pubkey,
+        base: Pubkey,
+        escrow_bump: u8,
+        update_recipient_mode: u8,
+        cancel_mode: u8,
+        token_program_flag: u8,
+    ) {
+        self.vesting_start_time = vesting_start_time;
+        self.cliff_time = cliff_time;
+        self.frequency = frequency;
+        self.cliff_unlock_amount = cliff_unlock_amount;
+        self.amount_per_period = amount_per_period;
+        self.number_of_period = number_of_period;
+        self.recipient = Pubkey::default();
+        self.root = root;
         self.token_mint = token_mint;
         self.creator = sender;
         self.base = base;
@@ -150,6 +187,29 @@ impl VestingEscrow {
         self.recipient = new_recipient;
     }
 
+    pub fn update_root(&mut self, new_root: [u8; 32]) -> Result<()> {
+        require!(self.root != new_root, LockerError::DuplicateRootData);
+        self.root = new_root;
+
+        Ok(())
+    }
+
+    pub fn verify_recipient(&self, recipient: Pubkey, proof: Vec<[u8; 32]>) -> Result<()> {
+        let leaf = hashv(&[&recipient.key().to_bytes()]);
+
+        let mut computed_hash = leaf.to_bytes();
+        for p in proof.iter() {
+            if computed_hash <= *p {
+                computed_hash = hashv(&[&computed_hash, p]).to_bytes();
+            } else {
+                computed_hash = hashv(&[p, &computed_hash]).to_bytes();
+            }
+        }
+        require!(computed_hash == self.root, LockerError::InvalidMerkleProof);
+
+        Ok(())
+    }
+
     pub fn validate_cancel_actor(&self, signer: Pubkey) -> Result<()> {
         require!(
             self.cancel_mode & self.signer_flag(signer) > 0,
@@ -165,6 +225,16 @@ impl VestingEscrow {
             LockerError::NotPermitToDoThisAction
         );
 
+        Ok(())
+    }
+
+    pub fn validate_update_root_actor(&self, signer: Pubkey) -> Result<()> {
+        require_keys_eq!(self.creator, signer, LockerError::NotPermitToDoThisAction);
+        require_eq!(
+            self.update_recipient_mode,
+            1,
+            LockerError::NotPermitToDoThisAction
+        );
         Ok(())
     }
 
