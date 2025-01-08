@@ -31,6 +31,18 @@ export async function createAndFundWallet(
   };
 }
 
+export async function createAndFundBatchWallet(
+  connection: web3.Connection,
+  batchSize = 10
+) {
+  const batchWallet: any = [];
+  while (batchWallet.length <= batchSize) {
+    const item = await createAndFundWallet(connection);
+    batchWallet.push(item);
+  }
+  return batchWallet;
+}
+
 export const encodeU32 = (num: number): Buffer => {
   const buf = Buffer.alloc(4);
   buf.writeUInt32LE(num);
