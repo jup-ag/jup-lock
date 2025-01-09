@@ -102,7 +102,7 @@ pub struct ClaimV3<'info> {
             escrow.key().to_bytes().as_ref()
         ],
         bump,
-        space = ClaimStatus::INIT_SPACE,
+        space = 8 + ClaimStatus::INIT_SPACE,
         payer = recipient
     )]
     pub claim_status: Account<'info, ClaimStatus>,
@@ -191,12 +191,22 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
     claim_status.total_unlocked_amount = params
         .get_total_locked_amount()?
         .safe_sub(claim_status.total_claimed_amount)?;
+    claim_status.latest_claimed_amount = amount;
+    claim_status.bump = ctx.bumps.claim_status;
 
     let current_ts = Clock::get()?.unix_timestamp as u64;
-    emit_cpi!(EventClaim {
+
+    emit_cpi!(EventClaimV3 {
         amount,
         current_ts,
+        recipient: ctx.accounts.recipient.key(),
         escrow: ctx.accounts.escrow.key(),
+        vesting_start_time: params.vesting_start_time,
+        cliff_time: params.cliff_time,
+        frequency: params.frequency,
+        cliff_unlock_amount: params.cliff_unlock_amount,
+        amount_per_period: params.amount_per_period,
+        number_of_period: params.number_of_period,
     });
     Ok(())
 }

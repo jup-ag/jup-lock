@@ -29,6 +29,20 @@ pub struct EventClaim {
 }
 
 #[event]
+pub struct EventClaimV3 {
+    pub amount: u64,
+    pub current_ts: u64,
+    pub escrow: Pubkey,
+    pub vesting_start_time: u64,
+    pub cliff_time: u64,
+    pub frequency: u64,
+    pub cliff_unlock_amount: u64,
+    pub amount_per_period: u64,
+    pub number_of_period: u64,
+    pub recipient: Pubkey
+}
+
+#[event]
 pub struct EventUpdateVestingEscrowRecipient {
     pub escrow: Pubkey,
     pub old_recipient: Pubkey,

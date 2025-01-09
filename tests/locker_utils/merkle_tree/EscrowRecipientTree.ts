@@ -1,6 +1,6 @@
 import { BN, web3 } from "@coral-xyz/anchor";
 import { sha256 } from "js-sha256";
-import { MerkleTree } from "./merkleTree";
+import { MerkleTree } from "./MerkleTree";
 
 export class EscrowRecipientTree {
   private readonly _tree: MerkleTree;

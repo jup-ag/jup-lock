@@ -5,4 +5,6 @@ use crate::*;
 pub struct ClaimStatus {
     pub total_claimed_amount: u64,
     pub total_unlocked_amount: u64,
+    pub latest_claimed_amount: u64,
+    pub bump: u8,
 }

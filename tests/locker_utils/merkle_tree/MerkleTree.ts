@@ -28,7 +28,10 @@ function bufArrToHexArr(arr: Buffer[]): string[] {
 }
 
 function sortAndConcat(...args: Buffer[]): Buffer {
-  return Buffer.concat([Buffer.from([1]), Buffer.concat([...args].sort(Buffer.compare.bind(null)))]);
+  return Buffer.concat([
+    Buffer.from([1]),
+    Buffer.concat([...args].sort(Buffer.compare.bind(null))),
+  ]);
 }
 
 export class MerkleTree {
@@ -112,9 +115,10 @@ export class MerkleTree {
   getProof(el: Buffer): Buffer[] {
     const initialIdx = this._bufferElementPositionIndex[el.toString("hex")];
 
-    if (typeof initialIdx !== "number") {
-      throw new Error("Element does not exist in Merkle tree");
-    }
+    // disable to testcase fake proof
+    // if (typeof initialIdx !== "number") {
+    //   throw new Error("Element does not exist in Merkle tree");
+    // }
 
     let idx = initialIdx;
     return this._layers.reduce((proof, layer) => {
