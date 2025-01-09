@@ -1,10 +1,13 @@
 use num_enum::{IntoPrimitive, TryFromPrimitive};
-use solana_program::hash::hashv;
+use anchor_lang::solana_program::hash::hashv;
 use static_assertions::const_assert_eq;
 
 use crate::*;
 
 use self::safe_math::SafeMath;
+
+const LEAF_PREFIX: &[u8] = &[0];
+const INTERMEDIATE_PREFIX: &[u8] = &[1];
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
 #[repr(u8)]
@@ -194,15 +197,16 @@ impl VestingEscrow {
         Ok(())
     }
 
-    pub fn verify_recipient(&self, recipient: Pubkey, proof: Vec<[u8; 32]>) -> Result<()> {
-        let leaf = hashv(&[&recipient.key().to_bytes()]);
-
+    pub fn verify_recipient(&self, recipient: Pubkey, proof: Vec<[u8; 32]>, cap_len: u64) -> Result<()> {
+        let node = hashv(&[&recipient.key().to_bytes(), &cap_len.to_le_bytes()]);
+        let leaf = hashv(&[LEAF_PREFIX, &node.to_bytes()]);
+        msg!("recipient: {:?}, leaf: {:?}", recipient, leaf.to_bytes());
         let mut computed_hash = leaf.to_bytes();
         for p in proof.iter() {
             if computed_hash <= *p {
-                computed_hash = hashv(&[&computed_hash, p]).to_bytes();
+                computed_hash = hashv(&[&INTERMEDIATE_PREFIX, &computed_hash, p]).to_bytes();
             } else {
-                computed_hash = hashv(&[p, &computed_hash]).to_bytes();
+                computed_hash = hashv(&[&INTERMEDIATE_PREFIX, p, &computed_hash]).to_bytes();
             }
         }
         require!(computed_hash == self.root, LockerError::InvalidMerkleProof);

@@ -51,12 +51,13 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ClaimV3<'info>>,
     max_amount: u64,
     proof: Vec<[u8; 32]>,
+    cap_len: u64,
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     let mut escrow = ctx.accounts.escrow.load_mut()?;
 
     // verify proof of recipient
-    escrow.verify_recipient(ctx.accounts.recipient.key(), proof)?;
+    escrow.verify_recipient(ctx.accounts.recipient.key(), proof, cap_len)?;
 
     let amount = escrow.claim(max_amount)?;
     drop(escrow);

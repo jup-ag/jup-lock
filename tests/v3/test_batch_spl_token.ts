@@ -7,7 +7,12 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { BN } from "bn.js";
-import { createAndFundBatchWallet, createAndFundWallet, getCurrentBlockTime, sleep } from "../common";
+import {
+  createAndFundBatchWallet,
+  createAndFundWallet,
+  getCurrentBlockTime,
+  sleep,
+} from "../common";
 import {
   createLockerProgram,
   createVestingPlanV3,
@@ -26,17 +31,17 @@ import {
 const provider = anchor.AnchorProvider.env();
 
 describe("[V3] Batch create vesting with Spl Token", () => {
-    const tokenDecimal = 8;
-    let mintAuthority: web3.Keypair;
-    let mintKeypair: web3.Keypair;
-    let TOKEN: web3.PublicKey;
-  
-    let UserKP: web3.Keypair;
-    let RecipientKP: web3.Keypair[];
-    let RecipientToken: web3.PublicKey[];
-    let recipientPubkeys: web3.PublicKey[];
-  
-    let mintAmount: bigint;
+  const tokenDecimal = 8;
+  let mintAuthority: web3.Keypair;
+  let mintKeypair: web3.Keypair;
+  let TOKEN: web3.PublicKey;
+
+  let UserKP: web3.Keypair;
+  let RecipientKP: web3.Keypair[];
+  let RecipientToken: web3.PublicKey[];
+  let recipientPubkeys: web3.PublicKey[];
+
+  let mintAmount: bigint;
 
   let root: any;
   let proof: any;
@@ -104,7 +109,7 @@ describe("[V3] Batch create vesting with Spl Token", () => {
       TOKEN_PROGRAM_ID
     );
 
-    RecipientToken = []
+    RecipientToken = [];
     for (const recipientor of RecipientKP) {
       const recipientorAta = await createAssociatedTokenAccountIdempotent(
         provider.connection,
@@ -167,6 +172,7 @@ describe("[V3] Batch create vesting with Spl Token", () => {
         isAssertion: true,
         tokenProgram: TOKEN_PROGRAM_ID,
         proof,
+        capLen: new BN(recipientPubkeys.length)
       });
     } catch (error) {
       console.log(error);
@@ -210,7 +216,10 @@ describe("[V3] Batch create vesting with Spl Token", () => {
     for (let i = 0; i < RecipientKP.length; i++) {
       const recipientor = RecipientKP[i];
       const recipientorAta = RecipientToken[i];
-      const recipientorProof = getMerkleTreeProof(recipientPubkeys, recipientor.publicKey);
+      const recipientorProof = getMerkleTreeProof(
+        recipientPubkeys,
+        recipientor.publicKey
+      );
       try {
         await claimTokenV3({
           recipient: recipientor,
@@ -220,6 +229,7 @@ describe("[V3] Batch create vesting with Spl Token", () => {
           isAssertion: true,
           tokenProgram: TOKEN_PROGRAM_ID,
           proof: recipientorProof,
+          capLen: new BN(recipientPubkeys.length)
         });
       } catch (error) {
         console.log(error);

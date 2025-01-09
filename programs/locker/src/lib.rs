@@ -141,6 +141,17 @@ pub mod locker {
     }
 
     // V3 instructions
+
+    /// Create a vesting escrow for the given params
+    /// This instruction supports both splToken and token2022
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * params - The params needed by instruction.
+    ///   * create_vesting_params - Extended params from create_vesting_escrow_v2
+    ///   * root - The root of merkle tree
+    /// * remaining_accounts_info: additional accounts needed by instruction
+    ///
     pub fn create_vesting_escrow_v3<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV3<'info>>,
         params: CreateVestingEscrowParametersV3,
@@ -149,15 +160,32 @@ pub mod locker {
         handle_create_vesting_escrow_v3(ctx, params, remaining_accounts_info)
     }
 
+    /// Claim maximum amount from the vesting escrow
+    /// This instruction supports both splToken and token2022
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * max_amount - The maximum amount claimed by the recipient
+    /// * proof: merkle tree proof of recipient
+    /// * cap_len: capacity of leaf node
+    /// * remaining_accounts_info: additional accounts needed by instruction
+    ///
     pub fn claim_v3<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ClaimV3<'info>>,
         max_amount: u64,
         proof: Vec<[u8; 32]>,
+        cap_len: u64,
         remaining_accounts_info: Option<RemainingAccountsInfo>,
     ) -> Result<()> {
-        handle_claim_v3(ctx, max_amount, proof, remaining_accounts_info)
+        handle_claim_v3(ctx, max_amount, proof, cap_len, remaining_accounts_info)
     }
 
+    /// Update vesting escrow root data
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * new_root - The merkle tree root of the new recipient list
+    ///
     pub fn update_vesting_escrow_root<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, UpdateVestingEscrowRoot<'info>>,
         new_root: [u8; 32],

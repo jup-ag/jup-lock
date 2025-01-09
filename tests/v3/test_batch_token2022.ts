@@ -122,6 +122,7 @@ describe("[V3] Batch create vesting with Token2022", () => {
         isAssertion: true,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         proof,
+        capLen: new BN(recipientPubkeys.length)
       });
     } catch (error) {
       console.log(error);
@@ -175,6 +176,7 @@ describe("[V3] Batch create vesting with Token2022", () => {
           isAssertion: true,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           proof: recipientorProof,
+          capLen: new BN(recipientPubkeys.length)
         });
       } catch (error) {
         console.log(error);

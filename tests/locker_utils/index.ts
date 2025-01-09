@@ -629,9 +629,10 @@ export async function createVestingPlanV3(params: CreateVestingPlanParamsV3) {
 
 export interface ClaimTokenParamsV3 extends ClaimTokenParamsV2 {
   proof: any;
+  capLen: BN
 }
 export async function claimTokenV3(params: ClaimTokenParamsV3) {
-  let { escrow, recipient, maxAmount, recipientToken, proof } = params;
+  let { escrow, recipient, maxAmount, recipientToken, proof, capLen } = params;
   const program = createLockerProgram(new Wallet(recipient));
   const escrowState = await program.account.vestingEscrow.fetch(escrow);
   const tokenProgram =
@@ -668,7 +669,7 @@ export async function claimTokenV3(params: ClaimTokenParamsV3) {
       .build();
   }
   const tx = await program.methods
-    .claimV3(maxAmount, proof, remainingAccountsInfo)
+    .claimV3(maxAmount, proof, capLen, remainingAccountsInfo)
     .accounts({
       tokenProgram,
       tokenMint: escrowState.tokenMint,
