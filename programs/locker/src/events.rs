@@ -15,6 +15,13 @@ pub struct EventCreateVestingEscrow {
 }
 
 #[event]
+pub struct EventCreateVestingEscrowV3 {
+    pub total_deposit_amount: u64,
+    pub escrow: Pubkey,
+    pub root: [u8; 32],
+}
+
+#[event]
 pub struct EventClaim {
     pub amount: u64,
     pub current_ts: u64,

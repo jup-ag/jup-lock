@@ -140,6 +140,49 @@ pub mod locker {
         handle_claim_v2(ctx, max_amount, remaining_accounts_info)
     }
 
+    // V3 instructions
+
+    /// Create a vesting escrow for the given params
+    /// This instruction supports both splToken and token2022
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * params - The params needed by instruction.
+    ///   * total_deposit_amount - The total amount of all recipients will deposit to escrow
+    ///   * root - 256 bit merkle tree root
+    /// * remaining_accounts_info: additional accounts needed by instruction
+    ///
+    pub fn create_vesting_escrow_v3<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV3<'info>>,
+        params: CreateVestingEscrowV3Parameters,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_create_vesting_escrow_v3(ctx, &params, remaining_accounts_info)
+    }
+
+    /// Claim maximum amount from the vesting escrow
+    /// This instruction supports both splToken and token2022
+    /// # Arguments
+    /// * ctx - The accounts needed by instruction.
+    /// * params - The params needed by instruction.
+    ///   * vesting_start_time - The creation time of this escrow
+    ///   * cliff_time - Trade cliff time of the escrow
+    ///   * frequency - How frequent the claimable amount will be updated
+    ///   * cliff_unlock_amount - The amount unlocked after cliff time
+    ///   * amount_per_period - The amount unlocked per vesting period
+    ///   * number_of_period - The total number of vesting period
+    ///   * max_amount - The maximum amount claimed by the recipient
+    ///   * proof - merkle tree proof
+    /// * remaining_accounts_info: additional accounts needed by instruction
+    ///
+    pub fn claim_v3<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ClaimV3<'info>>,
+        params: ClaimV3Params,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_claim_v3(ctx, &params, remaining_accounts_info)
+    }
+
     /// Cancel a vesting escrow.
     ///   - The claimable token will be transferred to recipient
     ///   - The remaining token will be transferred to the creator

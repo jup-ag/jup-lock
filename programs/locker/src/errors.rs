@@ -62,4 +62,7 @@ pub enum LockerError {
 
     #[msg("Claiming is not finished")]
     ClaimingIsNotFinished,
+
+    #[msg("Invalid merkle proof")]
+    InvalidMerkleProof,
 }

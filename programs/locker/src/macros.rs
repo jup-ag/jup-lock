@@ -9,3 +9,13 @@ macro_rules! escrow_seeds {
         ]
     };
 }
+
+macro_rules! escrow_seeds_v3 {
+    ($escrow:expr) => {
+        &[
+            b"escrow_v3".as_ref(),
+            $escrow.base.as_ref(),
+            &[$escrow.escrow_bump],
+        ]
+    };
+}

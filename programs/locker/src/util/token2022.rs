@@ -15,7 +15,7 @@ use anchor_spl::token_interface::{
     TokenInterface,
 };
 
-use crate::{LockerError, VestingEscrow};
+use crate::{LockerError, VestingEscrow, VestingEscrowV3};
 
 const ONE_IN_BASIS_POINTS: u128 = MAX_FEE_BASIS_POINTS as u128;
 
@@ -94,6 +94,75 @@ pub fn transfer_to_user_v2<'c: 'info, 'info>(
 ) -> Result<()> {
     let escrow_state = escrow.load()?;
     let escrow_seeds = escrow_seeds!(escrow_state);
+
+    if let Some(memo_ctx) = memo_transfer_context {
+        if is_transfer_memo_required(&recipient_account)? {
+            memo::build_memo(
+                CpiContext::new(memo_ctx.memo_program.to_account_info(), BuildMemo {}),
+                memo_ctx.memo,
+            )?;
+        }
+    }
+
+    let mut instruction = spl_token_2022::instruction::transfer_checked(
+        token_program.key,
+        &escrow_token.key(),
+        &token_mint.key(),        // mint
+        &recipient_account.key(), // to
+        &escrow.key(),            // authority
+        &[],
+        amount,
+        token_mint.decimals,
+    )?;
+
+    let mut account_infos = vec![
+        escrow_token.to_account_info(),
+        token_mint.to_account_info(),
+        recipient_account.to_account_info(),
+        escrow.to_account_info(),
+    ];
+
+    // TransferHook extension
+    if let Some(hook_program_id) = get_transfer_hook_program_id(token_mint)? {
+        let Some(transfer_hook_accounts) = transfer_hook_accounts else {
+            return Err(LockerError::NoTransferHookProgram.into());
+        };
+
+        spl_transfer_hook_interface::onchain::add_extra_accounts_for_execute_cpi(
+            &mut instruction,
+            &mut account_infos,
+            &hook_program_id,
+            escrow_token.to_account_info(),
+            token_mint.to_account_info(),
+            recipient_account.to_account_info(),
+            escrow.to_account_info(),
+            amount,
+            transfer_hook_accounts,
+        )?;
+    } else {
+        require!(
+            transfer_hook_accounts.is_none(),
+            LockerError::NoTransferHookProgram
+        );
+    }
+
+    solana_program::program::invoke_signed(&instruction, &account_infos, &[&escrow_seeds[..]])?;
+
+    Ok(())
+}
+
+pub fn transfer_to_user_v3<'c: 'info, 'info>(
+    escrow: &AccountLoader<'info, VestingEscrowV3>,
+    token_mint: &InterfaceAccount<'info, Mint>,
+    escrow_token: &AccountInfo<'info>,
+    recipient_account: &InterfaceAccount<'info, TokenAccount>,
+    token_program: &Interface<'info, TokenInterface>,
+    memo_transfer_context: Option<MemoTransferContext<'_, 'info>>,
+    amount: u64,
+    transfer_hook_accounts: Option<&'c [AccountInfo<'info>]>,
+) -> Result<()> {
+    let escrow_state = escrow.load()?;
+    let escrow_seeds = escrow_seeds_v3!(escrow_state);
 
     if let Some(memo_ctx) = memo_transfer_context {
         if is_transfer_memo_required(&recipient_account)? {
