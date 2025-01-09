@@ -160,6 +160,23 @@ pub mod locker {
         handle_create_vesting_escrow_v3(ctx, &params, remaining_accounts_info)
     }
 
+    /// Create vesting escrow metadata
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * params - The params needed by instruction.
+    ///   * name - The name of the vesting escrow
+    ///   * description - The description of the vesting escrow
+    ///   * creator_email - The email of the creator
+    ///   * recipient_email - The email of the recipient
+    ///
+    pub fn create_vesting_escrow_metadata_v3(
+        ctx: Context<CreateVestingEscrowMetadataV3>,
+        params: CreateVestingEscrowMetadataParameters,
+    ) -> Result<()> {
+        handle_create_vesting_escrow_metadata_v3(ctx, &params)
+    }
+
     /// Claim maximum amount from the vesting escrow
     /// This instruction supports both splToken and token2022
     /// # Arguments
@@ -181,6 +198,22 @@ pub mod locker {
         remaining_accounts_info: Option<RemainingAccountsInfo>,
     ) -> Result<()> {
         handle_claim_v3(ctx, &params, remaining_accounts_info)
+    }
+
+    /// Close vesting escrow V3
+    ///  - Close vesting escrow and escrow ATA and escrow metadata if recipient already claimed all tokens
+    ///  - Rent receiver must be escrow's creator
+    /// This instruction supports both splToken and token2022
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * remaining_accounts_info: additional accounts needed by instruction
+    ///
+    pub fn close_vesting_escrow_v3<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CloseVestingEscrowV3<'info>>,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_close_vesting_escrow_v3(ctx, remaining_accounts_info)
     }
 
     /// Cancel a vesting escrow.

@@ -19,11 +19,12 @@ pub struct VestingEscrowV3 {
     pub token_program_flag: u8,
     /// padding
     pub padding_0: [u8; 6],
+    ///
     pub total_deposit_amount: u64,
+    ///
+    pub total_claimed_amount: u64,
     /// cancelled_at
     pub cancelled_at: u64,
-    ///
-    pub padding_1: u64,
     /// buffer
     pub buffer: [u128; 5],
 }
@@ -48,5 +49,9 @@ impl VestingEscrowV3 {
         self.root = root;
         self.escrow_bump = escrow_bump;
         self.token_program_flag = token_program_flag;
+    }
+
+    pub fn is_claimed_full_amount(&self) -> Result<bool> {
+        Ok(self.total_deposit_amount == self.total_claimed_amount)
     }
 }

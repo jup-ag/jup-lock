@@ -132,8 +132,7 @@ describe("[V3] Create vesting with spl token", () => {
     // create root & proof
     // default value
     vestingStartTime = new BN(0);
-    let currentBlockTime = await getCurrentBlockTime(provider.connection);
-    cliffTime = new BN(currentBlockTime).add(new BN(5));
+    cliffTime = new BN(1);
     frequency = new BN(1);
     cliffUnlockAmount = new BN(100_000);
     amountPerPeriod = new BN(50_000);
@@ -189,7 +188,7 @@ describe("[V3] Create vesting with spl token", () => {
         tokenMint: TOKEN,
         escrow,
         maxAmount: new BN(1_000_000),
-        isAssertion: true,
+        isAssertion: false,
         tokenProgram: TOKEN_PROGRAM_ID,
         proof,
         vestingStartTime,
@@ -243,7 +242,7 @@ describe("[V3] Create vesting with spl token", () => {
           tokenMint: TOKEN,
           escrow,
           maxAmount: new BN(1_000_000),
-          isAssertion: true,
+          isAssertion: false,
           tokenProgram: TOKEN_PROGRAM_ID,
           proof: recipientProof,
           vestingStartTime,

@@ -86,7 +86,7 @@ describe("[V3] Create vesting with Token2022", () => {
     vestingStartTime = new BN(0);
     let currentBlockTime = await getCurrentBlockTime(provider.connection);
     cliffTime = new BN(currentBlockTime).add(new BN(5));
-    frequency = new BN(1);
+    frequency = new BN(2);
     cliffUnlockAmount = new BN(100_000);
     amountPerPeriod = new BN(50_000);
     numberOfPeriod = new BN(2);
@@ -115,7 +115,6 @@ describe("[V3] Create vesting with Token2022", () => {
   });
 
   it("Full flow Create Vesting plan", async () => {
-    console.log("Batch create vesting plan");
     let escrow = await createVestingPlanV3({
       ownerKeypair: UserKP,
       tokenMint: TOKEN,
@@ -186,7 +185,7 @@ describe("[V3] Create vesting with Token2022", () => {
           tokenMint: TOKEN,
           escrow,
           maxAmount: new BN(1_000_000),
-          isAssertion: true,
+          isAssertion: false,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           proof: recipientProof,
           vestingStartTime,
@@ -249,7 +248,7 @@ describe("[V3] Create vesting with Token2022", () => {
           tokenMint: TOKEN,
           escrow,
           maxAmount: new BN(1_000_000),
-          isAssertion: true,
+          isAssertion: false,
           tokenProgram: TOKEN_2022_PROGRAM_ID,
           proof: newRecipientProof,
           vestingStartTime,

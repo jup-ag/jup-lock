@@ -290,6 +290,54 @@ export async function createEscrowMetadata(params: CreateEscrowMetadataParams) {
   }
 }
 
+export async function createEscrowMetadataV3(
+  params: CreateEscrowMetadataParams
+) {
+  let {
+    isAssertion,
+    escrow,
+    name,
+    description,
+    creatorEmail,
+    recipientEmail,
+    creator,
+  } = params;
+  const program = createLockerProgram(new Wallet(creator));
+  const [escrowMetadata] = deriveEscrowMetadata(escrow, program.programId);
+  await program.methods
+    .createVestingEscrowMetadataV3({
+      name,
+      description,
+      creatorEmail,
+      recipientEmail,
+    })
+    .accounts({
+      escrow,
+      systemProgram: web3.SystemProgram.programId,
+      payer: creator.publicKey,
+      creator: creator.publicKey,
+      escrowMetadata,
+    })
+    .signers([creator])
+    .rpc();
+
+  if (isAssertion) {
+    const escrowMetadataState =
+      await program.account.vestingEscrowMetadata.fetch(escrowMetadata);
+    expect(escrowMetadataState.escrow.toString()).eq(escrow.toString());
+    expect(escrowMetadataState.name.toString()).eq(name.toString());
+    expect(escrowMetadataState.description.toString()).eq(
+      description.toString()
+    );
+    expect(escrowMetadataState.creatorEmail.toString()).eq(
+      creatorEmail.toString()
+    );
+    expect(escrowMetadataState.recipientEmail.toString()).eq(
+      recipientEmail.toString()
+    );
+  }
+}
+
 export interface UpdateRecipientParams {
   isAssertion: boolean;
   signer: web3.Keypair;
@@ -625,7 +673,9 @@ export async function createVestingPlanV3(params: CreateVestingPlanV3Params) {
       tokenProgram == TOKEN_PROGRAM_ID ? 0 : 1
     );
     expect(escrowState.root).to.deep.equal(root);
-    expect(escrowState.totalDepositAmount.toNumber()).eq(totalDepositAmount.toNumber());
+    expect(escrowState.totalDepositAmount.toNumber()).eq(
+      totalDepositAmount.toNumber()
+    );
   }
 
   return escrow;
@@ -738,6 +788,7 @@ export async function claimTokenV3(params: ClaimV3Params) {
     const claimStatusState = await program.account.claimStatus.fetch(
       claimStatus
     );
+
     const postEscrowTokenBalance = await getTokenBalance(
       program.provider.connection,
       escrowToken
@@ -947,6 +998,84 @@ export async function closeVestingEscrow(params: CloseVestingEscrowParams) {
 
   await program.methods
     .closeVestingEscrow(remainingAccountsInfo)
+    .accounts({
+      escrow,
+      escrowToken,
+      creatorToken,
+      memoProgram: MEMO_PROGRAM,
+      escrowMetadata,
+      tokenMint: escrowState.tokenMint,
+      tokenProgram,
+      creator: creator.publicKey,
+    })
+    .signers([creator])
+    .remainingAccounts(remainingAccounts)
+    .rpc();
+
+  if (isAssertion) {
+    let escrowStateAfter = await program.account.vestingEscrow.fetchNullable(
+      escrow
+    );
+    expect(escrowStateAfter).eq(null);
+    let escrowMetadataState =
+      await program.account.vestingEscrowMetadata.fetchNullable(escrow);
+    expect(escrowMetadataState).eq(null);
+    let escrowTokenState = await program.provider.connection.getAccountInfo(
+      escrowToken
+    );
+    expect(escrowTokenState).eq(null);
+  }
+}
+
+export async function closeVestingEscrowV3(params: CloseVestingEscrowParams) {
+  let { isAssertion, escrow, creator } = params;
+  const program = createLockerProgram(new Wallet(creator));
+  let [escrowMetadata] = deriveEscrowMetadata(escrow, program.programId);
+  let escrowState = await program.account.vestingEscrowV3.fetch(escrow);
+
+  let tokenProgram =
+    escrowState.tokenProgramFlag == 0
+      ? TOKEN_PROGRAM_ID
+      : TOKEN_2022_PROGRAM_ID;
+  const escrowToken = getAssociatedTokenAddressSync(
+    escrowState.tokenMint,
+    escrow,
+    true,
+    tokenProgram,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  const creatorToken = getAssociatedTokenAddressSync(
+    escrowState.tokenMint,
+    creator.publicKey,
+    true,
+    tokenProgram,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  let remainingAccountsInfo = null;
+  let remainingAccounts: AccountMeta[] = [];
+  if (escrowState.tokenProgramFlag == 1) {
+    let cancelTransferHookAccounts =
+      await TokenExtensionUtil.getExtraAccountMetasForTransferHook(
+        program.provider.connection,
+        escrowState.tokenMint,
+        escrowToken,
+        creatorToken,
+        escrow,
+        tokenProgram
+      );
+
+    [remainingAccountsInfo, remainingAccounts] = new RemainingAccountsBuilder()
+      .addSlice(
+        RemainingAccountsType.TransferHookEscrow,
+        cancelTransferHookAccounts
+      )
+      .build();
+  }
+
+  await program.methods
+    .closeVestingEscrowV3(remainingAccountsInfo)
     .accounts({
       escrow,
       escrowToken,
