@@ -96,7 +96,7 @@ impl ClaimV3Params {
 pub struct ClaimV3<'info> {
     /// Claim status PDA
     #[account(
-        init_if_needed,
+        init,
         seeds = [
             b"claim_status".as_ref(),
             recipient.key().to_bytes().as_ref(),
