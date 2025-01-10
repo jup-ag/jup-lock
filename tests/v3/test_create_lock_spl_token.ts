@@ -147,7 +147,7 @@ describe("[V3] Create vesting with spl token", () => {
         amountPerPeriod,
         numberOfPeriod,
         cliffTime,
-        frequency
+        frequency,
       };
     });
     const user = {
@@ -156,7 +156,7 @@ describe("[V3] Create vesting with spl token", () => {
       amountPerPeriod,
       numberOfPeriod,
       cliffTime,
-      frequency
+      frequency,
     };
     totalDepositAmount = totalLockedAmount.muln(leaves.length);
     root = generateMerkleTreeRoot(leaves);
@@ -201,6 +201,7 @@ describe("[V3] Create vesting with spl token", () => {
         amountPerPeriod,
         numberOfPeriod,
       };
+
       await claimTokenV3(claimParams);
     } catch (error) {
       console.log(error);
@@ -237,7 +238,7 @@ describe("[V3] Create vesting with spl token", () => {
         amountPerPeriod,
         numberOfPeriod,
         cliffTime,
-        frequency
+        frequency,
       };
       const recipientProof = getMerkleTreeProof(leaves, recipientNode);
       try {
@@ -300,7 +301,7 @@ describe("[V3] Create vesting with spl token", () => {
       amountPerPeriod,
       numberOfPeriod,
       cliffTime,
-      frequency
+      frequency,
     };
     const newRecipientProof = getMerkleTreeProof(leaves, recipientNode);
 

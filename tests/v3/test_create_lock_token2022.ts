@@ -100,7 +100,7 @@ describe("[V3] Create vesting with Token2022", () => {
         amountPerPeriod,
         numberOfPeriod,
         cliffTime,
-        frequency
+        frequency,
       };
     });
     const user = {
@@ -109,11 +109,12 @@ describe("[V3] Create vesting with Token2022", () => {
       amountPerPeriod,
       numberOfPeriod,
       cliffTime,
-      frequency
+      frequency,
     };
     totalDepositAmount = totalLockedAmount.muln(leaves.length);
     root = generateMerkleTreeRoot(leaves);
     proof = getMerkleTreeProof(leaves, user);
+    console.log({ root, proof });
   });
 
   it("Full flow Create Vesting plan", async () => {
@@ -180,7 +181,7 @@ describe("[V3] Create vesting with Token2022", () => {
         amountPerPeriod,
         numberOfPeriod,
         cliffTime,
-        frequency
+        frequency,
       };
       const recipientProof = getMerkleTreeProof(leaves, recipientNode);
       try {
@@ -243,7 +244,7 @@ describe("[V3] Create vesting with Token2022", () => {
       amountPerPeriod,
       numberOfPeriod,
       cliffTime,
-      frequency
+      frequency,
     };
     const newRecipientProof = getMerkleTreeProof(leaves, recipientNode);
 
