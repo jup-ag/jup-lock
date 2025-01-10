@@ -931,6 +931,122 @@ export async function cancelVestingPlan(
   }
 }
 
+export interface CancelVestingPlanV3Params {
+  isAssertion: boolean;
+  escrow: web3.PublicKey;
+  rentReceiver: web3.PublicKey;
+  creatorToken: web3.PublicKey;
+  signer: web3.Keypair;
+}
+
+export async function cancelVestingPlanV3(
+  params: CancelVestingPlanV3Params,
+  claimable_amount: number,
+  total_amount: number
+) {
+  let {
+    isAssertion,
+    escrow,
+    rentReceiver,
+    creatorToken,
+    signer,
+  } = params;
+  const program = createLockerProgram(new Wallet(signer));
+  const escrowState = await program.account.vestingEscrowV3.fetch(escrow);
+  const tokenProgram =
+    escrowState.tokenProgramFlag == ESCROW_USE_SPL_TOKEN
+      ? TOKEN_PROGRAM_ID
+      : TOKEN_2022_PROGRAM_ID;
+
+  const escrowToken = getAssociatedTokenAddressSync(
+    escrowState.tokenMint,
+    escrow,
+    true,
+    tokenProgram,
+    ASSOCIATED_TOKEN_PROGRAM_ID
+  );
+
+  const creator_token_balance_before = (
+    await program.provider.connection.getTokenAccountBalance(creatorToken)
+  ).value.amount;
+
+  let remainingAccountsInfo = null;
+  let remainingAccounts: AccountMeta[] = [];
+  if (tokenProgram == TOKEN_2022_PROGRAM_ID) {
+    let cancelTransferHookAccounts =
+      await TokenExtensionUtil.getExtraAccountMetasForTransferHook(
+        program.provider.connection,
+        escrowState.tokenMint,
+        escrowToken,
+        creatorToken,
+        escrow,
+        tokenProgram
+      );
+
+    [remainingAccountsInfo, remainingAccounts] = new RemainingAccountsBuilder()
+      .addSlice(
+        RemainingAccountsType.TransferHookEscrow,
+        cancelTransferHookAccounts
+      )
+      .build();
+  }
+  await program.methods
+    .cancelVestingEscrowV3(remainingAccountsInfo)
+    .accounts({
+      escrow,
+      tokenMint: escrowState.tokenMint,
+      escrowToken,
+      rentReceiver,
+      creatorToken: creatorToken,
+      signer: signer.publicKey,
+      tokenProgram,
+      memoProgram: MEMO_PROGRAM,
+    })
+    .preInstructions([
+      ComputeBudgetProgram.setComputeUnitLimit({
+        units: 400_000,
+      }),
+    ])
+    .remainingAccounts(remainingAccounts ? remainingAccounts : [])
+    .signers([signer])
+    .rpc();
+  let creator_fee = 0;
+  let claimer_fee = 0;
+  if (tokenProgram == TOKEN_2022_PROGRAM_ID) {
+    const feeConfig = getTransferFeeConfig(
+      await getMint(
+        program.provider.connection,
+        escrowState.tokenMint,
+        undefined,
+        TOKEN_2022_PROGRAM_ID
+      )
+    );
+    const epoch = BigInt(await getCurrentEpoch(program.provider.connection));
+    creator_fee = feeConfig
+      ? Number(
+          calculateEpochFee(
+            feeConfig,
+            epoch,
+            BigInt(total_amount)
+          )
+        )
+      : 0;
+    claimer_fee = feeConfig
+      ? Number(calculateEpochFee(feeConfig, epoch, BigInt(claimable_amount)))
+      : 0;
+  }
+
+  if (isAssertion) {
+    const escrowState = await program.account.vestingEscrowV3.fetch(escrow);
+    expect(escrowState.cancelledAt.toNumber()).greaterThan(0);
+
+    const escrowTokenAccount = await program.provider.connection.getAccountInfo(
+      escrowToken
+    );
+    expect(escrowTokenAccount).eq(null);
+  }
+}
+
 export interface CloseVestingEscrowParams {
   isAssertion: boolean;
   creator: web3.Keypair;

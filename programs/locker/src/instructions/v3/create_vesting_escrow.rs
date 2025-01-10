@@ -26,10 +26,14 @@ impl CreateVestingEscrowV3Parameters {
         sender: Pubkey,
         base: Pubkey,
         total_deposit_amount: u64,
-        cancel_mode: u8,
         escrow_bump: u8,
         token_program_flag: TokenProgramFlag,
     ) -> Result<()> {
+        require!(
+            CancelMode::try_from(self.cancel_mode).is_ok(),
+            LockerError::InvalidCancelMode,
+        );
+
         let mut vesting_escrow = vesting_escrow.load_init()?;
         vesting_escrow.init(
             token_mint,
@@ -37,7 +41,7 @@ impl CreateVestingEscrowV3Parameters {
             base,
             total_deposit_amount,
             self.root,
-            cancel_mode,
+            self.cancel_mode,
             escrow_bump,
             token_program_flag.into(),
         );
@@ -112,7 +116,6 @@ pub fn handle_create_vesting_escrow_v3<'c: 'info, 'info>(
         ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         params.total_deposit_amount,
-        params.cancel_mode,
         ctx.bumps.escrow,
         token_program_flag,
     )?;

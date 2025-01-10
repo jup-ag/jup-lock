@@ -216,6 +216,13 @@ pub mod locker {
         handle_close_vesting_escrow_v3(ctx, remaining_accounts_info)
     }
 
+    pub fn cancel_vesting_escrow_v3<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrowV3<'info>>,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_cancel_vesting_escrow_v3(ctx, remaining_accounts_info)
+    }
+
     /// Cancel a vesting escrow.
     ///   - The claimable token will be transferred to recipient
     ///   - The remaining token will be transferred to the creator

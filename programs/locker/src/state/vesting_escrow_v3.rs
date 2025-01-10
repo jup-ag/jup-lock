@@ -58,4 +58,15 @@ impl VestingEscrowV3 {
     pub fn is_claimed_full_amount(&self) -> Result<bool> {
         Ok(self.total_deposit_amount == self.total_claimed_amount)
     }
+
+    pub fn validate_cancel_actor(&self, signer: Pubkey) -> Result<()> {
+        require!(
+            CancelMode::try_from(self.cancel_mode).unwrap() == CancelMode::OnlyCreator,
+            LockerError::NotPermitToDoThisAction
+        );
+
+        require_keys_eq!(signer, self.creator, LockerError::NotPermitToDoThisAction);
+
+        Ok(())
+    }
 }
