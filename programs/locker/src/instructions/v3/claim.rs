@@ -5,8 +5,7 @@ use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 use safe_math::SafeMath;
 use solana_program::hash::hashv;
 use util::{
-    close, parse_remaining_accounts, AccountsType, ParsedRemainingAccounts,
-    TRANSFER_MEMO_CLAIM_VESTING,
+    parse_remaining_accounts, AccountsType, ParsedRemainingAccounts, TRANSFER_MEMO_CLAIM_VESTING,
 };
 
 const LEAF_PREFIX: &[u8] = &[0];
@@ -89,11 +88,6 @@ impl ClaimV3Params {
 
         Ok(amount)
     }
-
-    pub fn is_recipient_claimed_full_amount(&self, total_claimed_amount: u64) -> Result<bool> {
-        let max_amount = self.get_total_locked_amount()?;
-        Ok(total_claimed_amount == max_amount)
-    }
 }
 
 #[event_cpi]
@@ -159,12 +153,12 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     let claim_status = &mut ctx.accounts.claim_status;
-    let mut escrow = ctx.accounts.escrow.load_mut()?;
+    let escrow = ctx.accounts.escrow.load_mut()?;
 
     params.verify_recipient(ctx.accounts.recipient.key(), escrow.root)?;
 
     let amount = params.get_claim_amount(claim_status.total_claimed_amount)?;
-    escrow.total_claimed_amount += amount;
+    escrow.total_claimed_amount.safe_add(amount)?;
     drop(escrow);
 
     // Process remaining accounts
@@ -193,21 +187,14 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
     )?;
 
     // update claim status
-    claim_status.total_claimed_amount += amount;
+    claim_status.total_claimed_amount.safe_add(amount)?;
     claim_status.current_locked_amount = params
         .get_total_locked_amount()?
         .safe_sub(claim_status.total_claimed_amount)?;
     claim_status.latest_claimed_amount = amount;
-    claim_status.bump = ctx.bumps.claim_status;
 
     let current_ts = Clock::get()?.unix_timestamp as u64;
 
-    if params.is_recipient_claimed_full_amount(claim_status.total_claimed_amount)? {
-        close(
-            ctx.accounts.claim_status.to_account_info(),
-            ctx.accounts.recipient.to_account_info(),
-        )?;
-    }
     emit_cpi!(EventClaimV3 {
         amount,
         current_ts,
