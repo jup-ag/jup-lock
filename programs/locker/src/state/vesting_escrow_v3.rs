@@ -60,10 +60,8 @@ impl VestingEscrowV3 {
     }
 
     pub fn validate_cancel_actor(&self, signer: Pubkey) -> Result<()> {
-        require!(
-            CancelMode::try_from(self.cancel_mode).unwrap() == CancelMode::OnlyCreator,
-            LockerError::NotPermitToDoThisAction
-        );
+        // only creator has permission to cancel escrow v3
+        require!(self.cancel_mode == 1, LockerError::NotPermitToDoThisAction);
 
         require_keys_eq!(signer, self.creator, LockerError::NotPermitToDoThisAction);
 

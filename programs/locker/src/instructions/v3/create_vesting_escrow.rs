@@ -11,7 +11,7 @@ use crate::TokenProgramFlag::{UseSplToken, UseToken2022};
 use crate::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-/// Accounts for [locker::create_vesting_escrow].
+/// Accounts for [locker::create_vesting_escrow_v3].
 pub struct CreateVestingEscrowV3Parameters {
     pub total_deposit_amount: u64,
     pub cancel_mode: u8,

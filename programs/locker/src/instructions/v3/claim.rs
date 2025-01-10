@@ -24,13 +24,6 @@ pub struct ClaimV3Params {
 }
 
 impl ClaimV3Params {
-    pub fn get_total_locked_amount(&self) -> Result<u64> {
-        let total_locked_amount = self
-            .cliff_unlock_amount
-            .safe_add(self.amount_per_period.safe_mul(self.number_of_period)?)?;
-        Ok(total_locked_amount)
-    }
-
     pub fn verify_recipient(&self, recipient: Pubkey, root: [u8; 32]) -> Result<()> {
         let node = hashv(&[
             &recipient.key().to_bytes(),
@@ -90,6 +83,7 @@ impl ClaimV3Params {
     }
 }
 
+/// Accounts for [locker::claim_v3].
 #[event_cpi]
 #[derive(Accounts)]
 pub struct ClaimV3<'info> {

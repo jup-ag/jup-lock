@@ -8,7 +8,7 @@ use util::{
     MemoTransferContext, ParsedRemainingAccounts, TRANSFER_MEMO_CLOSE_ESCROW,
 };
 
-/// Accounts for [locker::close_vesting_escrow].
+/// Accounts for [locker::close_vesting_escrow_v3].
 #[derive(Accounts)]
 #[event_cpi]
 pub struct CloseVestingEscrowV3<'info> {

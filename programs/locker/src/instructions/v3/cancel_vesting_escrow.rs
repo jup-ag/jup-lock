@@ -9,7 +9,7 @@ use util::{
 use crate::util::MemoTransferContext;
 use crate::*;
 
-/// Accounts for [locker::cancel_vesting_escrow].
+/// Accounts for [locker::cancel_vesting_escrow_v3].
 #[derive(Accounts)]
 #[event_cpi]
 pub struct CancelVestingEscrowV3<'info> {
@@ -59,7 +59,7 @@ pub struct CancelVestingEscrowV3<'info> {
 }
 
 impl<'info> CancelVestingEscrowV3<'info> {
-    fn close_escrow_token(&self) -> Result<()> {
+    fn close_escrow_token_v3(&self) -> Result<()> {
         let escrow = self.escrow.load()?;
         let escrow_seeds = escrow_seeds_v3!(escrow);
 
@@ -124,7 +124,7 @@ pub fn handle_cancel_vesting_escrow_v3<'c: 'info, 'info>(
         &ctx.accounts.token_mint,
     )?;
 
-    ctx.accounts.close_escrow_token()?;
+    ctx.accounts.close_escrow_token_v3()?;
 
     emit_cpi!(EventCancelVestingEscrowV3 {
         escrow: ctx.accounts.escrow.key(),

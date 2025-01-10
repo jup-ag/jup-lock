@@ -160,7 +160,7 @@ pub mod locker {
         handle_create_vesting_escrow_v3(ctx, &params, remaining_accounts_info)
     }
 
-    /// Create vesting escrow metadata
+    /// Create vesting escrow metadata v3
     /// # Arguments
     ///
     /// * ctx - The accounts needed by instruction.
@@ -168,7 +168,6 @@ pub mod locker {
     ///   * name - The name of the vesting escrow
     ///   * description - The description of the vesting escrow
     ///   * creator_email - The email of the creator
-    ///   * recipient_email - The email of the recipient
     ///
     pub fn create_vesting_escrow_metadata_v3(
         ctx: Context<CreateVestingEscrowMetadataV3>,
@@ -201,7 +200,7 @@ pub mod locker {
     }
 
     /// Close vesting escrow V3
-    ///  - Close vesting escrow and escrow ATA and escrow metadata if recipient already claimed all tokens
+    ///  - Close vesting escrow and escrow ATA and escrow metadata if all recipients already claimed all tokens
     ///  - Rent receiver must be escrow's creator
     /// This instruction supports both splToken and token2022
     /// # Arguments
@@ -216,6 +215,14 @@ pub mod locker {
         handle_close_vesting_escrow_v3(ctx, remaining_accounts_info)
     }
 
+    /// Cancel a vesting escrow v3
+    ///   - The rest of token will be transferred to the creator
+    /// This instruction supports both splToken and token2022
+    /// # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    /// * remaining_accounts_info: additional accounts needed by instruction
+    ///
     pub fn cancel_vesting_escrow_v3<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrowV3<'info>>,
         remaining_accounts_info: Option<RemainingAccountsInfo>,

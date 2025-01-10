@@ -116,7 +116,6 @@ describe("[V3] Create vesting with Token2022", () => {
     totalDepositAmount = totalLockedAmount.muln(leaves.length);
     root = generateMerkleTreeRoot(leaves);
     proof = getMerkleTreeProof(leaves, user);
-    console.log({ root, proof });
   });
 
   it("Full flow Create Vesting plan", async () => {

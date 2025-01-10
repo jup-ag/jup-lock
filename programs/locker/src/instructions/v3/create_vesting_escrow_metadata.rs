@@ -1,6 +1,6 @@
 use crate::*;
 
-/// Accounts for [locker::create_vesting_escrow_metadata].
+/// Accounts for [locker::create_vesting_escrow_metadata_v3].
 #[derive(Accounts)]
 #[instruction(metadata: CreateVestingEscrowMetadataParameters)]
 pub struct CreateVestingEscrowMetadataV3<'info> {
