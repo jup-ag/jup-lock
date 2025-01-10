@@ -96,18 +96,16 @@ describe("[V3] Create vesting with Token2022", () => {
     leaves = recipients.map((item) => {
       return {
         account: item.publicKey,
-        totalLockedAmount,
-        vestingStartTime,
-        cliffTime,
-        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
       };
     });
     const user = {
       account: recipients[0].publicKey,
-      totalLockedAmount,
-      vestingStartTime,
-      cliffTime,
-      frequency,
+      cliffUnlockAmount,
+      amountPerPeriod,
+      numberOfPeriod,
     };
     totalDepositAmount = totalLockedAmount.muln(leaves.length);
     root = generateMerkleTreeRoot(leaves);
@@ -174,10 +172,9 @@ describe("[V3] Create vesting with Token2022", () => {
       const recipientAta = recipientAtas[i];
       const recipientNode = {
         account: recipient.publicKey,
-        totalLockedAmount,
-        vestingStartTime,
-        cliffTime,
-        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
       };
       const recipientProof = getMerkleTreeProof(leaves, recipientNode);
       try {
@@ -236,10 +233,9 @@ describe("[V3] Create vesting with Token2022", () => {
     );
     const recipientNode = {
       account: newRecipient.publicKey,
-      totalLockedAmount,
-      vestingStartTime,
-      cliffTime,
-      frequency,
+      cliffUnlockAmount,
+      amountPerPeriod,
+      numberOfPeriod,
     };
     const newRecipientProof = getMerkleTreeProof(leaves, recipientNode);
 

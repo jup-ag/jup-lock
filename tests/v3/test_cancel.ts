@@ -108,18 +108,16 @@ describe("[V3] Cancel escrow", () => {
     leaves = recipients.map((item) => {
       return {
         account: item.publicKey,
-        totalLockedAmount,
-        vestingStartTime,
-        cliffTime,
-        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
       };
     });
     const user = {
       account: recipients[0].publicKey,
-      totalLockedAmount,
-      vestingStartTime,
-      cliffTime,
-      frequency,
+      cliffUnlockAmount,
+      amountPerPeriod,
+      numberOfPeriod,
     };
     totalDepositAmount = totalLockedAmount.muln(leaves.length);
     root = generateMerkleTreeRoot(leaves);

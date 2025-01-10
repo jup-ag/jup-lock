@@ -141,16 +141,16 @@ describe("[V3] Close vesting escrow", () => {
       leaves = recipients.map((item) => {
         return {
           account: item.publicKey,
-          vestingStartTime,
-          cliffTime,
-          frequency,
+          cliffUnlockAmount,
+          amountPerPeriod,
+          numberOfPeriod,
         };
       });
       const user = {
         account: recipients[0].publicKey,
-        vestingStartTime,
-        cliffTime,
-        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
       };
       totalDepositAmount = totalLockedAmount.muln(leaves.length);
       root = generateMerkleTreeRoot(leaves);
@@ -200,9 +200,9 @@ describe("[V3] Close vesting escrow", () => {
         const recipientAta = recipientAtas[i];
         const recipientNode = {
           account: recipient.publicKey,
-          vestingStartTime,
-          cliffTime,
-          frequency,
+          cliffUnlockAmount,
+          amountPerPeriod,
+          numberOfPeriod,
         };
         const recipientProof = getMerkleTreeProof(leaves, recipientNode);
 
@@ -267,9 +267,9 @@ describe("[V3] Close vesting escrow", () => {
         const recipientAta = recipientAtas[i];
         const recipientNode = {
           account: recipient.publicKey,
-          vestingStartTime,
-          cliffTime,
-          frequency,
+          cliffUnlockAmount,
+          amountPerPeriod,
+          numberOfPeriod,
         };
         const recipientProof = getMerkleTreeProof(leaves, recipientNode);
 
@@ -360,16 +360,16 @@ describe("[V3] Close vesting escrow", () => {
       leaves = recipients.map((item) => {
         return {
           account: item.publicKey,
-          vestingStartTime,
-          cliffTime,
-          frequency,
+          cliffUnlockAmount,
+          amountPerPeriod,
+          numberOfPeriod,
         };
       });
       const user = {
         account: recipients[0].publicKey,
-        vestingStartTime,
-        cliffTime,
-        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
       };
       totalDepositAmount = totalLockedAmount.muln(leaves.length);
       root = generateMerkleTreeRoot(leaves);
@@ -419,9 +419,9 @@ describe("[V3] Close vesting escrow", () => {
         const recipientAta = recipientAtas[i];
         const recipientNode = {
           account: recipient.publicKey,
-          vestingStartTime,
-          cliffTime,
-          frequency,
+          cliffUnlockAmount,
+          amountPerPeriod,
+          numberOfPeriod,
         };
         const recipientProof = getMerkleTreeProof(leaves, recipientNode);
         try {
@@ -486,9 +486,9 @@ describe("[V3] Close vesting escrow", () => {
         const recipientAta = recipientAtas[i];
         const recipientNode = {
           account: recipient.publicKey,
-          vestingStartTime,
-          cliffTime,
-          frequency,
+          cliffUnlockAmount,
+          amountPerPeriod,
+          numberOfPeriod,
         };
         const recipientProof = getMerkleTreeProof(leaves, recipientNode);
         try {

@@ -4,9 +4,9 @@ import { EscrowRecipientTree } from "./EscrowRecipientTree";
 export function generateMerkleTreeRoot(
   data: {
     account: web3.PublicKey;
-    vestingStartTime: BN;
-    cliffTime: BN;
-    frequency: BN;
+    cliffUnlockAmount: BN;
+    amountPerPeriod: BN;
+    numberOfPeriod: BN;
   }[]
 ): number[] {
   const escrowRecipientTree = new EscrowRecipientTree(data);
@@ -16,24 +16,23 @@ export function generateMerkleTreeRoot(
 export function getMerkleTreeProof(
   data: {
     account: web3.PublicKey;
-    vestingStartTime: BN;
-    cliffTime: BN;
-    frequency: BN;
+    cliffUnlockAmount: BN;
+    amountPerPeriod: BN;
+    numberOfPeriod: BN;
   }[],
   user: {
     account: web3.PublicKey;
-    vestingStartTime: BN;
-    cliffTime: BN;
-    frequency: BN;
+    cliffUnlockAmount: BN;
+    amountPerPeriod: BN;
+    numberOfPeriod: BN;
   }
 ) {
-  const { account, vestingStartTime, cliffTime, frequency } =
-    user;
+  const { account, cliffUnlockAmount, amountPerPeriod, numberOfPeriod } = user;
   const escrowRecipientTree = new EscrowRecipientTree(data);
   return escrowRecipientTree.getProof(
     account,
-    vestingStartTime,
-    cliffTime,
-    frequency
+    cliffUnlockAmount,
+    amountPerPeriod,
+    numberOfPeriod
   );
 }

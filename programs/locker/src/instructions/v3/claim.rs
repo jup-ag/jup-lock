@@ -35,9 +35,9 @@ impl ClaimV3Params {
     pub fn verify_recipient(&self, recipient: Pubkey, root: [u8; 32]) -> Result<()> {
         let node = hashv(&[
             &recipient.key().to_bytes(),
-            &self.vesting_start_time.to_le_bytes(),
-            &self.cliff_time.to_le_bytes(),
-            &self.frequency.to_le_bytes(),
+            &self.cliff_unlock_amount.to_le_bytes(),
+            &self.amount_per_period.to_le_bytes(),
+            &self.number_of_period.to_le_bytes(),
         ]);
 
         let leaf = hashv(&[LEAF_PREFIX, &node.to_bytes()]);

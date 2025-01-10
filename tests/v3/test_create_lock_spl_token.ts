@@ -143,16 +143,16 @@ describe("[V3] Create vesting with spl token", () => {
     leaves = recipients.map((item) => {
       return {
         account: item.publicKey,
-        vestingStartTime,
-        cliffTime,
-        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
       };
     });
     const user = {
       account: recipients[0].publicKey,
-      vestingStartTime,
-      cliffTime,
-      frequency,
+      cliffUnlockAmount,
+      amountPerPeriod,
+      numberOfPeriod,
     };
     totalDepositAmount = totalLockedAmount.muln(leaves.length);
     root = generateMerkleTreeRoot(leaves);
@@ -229,9 +229,9 @@ describe("[V3] Create vesting with spl token", () => {
       const recipientAta = recipientAtas[i];
       const recipientNode = {
         account: recipient.publicKey,
-        vestingStartTime,
-        cliffTime,
-        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
       };
       const recipientProof = getMerkleTreeProof(leaves, recipientNode);
       try {
@@ -290,9 +290,9 @@ describe("[V3] Create vesting with spl token", () => {
     );
     const recipientNode = {
       account: newRecipient.publicKey,
-      vestingStartTime,
-      cliffTime,
-      frequency,
+      cliffUnlockAmount,
+      amountPerPeriod,
+      numberOfPeriod,
     };
     const newRecipientProof = getMerkleTreeProof(leaves, recipientNode);
 

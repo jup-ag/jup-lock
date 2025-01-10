@@ -7,9 +7,9 @@ export class EscrowRecipientTree {
   constructor(
     balances: {
       account: web3.PublicKey;
-      vestingStartTime: BN;
-      cliffTime: BN;
-      frequency: BN;
+      cliffUnlockAmount: BN;
+      amountPerPeriod: BN;
+      numberOfPeriod: BN;
     }[]
   ) {
     this._tree = new MerkleTree(
@@ -17,17 +17,17 @@ export class EscrowRecipientTree {
         (
           {
             account,
-            vestingStartTime,
-            cliffTime,
-            frequency,
+            cliffUnlockAmount,
+            amountPerPeriod,
+            numberOfPeriod,
           },
           index
         ) => {
           return EscrowRecipientTree.toNode(
             account,
-            vestingStartTime,
-            cliffTime,
-            frequency
+            cliffUnlockAmount,
+            amountPerPeriod,
+            numberOfPeriod
           );
         }
       )
@@ -37,15 +37,15 @@ export class EscrowRecipientTree {
   // sha256(abi.encode(index, account, amount))
   static toNode(
     account: web3.PublicKey,
-    vestingStartTime: BN,
-    cliffTime: BN,
-    frequency: BN
+    cliffUnlockAmount: BN,
+    amountPerPeriod: BN,
+    numberOfPeriod: BN,
   ): Buffer {
     const buf = Buffer.concat([
       account.toBuffer(),
-      new BN(vestingStartTime).toArrayLike(Buffer, "le", 8),
-      new BN(cliffTime).toArrayLike(Buffer, "le", 8),
-      new BN(frequency).toArrayLike(Buffer, "le", 8),
+      new BN(cliffUnlockAmount).toArrayLike(Buffer, "le", 8),
+      new BN(amountPerPeriod).toArrayLike(Buffer, "le", 8),
+      new BN(numberOfPeriod).toArrayLike(Buffer, "le", 8),
     ]);
 
     const hashedBuff = Buffer.from(sha256(buf), "hex");
@@ -60,16 +60,16 @@ export class EscrowRecipientTree {
 
   getProof(
     account: web3.PublicKey,
-    vestingStartTime: BN,
-    cliffTime: BN,
-    frequency: BN
+    cliffUnlockAmount: BN,
+    amountPerPeriod: BN,
+    numberOfPeriod: BN,
   ): Buffer[] {
     return this._tree.getProof(
       EscrowRecipientTree.toNode(
         account,
-        vestingStartTime,
-        cliffTime,
-        frequency
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod
       )
     );
   }
