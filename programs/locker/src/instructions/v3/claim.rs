@@ -12,7 +12,6 @@ const LEAF_PREFIX: &[u8] = &[0];
 const INTERMEDIATE_PREFIX: &[u8] = &[1];
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-/// Accounts for [locker::create_vesting_escrow].
 pub struct ClaimV3Params {
     pub vesting_start_time: u64,
     pub cliff_time: u64,

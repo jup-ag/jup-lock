@@ -2,57 +2,46 @@ import { BN, web3 } from "@coral-xyz/anchor";
 import { sha256 } from "js-sha256";
 import { MerkleTree } from "./MerkleTree";
 
+export type NodeType = {
+  account: web3.PublicKey;
+  cliffUnlockAmount: BN;
+  amountPerPeriod: BN;
+  numberOfPeriod: BN;
+  cliffTime: BN;
+  frequency: BN;
+  vestingStartTime: BN;
+};
 export class EscrowRecipientTree {
   private readonly _tree: MerkleTree;
-  constructor(
-    balances: {
-      account: web3.PublicKey;
-      cliffUnlockAmount: BN;
-      amountPerPeriod: BN;
-      numberOfPeriod: BN;
-      cliffTime: BN;
-      frequency: BN;
-      vestingStartTime: BN;
-    }[]
-  ) {
+  constructor(nodeData: NodeType[]) {
+    this._validateNode(nodeData);
     this._tree = new MerkleTree(
-      balances.map(
-        (
-          {
-            account,
-            cliffUnlockAmount,
-            amountPerPeriod,
-            numberOfPeriod,
-            cliffTime,
-            frequency,
-            vestingStartTime
-          },
-          index
-        ) => {
-          return EscrowRecipientTree.toNode(
-            account,
-            cliffUnlockAmount,
-            amountPerPeriod,
-            numberOfPeriod,
-            cliffTime,
-            frequency,
-            vestingStartTime
-          );
-        }
-      )
+      nodeData.map((node: NodeType) => {
+        return EscrowRecipientTree.toNode(node);
+      })
     );
   }
 
-  // sha256(abi.encode(index, account, amount))
-  static toNode(
-    account: web3.PublicKey,
-    cliffUnlockAmount: BN,
-    amountPerPeriod: BN,
-    numberOfPeriod: BN,
-    cliffTime: BN,
-    frequency: BN,
-    vestingStartTime: BN
-  ): Buffer {
+  private _validateNode(nodeData: NodeType[]) {
+    nodeData.forEach((item: NodeType) => {
+      if (item.vestingStartTime.gt(item.cliffTime)) {
+        throw Error("cliff time must greater or equal vesting start time");
+      }
+      if (item.frequency.eqn(0)) {
+        throw Error("frequency must geater than zero");
+      }
+    });
+  }
+  static toNode(node: NodeType): Buffer {
+    const {
+      account,
+      cliffUnlockAmount,
+      amountPerPeriod,
+      numberOfPeriod,
+      cliffTime,
+      frequency,
+      vestingStartTime,
+    } = node;
     const buf = Buffer.concat([
       account.toBuffer(),
       new BN(cliffUnlockAmount).toArrayLike(Buffer, "le", 8),
@@ -73,25 +62,7 @@ export class EscrowRecipientTree {
     return this._tree.getRoot();
   }
 
-  getProof(
-    account: web3.PublicKey,
-    cliffUnlockAmount: BN,
-    amountPerPeriod: BN,
-    numberOfPeriod: BN,
-    cliffTime: BN,
-    frequency: BN,
-    vestingStartTime: BN
-  ): Buffer[] {
-    return this._tree.getProof(
-      EscrowRecipientTree.toNode(
-        account,
-        cliffUnlockAmount,
-        amountPerPeriod,
-        numberOfPeriod,
-        cliffTime,
-        frequency,
-        vestingStartTime
-      )
-    );
+  getProof(node: NodeType): Buffer[] {
+    return this._tree.getProof(EscrowRecipientTree.toNode(node));
   }
 }
