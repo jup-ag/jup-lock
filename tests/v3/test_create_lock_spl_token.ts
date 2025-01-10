@@ -143,7 +143,6 @@ describe("[V3] Create vesting with spl token", () => {
     leaves = recipients.map((item) => {
       return {
         account: item.publicKey,
-        totalLockedAmount,
         vestingStartTime,
         cliffTime,
         frequency,
@@ -151,7 +150,6 @@ describe("[V3] Create vesting with spl token", () => {
     });
     const user = {
       account: recipients[0].publicKey,
-      totalLockedAmount,
       vestingStartTime,
       cliffTime,
       frequency,
@@ -231,7 +229,6 @@ describe("[V3] Create vesting with spl token", () => {
       const recipientAta = recipientAtas[i];
       const recipientNode = {
         account: recipient.publicKey,
-        totalLockedAmount,
         vestingStartTime,
         cliffTime,
         frequency,
@@ -293,7 +290,6 @@ describe("[V3] Create vesting with spl token", () => {
     );
     const recipientNode = {
       account: newRecipient.publicKey,
-      totalLockedAmount,
       vestingStartTime,
       cliffTime,
       frequency,

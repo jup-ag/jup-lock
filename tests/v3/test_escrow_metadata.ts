@@ -153,6 +153,7 @@ describe("[V3] Create vesting metadata", () => {
       isAssertion: true,
       tokenProgram: TOKEN_PROGRAM_ID,
       totalDepositAmount,
+      cancelMode: 0,
       root,
     });
     console.log("Create escrow metadata");

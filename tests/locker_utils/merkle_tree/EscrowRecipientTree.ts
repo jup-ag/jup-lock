@@ -7,7 +7,6 @@ export class EscrowRecipientTree {
   constructor(
     balances: {
       account: web3.PublicKey;
-      totalLockedAmount: BN;
       vestingStartTime: BN;
       cliffTime: BN;
       frequency: BN;
@@ -18,7 +17,6 @@ export class EscrowRecipientTree {
         (
           {
             account,
-            totalLockedAmount,
             vestingStartTime,
             cliffTime,
             frequency,
@@ -27,7 +25,6 @@ export class EscrowRecipientTree {
         ) => {
           return EscrowRecipientTree.toNode(
             account,
-            totalLockedAmount,
             vestingStartTime,
             cliffTime,
             frequency
@@ -40,14 +37,12 @@ export class EscrowRecipientTree {
   // sha256(abi.encode(index, account, amount))
   static toNode(
     account: web3.PublicKey,
-    totalLockedAmount: BN,
     vestingStartTime: BN,
     cliffTime: BN,
     frequency: BN
   ): Buffer {
     const buf = Buffer.concat([
       account.toBuffer(),
-      new BN(totalLockedAmount).toArrayLike(Buffer, "le", 8),
       new BN(vestingStartTime).toArrayLike(Buffer, "le", 8),
       new BN(cliffTime).toArrayLike(Buffer, "le", 8),
       new BN(frequency).toArrayLike(Buffer, "le", 8),
@@ -65,7 +60,6 @@ export class EscrowRecipientTree {
 
   getProof(
     account: web3.PublicKey,
-    totalLockedAmount: BN,
     vestingStartTime: BN,
     cliffTime: BN,
     frequency: BN
@@ -73,7 +67,6 @@ export class EscrowRecipientTree {
     return this._tree.getProof(
       EscrowRecipientTree.toNode(
         account,
-        totalLockedAmount,
         vestingStartTime,
         cliffTime,
         frequency

@@ -33,10 +33,8 @@ impl ClaimV3Params {
     }
 
     pub fn verify_recipient(&self, recipient: Pubkey, root: [u8; 32]) -> Result<()> {
-        let total_locked_amount = self.get_total_locked_amount()?;
         let node = hashv(&[
             &recipient.key().to_bytes(),
-            &total_locked_amount.to_le_bytes(),
             &self.vesting_start_time.to_le_bytes(),
             &self.cliff_time.to_le_bytes(),
             &self.frequency.to_le_bytes(),

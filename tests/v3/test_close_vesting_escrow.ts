@@ -141,7 +141,6 @@ describe("[V3] Close vesting escrow", () => {
       leaves = recipients.map((item) => {
         return {
           account: item.publicKey,
-          totalLockedAmount,
           vestingStartTime,
           cliffTime,
           frequency,
@@ -149,7 +148,6 @@ describe("[V3] Close vesting escrow", () => {
       });
       const user = {
         account: recipients[0].publicKey,
-        totalLockedAmount,
         vestingStartTime,
         cliffTime,
         frequency,
@@ -166,6 +164,7 @@ describe("[V3] Close vesting escrow", () => {
         isAssertion: true,
         tokenProgram: TOKEN_PROGRAM_ID,
         totalDepositAmount,
+        cancelMode: 0,
         root,
       });
 
@@ -201,7 +200,6 @@ describe("[V3] Close vesting escrow", () => {
         const recipientAta = recipientAtas[i];
         const recipientNode = {
           account: recipient.publicKey,
-          totalLockedAmount,
           vestingStartTime,
           cliffTime,
           frequency,
@@ -243,6 +241,7 @@ describe("[V3] Close vesting escrow", () => {
         isAssertion: true,
         tokenProgram: TOKEN_PROGRAM_ID,
         totalDepositAmount,
+        cancelMode: 0,
         root,
       });
 
@@ -268,7 +267,6 @@ describe("[V3] Close vesting escrow", () => {
         const recipientAta = recipientAtas[i];
         const recipientNode = {
           account: recipient.publicKey,
-          totalLockedAmount,
           vestingStartTime,
           cliffTime,
           frequency,
@@ -362,7 +360,6 @@ describe("[V3] Close vesting escrow", () => {
       leaves = recipients.map((item) => {
         return {
           account: item.publicKey,
-          totalLockedAmount,
           vestingStartTime,
           cliffTime,
           frequency,
@@ -370,7 +367,6 @@ describe("[V3] Close vesting escrow", () => {
       });
       const user = {
         account: recipients[0].publicKey,
-        totalLockedAmount,
         vestingStartTime,
         cliffTime,
         frequency,
@@ -388,6 +384,7 @@ describe("[V3] Close vesting escrow", () => {
         isAssertion: true,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         totalDepositAmount,
+        cancelMode: 0,
         root,
       });
 
@@ -422,7 +419,6 @@ describe("[V3] Close vesting escrow", () => {
         const recipientAta = recipientAtas[i];
         const recipientNode = {
           account: recipient.publicKey,
-          totalLockedAmount,
           vestingStartTime,
           cliffTime,
           frequency,
@@ -467,6 +463,7 @@ describe("[V3] Close vesting escrow", () => {
         isAssertion: true,
         tokenProgram: TOKEN_2022_PROGRAM_ID,
         totalDepositAmount,
+        cancelMode: 0,
         root,
       });
       // wait until vesting is over
@@ -489,7 +486,6 @@ describe("[V3] Close vesting escrow", () => {
         const recipientAta = recipientAtas[i];
         const recipientNode = {
           account: recipient.publicKey,
-          totalLockedAmount,
           vestingStartTime,
           cliffTime,
           frequency,
