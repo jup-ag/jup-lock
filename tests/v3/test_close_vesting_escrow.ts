@@ -145,7 +145,8 @@ describe("[V3] Close vesting escrow", () => {
           amountPerPeriod,
           numberOfPeriod,
           cliffTime,
-          frequency
+          frequency,
+          vestingStartTime
         };
       });
       const user = {
@@ -154,7 +155,8 @@ describe("[V3] Close vesting escrow", () => {
         amountPerPeriod,
         numberOfPeriod,
         cliffTime,
-        frequency
+        frequency,
+        vestingStartTime
       };
       totalDepositAmount = totalLockedAmount.muln(leaves.length);
       root = generateMerkleTreeRoot(leaves);
@@ -208,7 +210,8 @@ describe("[V3] Close vesting escrow", () => {
           amountPerPeriod,
           numberOfPeriod,
           cliffTime,
-          frequency
+          frequency,
+          vestingStartTime
         };
         const recipientProof = getMerkleTreeProof(leaves, recipientNode);
 
@@ -277,7 +280,8 @@ describe("[V3] Close vesting escrow", () => {
           amountPerPeriod,
           numberOfPeriod,
           cliffTime,
-          frequency
+          frequency,
+          vestingStartTime
         };
         const recipientProof = getMerkleTreeProof(leaves, recipientNode);
 
@@ -372,7 +376,8 @@ describe("[V3] Close vesting escrow", () => {
           amountPerPeriod,
           numberOfPeriod,
           cliffTime,
-          frequency
+          frequency,
+          vestingStartTime
         };
       });
       const user = {
@@ -381,7 +386,8 @@ describe("[V3] Close vesting escrow", () => {
         amountPerPeriod,
         numberOfPeriod,
         cliffTime,
-        frequency
+        frequency,
+        vestingStartTime
       };
       totalDepositAmount = totalLockedAmount.muln(leaves.length);
       root = generateMerkleTreeRoot(leaves);
@@ -435,7 +441,8 @@ describe("[V3] Close vesting escrow", () => {
           amountPerPeriod,
           numberOfPeriod,
           cliffTime,
-          frequency
+          frequency,
+          vestingStartTime
         };
         const recipientProof = getMerkleTreeProof(leaves, recipientNode);
         try {
@@ -504,7 +511,8 @@ describe("[V3] Close vesting escrow", () => {
           amountPerPeriod,
           numberOfPeriod,
           cliffTime,
-          frequency
+          frequency,
+          vestingStartTime
         };
         const recipientProof = getMerkleTreeProof(leaves, recipientNode);
         try {

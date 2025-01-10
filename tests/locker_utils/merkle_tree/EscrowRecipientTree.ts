@@ -12,6 +12,7 @@ export class EscrowRecipientTree {
       numberOfPeriod: BN;
       cliffTime: BN;
       frequency: BN;
+      vestingStartTime: BN;
     }[]
   ) {
     this._tree = new MerkleTree(
@@ -24,6 +25,7 @@ export class EscrowRecipientTree {
             numberOfPeriod,
             cliffTime,
             frequency,
+            vestingStartTime
           },
           index
         ) => {
@@ -33,7 +35,8 @@ export class EscrowRecipientTree {
             amountPerPeriod,
             numberOfPeriod,
             cliffTime,
-            frequency
+            frequency,
+            vestingStartTime
           );
         }
       )
@@ -47,7 +50,8 @@ export class EscrowRecipientTree {
     amountPerPeriod: BN,
     numberOfPeriod: BN,
     cliffTime: BN,
-    frequency: BN
+    frequency: BN,
+    vestingStartTime: BN
   ): Buffer {
     const buf = Buffer.concat([
       account.toBuffer(),
@@ -56,6 +60,7 @@ export class EscrowRecipientTree {
       new BN(numberOfPeriod).toArrayLike(Buffer, "le", 8),
       new BN(cliffTime).toArrayLike(Buffer, "le", 8),
       new BN(frequency).toArrayLike(Buffer, "le", 8),
+      new BN(vestingStartTime).toArrayLike(Buffer, "le", 8),
     ]);
 
     const hashedBuff = Buffer.from(sha256(buf), "hex");
@@ -74,7 +79,8 @@ export class EscrowRecipientTree {
     amountPerPeriod: BN,
     numberOfPeriod: BN,
     cliffTime: BN,
-    frequency: BN
+    frequency: BN,
+    vestingStartTime: BN
   ): Buffer[] {
     return this._tree.getProof(
       EscrowRecipientTree.toNode(
@@ -83,7 +89,8 @@ export class EscrowRecipientTree {
         amountPerPeriod,
         numberOfPeriod,
         cliffTime,
-        frequency
+        frequency,
+        vestingStartTime
       )
     );
   }

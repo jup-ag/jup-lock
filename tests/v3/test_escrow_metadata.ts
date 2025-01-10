@@ -132,7 +132,8 @@ describe("[V3] Create vesting metadata", () => {
         amountPerPeriod,
         numberOfPeriod,
         cliffTime,
-        frequency
+        frequency,
+        vestingStartTime
       };
     });
     const user = {
@@ -141,7 +142,8 @@ describe("[V3] Create vesting metadata", () => {
       amountPerPeriod,
       numberOfPeriod,
       cliffTime,
-      frequency
+      frequency,
+      vestingStartTime
     };
     totalDepositAmount = totalLockedAmount.muln(leaves.length);
     root = generateMerkleTreeRoot(leaves);
