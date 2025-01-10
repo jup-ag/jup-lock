@@ -7,6 +7,8 @@ export function generateMerkleTreeRoot(
     cliffUnlockAmount: BN;
     amountPerPeriod: BN;
     numberOfPeriod: BN;
+    cliffTime: BN;
+    frequency: BN;
   }[]
 ): number[] {
   const escrowRecipientTree = new EscrowRecipientTree(data);
@@ -19,20 +21,33 @@ export function getMerkleTreeProof(
     cliffUnlockAmount: BN;
     amountPerPeriod: BN;
     numberOfPeriod: BN;
+    cliffTime: BN;
+    frequency: BN;
   }[],
   user: {
     account: web3.PublicKey;
     cliffUnlockAmount: BN;
     amountPerPeriod: BN;
     numberOfPeriod: BN;
+    cliffTime: BN;
+    frequency: BN;
   }
 ) {
-  const { account, cliffUnlockAmount, amountPerPeriod, numberOfPeriod } = user;
+  const {
+    account,
+    cliffUnlockAmount,
+    amountPerPeriod,
+    numberOfPeriod,
+    cliffTime,
+    frequency,
+  } = user;
   const escrowRecipientTree = new EscrowRecipientTree(data);
   return escrowRecipientTree.getProof(
     account,
     cliffUnlockAmount,
     amountPerPeriod,
-    numberOfPeriod
+    numberOfPeriod,
+    cliffTime,
+    frequency
   );
 }

@@ -111,6 +111,8 @@ describe("[V3] Cancel escrow", () => {
         cliffUnlockAmount,
         amountPerPeriod,
         numberOfPeriod,
+        cliffTime,
+        frequency
       };
     });
     const user = {
@@ -118,6 +120,8 @@ describe("[V3] Cancel escrow", () => {
       cliffUnlockAmount,
       amountPerPeriod,
       numberOfPeriod,
+      cliffTime,
+      frequency
     };
     totalDepositAmount = totalLockedAmount.muln(leaves.length);
     root = generateMerkleTreeRoot(leaves);
