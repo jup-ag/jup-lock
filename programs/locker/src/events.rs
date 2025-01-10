@@ -18,6 +18,7 @@ pub struct EventCreateVestingEscrow {
 pub struct EventCreateVestingEscrowV3 {
     pub total_deposit_amount: u64,
     pub escrow: Pubkey,
+    pub cancel_mode: u8,
     pub root: [u8; 32],
 }
 

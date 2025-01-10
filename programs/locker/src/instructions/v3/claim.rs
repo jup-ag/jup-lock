@@ -153,12 +153,12 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     let claim_status = &mut ctx.accounts.claim_status;
-    let escrow = ctx.accounts.escrow.load_mut()?;
+    let mut escrow = ctx.accounts.escrow.load_mut()?;
 
     params.verify_recipient(ctx.accounts.recipient.key(), escrow.root)?;
 
     let amount = params.get_claim_amount(claim_status.total_claimed_amount)?;
-    escrow.total_claimed_amount.safe_add(amount)?;
+    escrow.total_claimed_amount = escrow.total_claimed_amount.safe_add(amount)?;
     drop(escrow);
 
     // Process remaining accounts
@@ -187,11 +187,7 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
     )?;
 
     // update claim status
-    claim_status.total_claimed_amount.safe_add(amount)?;
-    claim_status.current_locked_amount = params
-        .get_total_locked_amount()?
-        .safe_sub(claim_status.total_claimed_amount)?;
-    claim_status.latest_claimed_amount = amount;
+    claim_status.total_claimed_amount = claim_status.total_claimed_amount.safe_add(amount)?;
 
     let current_ts = Clock::get()?.unix_timestamp as u64;
 

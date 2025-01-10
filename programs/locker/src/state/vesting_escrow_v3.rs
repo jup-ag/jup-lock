@@ -13,12 +13,14 @@ pub struct VestingEscrowV3 {
     pub base: Pubkey,
     /// 256 bit merkle root
     pub root: [u8; 32],
+    /// cancel mode
+    pub cancel_mode: u8,
     /// escrow bump
     pub escrow_bump: u8,
     /// token program flag
     pub token_program_flag: u8,
     /// padding
-    pub padding_0: [u8; 6],
+    pub padding_0: [u8; 5],
     ///
     pub total_deposit_amount: u64,
     ///
@@ -39,6 +41,7 @@ impl VestingEscrowV3 {
         base: Pubkey,
         total_deposit_amount: u64,
         root: [u8; 32],
+        cancel_mode: u8,
         escrow_bump: u8,
         token_program_flag: u8,
     ) {
@@ -47,6 +50,7 @@ impl VestingEscrowV3 {
         self.base = base;
         self.total_deposit_amount = total_deposit_amount;
         self.root = root;
+        self.cancel_mode = cancel_mode;
         self.escrow_bump = escrow_bump;
         self.token_program_flag = token_program_flag;
     }

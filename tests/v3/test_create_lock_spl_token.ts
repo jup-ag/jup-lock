@@ -168,6 +168,7 @@ describe("[V3] Create vesting with spl token", () => {
       isAssertion: true,
       tokenProgram: TOKEN_PROGRAM_ID,
       totalDepositAmount,
+      cancelMode: 0,
       root,
     });
 
@@ -211,6 +212,7 @@ describe("[V3] Create vesting with spl token", () => {
       isAssertion: true,
       tokenProgram: TOKEN_PROGRAM_ID,
       totalDepositAmount,
+      cancelMode: 0,
       root,
     });
 
@@ -266,6 +268,7 @@ describe("[V3] Create vesting with spl token", () => {
       isAssertion: true,
       tokenProgram: TOKEN_PROGRAM_ID,
       totalDepositAmount,
+      cancelMode: 0,
       root,
     });
 

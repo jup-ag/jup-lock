@@ -121,6 +121,7 @@ describe("[V3] Create vesting with Token2022", () => {
       isAssertion: true,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       totalDepositAmount,
+      cancelMode: 0,
       root,
     });
 
@@ -154,6 +155,7 @@ describe("[V3] Create vesting with Token2022", () => {
       isAssertion: true,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       totalDepositAmount,
+      cancelMode: 0,
       root,
     });
 
@@ -209,6 +211,7 @@ describe("[V3] Create vesting with Token2022", () => {
       isAssertion: true,
       tokenProgram: TOKEN_2022_PROGRAM_ID,
       totalDepositAmount,
+      cancelMode: 0,
       root,
     });
 

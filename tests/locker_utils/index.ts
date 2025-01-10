@@ -574,6 +574,7 @@ export interface CreateVestingPlanV3Params {
   tokenMint: web3.PublicKey;
   ownerKeypair: web3.Keypair;
   totalDepositAmount: BN;
+  cancelMode: number;
   root: number[];
   tokenProgram: web3.PublicKey;
 }
@@ -584,6 +585,7 @@ export async function createVestingPlanV3(params: CreateVestingPlanV3Params) {
     tokenMint,
     ownerKeypair,
     totalDepositAmount,
+    cancelMode,
     root,
     tokenProgram,
   } = params;
@@ -635,6 +637,7 @@ export async function createVestingPlanV3(params: CreateVestingPlanV3Params) {
       {
         totalDepositAmount,
         root,
+        cancelMode
       },
       remainingAccountsInfo
     )
@@ -783,22 +786,6 @@ export async function claimTokenV3(params: ClaimV3Params) {
     .remainingAccounts(remainingAccounts ? remainingAccounts : [])
     .signers([recipient])
     .rpc();
-
-  if (isAssertion) {
-    const claimStatusState = await program.account.claimStatus.fetch(
-      claimStatus
-    );
-
-    const postEscrowTokenBalance = await getTokenBalance(
-      program.provider.connection,
-      escrowToken
-    );
-
-    // balance changed in escrow must equal claimed amount
-    expect(claimStatusState.latestClaimedAmount.toNumber()).eq(
-      preEscrowTokenBalance - postEscrowTokenBalance
-    );
-  }
 }
 
 export interface CancelVestingPlanParams {

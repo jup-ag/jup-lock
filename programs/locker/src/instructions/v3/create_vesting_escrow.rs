@@ -14,6 +14,7 @@ use crate::*;
 /// Accounts for [locker::create_vesting_escrow].
 pub struct CreateVestingEscrowV3Parameters {
     pub total_deposit_amount: u64,
+    pub cancel_mode: u8,
     pub root: [u8; 32],
 }
 
@@ -25,6 +26,7 @@ impl CreateVestingEscrowV3Parameters {
         sender: Pubkey,
         base: Pubkey,
         total_deposit_amount: u64,
+        cancel_mode: u8,
         escrow_bump: u8,
         token_program_flag: TokenProgramFlag,
     ) -> Result<()> {
@@ -35,6 +37,7 @@ impl CreateVestingEscrowV3Parameters {
             base,
             total_deposit_amount,
             self.root,
+            cancel_mode,
             escrow_bump,
             token_program_flag.into(),
         );
@@ -109,6 +112,7 @@ pub fn handle_create_vesting_escrow_v3<'c: 'info, 'info>(
         ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         params.total_deposit_amount,
+        params.cancel_mode,
         ctx.bumps.escrow,
         token_program_flag,
     )?;
@@ -140,11 +144,13 @@ pub fn handle_create_vesting_escrow_v3<'c: 'info, 'info>(
     let &CreateVestingEscrowV3Parameters {
         root,
         total_deposit_amount,
+        cancel_mode,
     } = params;
 
     emit_cpi!(EventCreateVestingEscrowV3 {
         total_deposit_amount,
         escrow: ctx.accounts.escrow.key(),
+        cancel_mode,
         root: root
     });
 
