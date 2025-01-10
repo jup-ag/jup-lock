@@ -38,6 +38,8 @@ impl ClaimV3Params {
             &self.cliff_unlock_amount.to_le_bytes(),
             &self.amount_per_period.to_le_bytes(),
             &self.number_of_period.to_le_bytes(),
+            &self.cliff_time.to_le_bytes(),
+            &self.frequency.to_be_bytes()
         ]);
 
         let leaf = hashv(&[LEAF_PREFIX, &node.to_bytes()]);
