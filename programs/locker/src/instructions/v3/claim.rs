@@ -101,7 +101,7 @@ pub struct ClaimV3<'info> {
         ],
         bump,
         space = 8 + ClaimStatus::INIT_SPACE,
-        payer = recipient
+        payer = payer
     )]
     pub claim_status: Account<'info, ClaimStatus>,
 
@@ -128,6 +128,9 @@ pub struct ClaimV3<'info> {
     /// Recipient.
     #[account(mut)]
     pub recipient: Signer<'info>,
+
+    #[account(mut)]
+    pub payer: Signer<'info>,
 
     /// Recipient Token Account.
     #[account(

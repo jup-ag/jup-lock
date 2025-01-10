@@ -781,6 +781,7 @@ export async function claimTokenV3(params: ClaimV3Params) {
       escrow,
       escrowToken,
       recipient: recipient.publicKey,
+      payer: recipient.publicKey,
       recipientToken,
     })
     .remainingAccounts(remainingAccounts ? remainingAccounts : [])
