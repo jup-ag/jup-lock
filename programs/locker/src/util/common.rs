@@ -22,7 +22,7 @@ pub fn is_closed(info: &AccountInfo) -> bool {
 
 /// This is safe because it shortens lifetimes 'info: 'o and 'a: 'o to that of 'o
 pub fn account_info_ref_lifetime_shortener<'info: 'a + 'o, 'a: 'o, 'o>(
-    ai: &'a AccountInfo<'info>,
+    account_info: &'a AccountInfo<'info>,
 ) -> &'o AccountInfo<'o> {
-    unsafe { core::mem::transmute(ai) }
+    unsafe { core::mem::transmute(account_info) }
 }
