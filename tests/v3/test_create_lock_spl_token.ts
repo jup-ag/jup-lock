@@ -148,7 +148,7 @@ describe("[V3] Create vesting with spl token", () => {
         numberOfPeriod,
         cliffTime,
         frequency,
-        vestingStartTime
+        vestingStartTime,
       };
     });
     const user = {
@@ -158,7 +158,7 @@ describe("[V3] Create vesting with spl token", () => {
       numberOfPeriod,
       cliffTime,
       frequency,
-      vestingStartTime
+      vestingStartTime,
     };
     totalDepositAmount = totalLockedAmount.muln(leaves.length);
     root = generateMerkleTreeRoot(leaves);
@@ -241,7 +241,7 @@ describe("[V3] Create vesting with spl token", () => {
         numberOfPeriod,
         cliffTime,
         frequency,
-        vestingStartTime
+        vestingStartTime,
       };
       const recipientProof = getMerkleTreeProof(leaves, recipientNode);
       try {
@@ -305,7 +305,7 @@ describe("[V3] Create vesting with spl token", () => {
       numberOfPeriod,
       cliffTime,
       frequency,
-      vestingStartTime
+      vestingStartTime,
     };
     const newRecipientProof = getMerkleTreeProof(leaves, recipientNode);
 
@@ -332,5 +332,140 @@ describe("[V3] Create vesting with spl token", () => {
       "Invalid merkle proof",
       true
     );
+  });
+
+  it("recipient able to claim to another recipient token account", async () => {
+    let escrow = await createVestingPlanV3({
+      ownerKeypair: UserKP,
+      tokenMint: TOKEN,
+      isAssertion: true,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      totalDepositAmount,
+      cancelMode: 0,
+      root,
+    });
+
+    while (true) {
+      const currentBlockTime = await getCurrentBlockTime(provider.connection);
+      if (currentBlockTime > cliffTime.toNumber()) {
+        break;
+      } else {
+        await sleep(1000);
+        console.log("Wait until startTime");
+      }
+    }
+
+    const newRecipient = web3.Keypair.generate();
+    const newRecipientorAta = await createAssociatedTokenAccountIdempotent(
+      provider.connection,
+      UserKP,
+      TOKEN,
+      newRecipient.publicKey,
+      {},
+      TOKEN_PROGRAM_ID
+    );
+
+    try {
+      const claimParams = {
+        recipient: recipients[0],
+        recipientToken: newRecipientorAta,
+        tokenMint: TOKEN,
+        escrow,
+        maxAmount: new BN(100_000),
+        isAssertion: true,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        proof,
+        vestingStartTime,
+        cliffTime,
+        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
+      };
+
+      await claimTokenV3(claimParams);
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
+  it("recipient claim more than one time", async () => {
+    let escrow = await createVestingPlanV3({
+      ownerKeypair: UserKP,
+      tokenMint: TOKEN,
+      isAssertion: true,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      totalDepositAmount,
+      cancelMode: 0,
+      root,
+    });
+
+    while (true) {
+      const currentBlockTime = await getCurrentBlockTime(provider.connection);
+      if (currentBlockTime > cliffTime.toNumber()) {
+        break;
+      } else {
+        await sleep(1000);
+        console.log("Wait until startTime");
+      }
+    }
+
+    // first time claim
+    try {
+      const claimParams = {
+        recipient: recipients[0],
+        recipientToken: recipientAtas[0],
+        tokenMint: TOKEN,
+        escrow,
+        maxAmount: new BN(100_000),
+        isAssertion: true,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        proof,
+        vestingStartTime,
+        cliffTime,
+        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
+      };
+
+      await claimTokenV3(claimParams);
+    } catch (error) {
+      console.log(error);
+    }
+
+    while (true) {
+      const currentBlockTime = await getCurrentBlockTime(provider.connection);
+      if (currentBlockTime > cliffTime.toNumber()) {
+        break;
+      } else {
+        await sleep(1000);
+        console.log("Wait until startTime");
+      }
+    }
+
+    // 2nd claim
+    try {
+      const claimParams = {
+        recipient: recipients[0],
+        recipientToken: recipientAtas[0],
+        tokenMint: TOKEN,
+        escrow,
+        maxAmount: new BN(100_000),
+        isAssertion: true,
+        tokenProgram: TOKEN_PROGRAM_ID,
+        proof,
+        vestingStartTime,
+        cliffTime,
+        frequency,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
+      };
+
+      await claimTokenV3(claimParams);
+    } catch (error) {
+      console.log(error);
+    }
   });
 });

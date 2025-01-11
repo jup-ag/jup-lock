@@ -222,6 +222,59 @@ describe("[V3] Cancel escrow", () => {
     );
   });
 
+  it("Creator cancel escrow with another destination fee account", async () => {
+    let escrow = await createVestingPlanV3({
+      ownerKeypair: UserKP,
+      tokenMint: TOKEN,
+      isAssertion: true,
+      tokenProgram: TOKEN_2022_PROGRAM_ID,
+      totalDepositAmount,
+      cancelMode: 1,
+      root,
+    });
+
+    console.log("Cancel Vesting Plan");
+    invokeAndAssertError(
+      async () => {
+        await cancelVestingPlanV3(
+          {
+            escrow,
+            isAssertion: true,
+            rentReceiver: UserKP.publicKey,
+            creatorToken: UserToken,
+            signer: recipients[0],
+          },
+          0,
+          200_000
+        );
+      },
+      "Not permit to do this action",
+      true
+    );
+
+    const newDestination = web3.Keypair.generate()
+    const desAta = await createAssociatedTokenAccountIdempotent(
+      provider.connection,
+      UserKP,
+      TOKEN,
+      newDestination.publicKey,
+      {},
+      TOKEN_2022_PROGRAM_ID
+    );
+
+    await cancelVestingPlanV3(
+      {
+        escrow,
+        isAssertion: true,
+        rentReceiver: UserKP.publicKey,
+        creatorToken: desAta,
+        signer: UserKP,
+      },
+      0,
+      200_000
+    );
+  });
+
   it("Recipient is not able to cancel", async () => {
     let escrow = await createVestingPlanV3({
       ownerKeypair: UserKP,
