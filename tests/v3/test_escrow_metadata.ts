@@ -166,7 +166,7 @@ describe("[V3] Create vesting metadata", () => {
       name: "Jupiter lock",
       description: "This is jupiter lock",
       creatorEmail: "andrew@raccoons.dev",
-      recipientEmail: "max@raccoons.dev",
+      recipientEmail: "",
       creator: UserKP,
       isAssertion: true,
     });
