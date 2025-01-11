@@ -53,7 +53,6 @@ impl CreateVestingEscrowV3Parameters {
 #[event_cpi]
 #[derive(Accounts)]
 pub struct CreateVestingEscrowV3<'info> {
-    #[account(mut)]
     pub base: Signer<'info>,
 
     /// Escrow.
