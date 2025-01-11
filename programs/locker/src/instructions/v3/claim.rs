@@ -32,7 +32,7 @@ impl ClaimV3Params {
             &self.number_of_period.to_le_bytes(),
             &self.cliff_time.to_le_bytes(),
             &self.frequency.to_le_bytes(),
-            &self.vesting_start_time.to_le_bytes()
+            &self.vesting_start_time.to_le_bytes(),
         ]);
 
         let leaf = hashv(&[LEAF_PREFIX, &node.to_bytes()]);
@@ -149,6 +149,8 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     let claim_status = &mut ctx.accounts.claim_status;
+    claim_status.init_if_needed(ctx.accounts.recipient.key(), ctx.accounts.escrow.key())?;
+
     let mut escrow = ctx.accounts.escrow.load_mut()?;
 
     params.verify_recipient(ctx.accounts.recipient.key(), escrow.root)?;
