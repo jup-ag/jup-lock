@@ -1,3 +1,5 @@
+use crate::util::MemoTransferContext;
+use crate::*;
 use anchor_spl::memo::Memo;
 use anchor_spl::token_interface::{
     close_account, CloseAccount, Mint, TokenAccount, TokenInterface,
@@ -6,8 +8,6 @@ use util::{
     harvest_fees, parse_remaining_accounts, transfer_to_user_v3, AccountsType,
     ParsedRemainingAccounts, TRANSFER_MEMO_CANCEL_VESTING,
 };
-use crate::util::MemoTransferContext;
-use crate::*;
 
 /// Accounts for [locker::cancel_vesting_escrow_v3].
 #[derive(Accounts)]
@@ -35,12 +35,7 @@ pub struct CancelVestingEscrowV3<'info> {
     pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// Creator Token Account.
-    #[account(
-        mut,
-        associated_token::mint = token_mint,
-        associated_token::authority = escrow.load()?.creator,
-        associated_token::token_program = token_program
-    )]
+    #[account(mut)]
     pub creator_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// CHECKED: The Token Account will receive the rent
