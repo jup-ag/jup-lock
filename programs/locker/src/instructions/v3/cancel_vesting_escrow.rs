@@ -43,7 +43,6 @@ pub struct CancelVestingEscrowV3<'info> {
     pub rent_receiver: UncheckedAccount<'info>,
 
     /// Signer.
-    #[account(mut)]
     pub signer: Signer<'info>,
 
     /// Memo program.

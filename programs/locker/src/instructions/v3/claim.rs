@@ -122,7 +122,6 @@ pub struct ClaimV3<'info> {
     pub escrow_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
     /// Recipient.
-    #[account(mut)]
     pub recipient: Signer<'info>,
 
     #[account(mut)]
