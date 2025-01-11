@@ -1,6 +1,7 @@
 use static_assertions::const_assert_eq;
 
 use crate::*;
+use safe_math::SafeMath;
 
 #[account(zero_copy)]
 #[derive(Default, InitSpace, Debug)]
@@ -53,6 +54,11 @@ impl VestingEscrowV3 {
         self.cancel_mode = cancel_mode;
         self.escrow_bump = escrow_bump;
         self.token_program_flag = token_program_flag;
+    }
+
+    pub fn accumulate_claimed_amount(&mut self, claimed_amount: u64) -> Result<()> {
+        self.total_claimed_amount = self.total_claimed_amount.safe_add(claimed_amount)?;
+        Ok(())
     }
 
     pub fn is_claimed_full_amount(&self) -> Result<bool> {

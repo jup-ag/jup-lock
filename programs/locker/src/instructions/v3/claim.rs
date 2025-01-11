@@ -154,7 +154,7 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
     params.verify_recipient(ctx.accounts.recipient.key(), escrow.root)?;
 
     let amount = params.get_claim_amount(claim_status.total_claimed_amount)?;
-    escrow.total_claimed_amount = escrow.total_claimed_amount.safe_add(amount)?;
+    escrow.accumulate_claimed_amount(amount)?;
     drop(escrow);
 
     // Process remaining accounts
@@ -183,7 +183,7 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
     )?;
 
     // update claim status
-    claim_status.total_claimed_amount = claim_status.total_claimed_amount.safe_add(amount)?;
+    claim_status.accumulate_claimed_amount(amount)?;
 
     let current_ts = Clock::get()?.unix_timestamp as u64;
 
