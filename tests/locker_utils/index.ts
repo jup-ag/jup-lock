@@ -637,7 +637,7 @@ export async function createVestingPlanV3(params: CreateVestingPlanV3Params) {
       {
         totalDepositAmount,
         root,
-        cancelMode
+        cancelMode,
       },
       remainingAccountsInfo
     )
@@ -734,11 +734,6 @@ export async function claimTokenV3(params: ClaimV3Params) {
     true,
     tokenProgram,
     ASSOCIATED_TOKEN_PROGRAM_ID
-  );
-
-  const preEscrowTokenBalance = await getTokenBalance(
-    program.provider.connection,
-    escrowToken
   );
 
   let remainingAccountsInfo = null;
@@ -944,13 +939,7 @@ export async function cancelVestingPlanV3(
   claimable_amount: number,
   total_amount: number
 ) {
-  let {
-    isAssertion,
-    escrow,
-    rentReceiver,
-    creatorToken,
-    signer,
-  } = params;
+  let { isAssertion, escrow, rentReceiver, creatorToken, signer } = params;
   const program = createLockerProgram(new Wallet(signer));
   const escrowState = await program.account.vestingEscrowV3.fetch(escrow);
   const tokenProgram =
@@ -1023,13 +1012,7 @@ export async function cancelVestingPlanV3(
     );
     const epoch = BigInt(await getCurrentEpoch(program.provider.connection));
     creator_fee = feeConfig
-      ? Number(
-          calculateEpochFee(
-            feeConfig,
-            epoch,
-            BigInt(total_amount)
-          )
-        )
+      ? Number(calculateEpochFee(feeConfig, epoch, BigInt(total_amount)))
       : 0;
     claimer_fee = feeConfig
       ? Number(calculateEpochFee(feeConfig, epoch, BigInt(claimable_amount)))
@@ -1206,5 +1189,40 @@ export async function closeVestingEscrowV3(params: CloseVestingEscrowParams) {
       escrowToken
     );
     expect(escrowTokenState).eq(null);
+  }
+}
+
+export interface CloseClaimStatusParams {
+  isAssertion: boolean;
+  recipient: web3.Keypair;
+  escrow: web3.PublicKey;
+}
+
+export async function closeClaimStatus(params: CloseClaimStatusParams) {
+  let { isAssertion, escrow, recipient } = params;
+  const program = createLockerProgram(new Wallet(recipient));
+  let [claimStatus] = deriveClaimStatus(
+    recipient.publicKey,
+    escrow,
+    program.programId
+  );
+  try{
+  await program.methods
+    .closeClaimStatus()
+    .accounts({
+      escrow,
+      claimStatus,
+      recipient: recipient.publicKey,
+    })
+    .signers([recipient])
+    .rpc();
+  } catch (e) {
+    console.log(e)
+  }
+  if (isAssertion) {
+    let claimStatusState = await program.account.claimStatus.fetchNullable(
+      claimStatus
+    );
+    expect(claimStatusState).eq(null)
   }
 }

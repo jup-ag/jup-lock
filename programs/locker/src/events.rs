@@ -72,3 +72,10 @@ pub struct EventCancelVestingEscrowV3 {
 pub struct EventCloseVestingEscrow {
     pub escrow: Pubkey,
 }
+
+
+#[event]
+pub struct EventCloseClaimStatus {
+    pub escrow: Pubkey,
+    pub recipient: Pubkey
+}

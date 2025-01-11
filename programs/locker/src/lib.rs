@@ -199,6 +199,18 @@ pub mod locker {
         handle_claim_v3(ctx, &params, remaining_accounts_info)
     }
 
+    /// Close claim status account
+    /// Only allow close if escrow cancelled or closed
+    /// Rent fee will be transferred to recipient
+    ///  # Arguments
+    ///
+    /// * ctx - The accounts needed by instruction.
+    pub fn close_claim_status<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CloseClaimStatus<'info>>,
+    ) -> Result<()> {
+        handle_close_claim_status(ctx)
+    }
+
     /// Close vesting escrow V3
     ///  - Close vesting escrow and escrow ATA and escrow metadata if all recipients already claimed all tokens
     ///  - Rent receiver must be escrow's creator
