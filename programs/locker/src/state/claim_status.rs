@@ -4,7 +4,10 @@ use safe_math::SafeMath;
 #[account]
 #[derive(Default, InitSpace, Debug)]
 pub struct ClaimStatus {
+    /// total claimed amount of recipient
     pub total_claimed_amount: u64,
+    /// buffer
+    pub buffer: [u128; 5]
 }
 
 impl ClaimStatus {

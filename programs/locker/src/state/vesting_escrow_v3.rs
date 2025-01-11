@@ -22,9 +22,9 @@ pub struct VestingEscrowV3 {
     pub token_program_flag: u8,
     /// padding
     pub padding_0: [u8; 5],
-    ///
+    /// total deposited amount
     pub total_deposit_amount: u64,
-    ///
+    /// total claimed amount of all recipients.
     pub total_claimed_amount: u64,
     /// cancelled_at
     pub cancelled_at: u64,
