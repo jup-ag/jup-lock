@@ -24,10 +24,10 @@ export class EscrowRecipientTree {
 
   private _validateNode(nodeData: NodeType[]) {
     nodeData.forEach((item: NodeType) => {
-      if (item.vestingStartTime.gt(item.cliffTime)) {
+      if (item.vestingStartTime.gte(item.cliffTime)) {
         throw Error("cliff time must greater or equal vesting start time");
       }
-      if (item.frequency.eqn(0)) {
+      if (!item.frequency.gtn(0)) {
         throw Error("frequency must geater than zero");
       }
     });
