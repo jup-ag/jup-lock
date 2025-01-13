@@ -1196,33 +1196,41 @@ export interface CloseClaimStatusParams {
   isAssertion: boolean;
   recipient: web3.Keypair;
   escrow: web3.PublicKey;
+  rentReceiver: web3.PublicKey;
 }
 
 export async function closeClaimStatus(params: CloseClaimStatusParams) {
-  let { isAssertion, escrow, recipient } = params;
+  let { isAssertion, escrow, recipient, rentReceiver } = params;
   const program = createLockerProgram(new Wallet(recipient));
   let [claimStatus] = deriveClaimStatus(
     recipient.publicKey,
     escrow,
     program.programId
   );
-  try{
-  await program.methods
-    .closeClaimStatus()
-    .accounts({
-      escrow,
-      claimStatus,
-      recipient: recipient.publicKey,
-    })
-    .signers([recipient])
-    .rpc();
+  const rentBalance = await program.provider.connection.getBalance(claimStatus);
+  const preBalance = await program.provider.connection.getBalance(rentReceiver);
+  try {
+    await program.methods
+      .closeClaimStatus()
+      .accounts({
+        escrow,
+        claimStatus,
+        rentReceiver: rentReceiver,
+        recipient: recipient.publicKey,
+      })
+      .signers([recipient])
+      .rpc();
   } catch (e) {
-    console.log(e)
+    console.log(e);
   }
   if (isAssertion) {
     let claimStatusState = await program.account.claimStatus.fetchNullable(
       claimStatus
     );
-    expect(claimStatusState).eq(null)
+    expect(claimStatusState).eq(null);
+    const postBalance = await program.provider.connection.getBalance(
+      rentReceiver
+    );
+    expect(preBalance + rentBalance).eq(postBalance);
   }
 }

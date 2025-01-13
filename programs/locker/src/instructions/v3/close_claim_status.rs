@@ -10,13 +10,16 @@ pub struct CloseClaimStatus<'info> {
     #[account(
         mut,
         has_one = recipient,
-        has_one = escrow,
-        close = recipient,
+        has_one = escrow
     )]
     pub claim_status: Account<'info, ClaimStatus>,
 
     /// CHECK: this account use to verify escrow cancelled or closed
     pub escrow: UncheckedAccount<'info>,
+
+    /// CHECKED: The Token Account will receive the rent
+    #[account(mut)]
+    pub rent_receiver: UncheckedAccount<'info>,
 
     /// recipient
     #[account(mut)]
@@ -44,13 +47,14 @@ pub fn handle_close_claim_status<'c: 'info, 'info>(
     if is_close {
         close(
             ctx.accounts.claim_status.to_account_info(),
-            ctx.accounts.recipient.to_account_info(),
+            ctx.accounts.rent_receiver.to_account_info(),
         )?;
     }
 
     emit_cpi!(EventCloseClaimStatus {
         escrow: ctx.accounts.escrow.key(),
         recipient: ctx.accounts.recipient.key(),
+        rent_receiver: ctx.accounts.rent_receiver.key()
     });
     Ok(())
 }

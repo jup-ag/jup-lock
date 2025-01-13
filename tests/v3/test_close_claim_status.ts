@@ -245,6 +245,7 @@ describe("[V3] Close vesting escrow", () => {
       await closeClaimStatus({
         escrow,
         recipient: recipients[0],
+        rentReceiver: UserKP.publicKey,
         isAssertion: true,
       });
     });
@@ -307,6 +308,7 @@ describe("[V3] Close vesting escrow", () => {
         escrow,
         recipient: recipients[0],
         isAssertion: true,
+        rentReceiver: UserKP.publicKey,
       });
     });
   });
@@ -488,6 +490,7 @@ describe("[V3] Close vesting escrow", () => {
         escrow,
         recipient: recipients[0],
         isAssertion: true,
+        rentReceiver: UserKP.publicKey,
       });
     });
 
@@ -569,6 +572,7 @@ describe("[V3] Close vesting escrow", () => {
         escrow,
         recipient: recipients[0],
         isAssertion: true,
+        rentReceiver: UserKP.publicKey,
       });
     });
   });

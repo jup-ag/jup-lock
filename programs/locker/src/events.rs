@@ -77,5 +77,6 @@ pub struct EventCloseVestingEscrow {
 #[event]
 pub struct EventCloseClaimStatus {
     pub escrow: Pubkey,
-    pub recipient: Pubkey
+    pub recipient: Pubkey,
+    pub rent_receiver: Pubkey
 }
