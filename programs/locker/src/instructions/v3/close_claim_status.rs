@@ -17,7 +17,7 @@ pub struct CloseClaimStatus<'info> {
     /// CHECK: this account use to verify escrow cancelled or closed
     pub escrow: UncheckedAccount<'info>,
 
-    /// CHECKED: The Token Account will receive the rent
+    /// CHECKED: The system account will receive the rent
     #[account(mut)]
     pub rent_receiver: UncheckedAccount<'info>,
 
