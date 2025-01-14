@@ -15,7 +15,6 @@ import { createAndFundWallet, getCurrentBlockTime, sleep } from "../common";
 import {
   cancelVestingPlanV3,
   closeClaimStatus,
-  closeVestingEscrowV3,
   createEscrowMetadataV3,
 } from "../locker_utils";
 import {
@@ -171,85 +170,6 @@ describe("[V3] Close vesting escrow", () => {
       proof = getMerkleTreeProof(leaves, user);
     });
 
-    it("Close claim status when escrow is closed", async () => {
-      let blockTime = await getCurrentBlockTime(provider.connection);
-      let escrow = await createVestingPlanV3({
-        ownerKeypair: UserKP,
-        tokenMint: TOKEN,
-        isAssertion: true,
-        tokenProgram: TOKEN_PROGRAM_ID,
-        totalDepositAmount,
-        cancelMode: 0,
-        root,
-      });
-
-      // wait until vesting is over
-      while (true) {
-        const currentBlockTime = await getCurrentBlockTime(provider.connection);
-        if (
-          currentBlockTime >
-          blockTime +
-            cliffTimeDurraion +
-            frequency.toNumber() * numberOfPeriod.toNumber()
-        ) {
-          break;
-        } else {
-          await sleep(1000);
-          console.log("Wait until vesting over");
-        }
-      }
-
-      console.log("Claim token");
-      for (let i = 0; i < recipients.length; i++) {
-        const recipient = recipients[i];
-        const recipientAta = recipientAtas[i];
-        const recipientNode = {
-          account: recipient.publicKey,
-          cliffUnlockAmount,
-          amountPerPeriod,
-          numberOfPeriod,
-          cliffTime,
-          frequency,
-          vestingStartTime,
-        };
-        const recipientProof = getMerkleTreeProof(leaves, recipientNode);
-
-        const claimParams = {
-          recipient: recipient,
-          recipientToken: recipientAta,
-          tokenMint: TOKEN,
-          escrow,
-          maxAmount: new BN(1_000_000),
-          isAssertion: false,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          proof: recipientProof,
-          vestingStartTime,
-          cliffTime,
-          frequency,
-          cliffUnlockAmount,
-          amountPerPeriod,
-          numberOfPeriod,
-        };
-        await claimTokenV3(claimParams);
-      }
-
-      console.log("Close vesting escrow");
-      await closeVestingEscrowV3({
-        escrow,
-        creator: UserKP,
-        isAssertion: true,
-      });
-
-      console.log("Close claim status");
-
-      await closeClaimStatus({
-        escrow,
-        recipient: recipients[0],
-        rentReceiver: UserKP.publicKey,
-        isAssertion: true,
-      });
-    });
-
     it("Close claim status when escrow is cancelled", async () => {
       let escrow = await createVestingPlanV3({
         ownerKeypair: UserKP,
@@ -401,97 +321,6 @@ describe("[V3] Close vesting escrow", () => {
       totalDepositAmount = totalLockedAmount.muln(leaves.length);
       root = generateMerkleTreeRoot(leaves);
       proof = getMerkleTreeProof(leaves, user);
-    });
-
-    it("Close claim status when escrow is closed", async () => {
-      let blockTime = await getCurrentBlockTime(provider.connection);
-      let escrow = await createVestingPlanV3({
-        ownerKeypair: UserKP,
-        tokenMint: TOKEN,
-        isAssertion: true,
-        tokenProgram: TOKEN_2022_PROGRAM_ID,
-        totalDepositAmount,
-        cancelMode: 0,
-        root,
-      });
-
-      console.log("Create escrow metadata");
-      await createEscrowMetadataV3({
-        escrow,
-        name: "Jupiter lock",
-        description: "This is jupiter lock",
-        creatorEmail: "andrew@raccoons.dev",
-        recipientEmail: "",
-        creator: UserKP,
-        isAssertion: true,
-      });
-
-      // wait until vesting is over
-      while (true) {
-        const currentBlockTime = await getCurrentBlockTime(provider.connection);
-        if (
-          currentBlockTime >
-          blockTime +
-            cliffTimeDurraion +
-            frequency.toNumber() * numberOfPeriod.toNumber()
-        ) {
-          break;
-        } else {
-          await sleep(1000);
-          console.log("Wait until vesting over");
-        }
-      }
-      for (let i = 0; i < recipients.length; i++) {
-        const recipient = recipients[i];
-        const recipientAta = recipientAtas[i];
-        const recipientNode = {
-          account: recipient.publicKey,
-          cliffUnlockAmount,
-          amountPerPeriod,
-          numberOfPeriod,
-          cliffTime,
-          frequency,
-          vestingStartTime,
-        };
-        const recipientProof = getMerkleTreeProof(leaves, recipientNode);
-        try {
-          const claimParams = {
-            recipient: recipient,
-            recipientToken: recipientAta,
-            tokenMint: TOKEN,
-            escrow,
-            maxAmount: new BN(1_000_000),
-            isAssertion: false,
-            tokenProgram: TOKEN_2022_PROGRAM_ID,
-            proof: recipientProof,
-            vestingStartTime,
-            cliffTime,
-            frequency,
-            cliffUnlockAmount,
-            amountPerPeriod,
-            numberOfPeriod,
-          };
-          await claimTokenV3(claimParams);
-        } catch (error) {
-          console.log(error);
-        }
-      }
-
-      console.log("Close vesting escrow");
-      await closeVestingEscrowV3({
-        escrow,
-        creator: UserKP,
-        isAssertion: true,
-      });
-
-      console.log("close claim status");
-
-      await closeClaimStatus({
-        escrow,
-        recipient: recipients[0],
-        isAssertion: true,
-        rentReceiver: UserKP.publicKey,
-      });
     });
 
     it("Close claim status when escrow is cancelled", async () => {

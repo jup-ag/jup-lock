@@ -65,4 +65,7 @@ pub enum LockerError {
 
     #[msg("Invalid merkle proof")]
     InvalidMerkleProof,
+
+    #[msg("Escrow is not cancelled")]
+    EscrowNotCancelled,
 }

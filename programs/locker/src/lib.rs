@@ -200,7 +200,7 @@ pub mod locker {
     }
 
     /// Close claim status account
-    /// Only allow close if escrow cancelled or closed
+    /// Only allow close if escrow cancelled
     /// Rent fee will be transferred to recipient
     ///  # Arguments
     ///
@@ -210,23 +210,7 @@ pub mod locker {
     ) -> Result<()> {
         handle_close_claim_status(ctx)
     }
-
-    /// Close vesting escrow V3
-    ///  - Close vesting escrow and escrow ATA and escrow metadata if all recipients already claimed all tokens
-    ///  - Rent receiver must be escrow's creator
-    /// This instruction supports both splToken and token2022
-    /// # Arguments
-    ///
-    /// * ctx - The accounts needed by instruction.
-    /// * remaining_accounts_info: additional accounts needed by instruction
-    ///
-    pub fn close_vesting_escrow_v3<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, CloseVestingEscrowV3<'info>>,
-        remaining_accounts_info: Option<RemainingAccountsInfo>,
-    ) -> Result<()> {
-        handle_close_vesting_escrow_v3(ctx, remaining_accounts_info)
-    }
-
+    
     /// Cancel a vesting escrow v3
     ///   - The rest of token will be transferred to the creator
     /// This instruction supports both splToken and token2022
