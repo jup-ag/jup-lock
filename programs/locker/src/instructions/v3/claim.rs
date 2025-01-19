@@ -149,7 +149,11 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     let claim_status = &mut ctx.accounts.claim_status;
-    claim_status.init_if_needed(ctx.accounts.recipient.key(), ctx.accounts.escrow.key())?;
+
+    if claim_status.escrow == Pubkey::default() {
+        claim_status.recipient = ctx.accounts.recipient.key();
+        claim_status.escrow = ctx.accounts.escrow.key();
+    }
 
     let mut escrow = ctx.accounts.escrow.load_mut()?;
 
