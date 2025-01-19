@@ -132,7 +132,7 @@ describe("Update recipient", () => {
           newRecipient: newRecipient.publicKey,
           isAssertion: true,
           signer: UserKP,
-          newRecipientEmail: null,
+          newrecipientEndpoint: null,
         });
       },
       "Not permit to do this action",
@@ -146,7 +146,7 @@ describe("Update recipient", () => {
           newRecipient: newRecipient.publicKey,
           isAssertion: true,
           signer: RecipientKP,
-          newRecipientEmail: null,
+          newrecipientEndpoint: null,
         });
       },
       "Not permit to do this action",
@@ -184,7 +184,7 @@ describe("Update recipient", () => {
           newRecipient: newRecipient.publicKey,
           isAssertion: true,
           signer: RecipientKP,
-          newRecipientEmail: null,
+          newrecipientEndpoint: null,
         });
       },
       "Not permit to do this action",
@@ -196,7 +196,7 @@ describe("Update recipient", () => {
       newRecipient: newRecipient.publicKey,
       isAssertion: true,
       signer: UserKP,
-      newRecipientEmail: null,
+      newrecipientEndpoint: null,
     });
   });
 
@@ -230,7 +230,7 @@ describe("Update recipient", () => {
           newRecipient: newRecipient.publicKey,
           isAssertion: true,
           signer: UserKP,
-          newRecipientEmail: null,
+          newrecipientEndpoint: null,
         });
       },
       "Not permit to do this action",
@@ -242,7 +242,7 @@ describe("Update recipient", () => {
       newRecipient: newRecipient.publicKey,
       isAssertion: true,
       signer: RecipientKP,
-      newRecipientEmail: null,
+      newrecipientEndpoint: null,
     });
   });
 
@@ -273,7 +273,7 @@ describe("Update recipient", () => {
       newRecipient: RecipientKP.publicKey,
       isAssertion: true,
       signer: UserKP,
-      newRecipientEmail: null,
+      newrecipientEndpoint: null,
     });
 
     await updateRecipient({
@@ -281,11 +281,11 @@ describe("Update recipient", () => {
       newRecipient: RecipientKP.publicKey,
       isAssertion: true,
       signer: RecipientKP,
-      newRecipientEmail: null,
+      newrecipientEndpoint: null,
     });
   });
 
-  it("Update both recipient and recipient email", async () => {
+  it("Update both recipient and recipient endpoint", async () => {
     console.log("Create vesting plan");
     const program = createLockerProgram(new anchor.Wallet(UserKP));
     let currentBlockTime = await getCurrentBlockTime(
@@ -313,12 +313,12 @@ describe("Update recipient", () => {
       name: "Jupiter lock",
       description: "This is jupiter lock",
       creatorEmail: "andrew@raccoons.dev",
-      recipientEmail: "max@raccoons.dev",
+      recipientEndpoint: "max@raccoons.dev",
       creator: UserKP,
       isAssertion: true,
     });
 
-    it("Update both recipient and recipient email", async () => {
+    it("Update both recipient and recipient endpoint", async () => {
       console.log("Create vesting plan");
       const program = createLockerProgram(new anchor.Wallet(UserKP));
       let currentBlockTime = await getCurrentBlockTime(
@@ -346,7 +346,7 @@ describe("Update recipient", () => {
         name: "Jupiter lock",
         description: "This is jupiter lock",
         creatorEmail: "andrew@raccoons.dev",
-        recipientEmail: "max@raccoons.dev",
+        recipientEndpoint: "max@raccoons.dev",
         creator: UserKP,
         isAssertion: true,
       });
@@ -357,7 +357,7 @@ describe("Update recipient", () => {
         newRecipient: RecipientKP.publicKey,
         isAssertion: true,
         signer: UserKP,
-        newRecipientEmail: "maximillian@raccoons.dev",
+        newrecipientEndpoint: "maximillian@raccoons.dev",
       });
 
       console.log("Update recipient with smaller email size");
@@ -366,7 +366,7 @@ describe("Update recipient", () => {
         newRecipient: RecipientKP.publicKey,
         isAssertion: true,
         signer: UserKP,
-        newRecipientEmail: "max@raccoons.dev",
+        newrecipientEndpoint: "max@raccoons.dev",
       });
     });
   });

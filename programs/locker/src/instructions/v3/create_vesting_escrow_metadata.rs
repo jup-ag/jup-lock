@@ -37,6 +37,6 @@ pub fn handle_create_vesting_escrow_metadata_v3(
     escrow_metadata.name = params.name.clone();
     escrow_metadata.description = params.description.clone();
     escrow_metadata.creator_email = params.creator_email.clone();
-    escrow_metadata.recipient_email = String::from("");
+    escrow_metadata.recipient_endpoint = params.recipient_endpoint.clone();
     Ok(())
 }

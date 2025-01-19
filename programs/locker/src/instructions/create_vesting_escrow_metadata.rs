@@ -5,7 +5,7 @@ pub struct CreateVestingEscrowMetadataParameters {
     pub name: String,
     pub description: String,
     pub creator_email: String,
-    pub recipient_email: String,
+    pub recipient_endpoint: String,
 }
 
 /// Accounts for [locker::create_vesting_escrow_metadata].
@@ -45,6 +45,6 @@ pub fn handle_create_vesting_escrow_metadata(
     escrow_metadata.name = params.name.clone();
     escrow_metadata.description = params.description.clone();
     escrow_metadata.creator_email = params.creator_email.clone();
-    escrow_metadata.recipient_email = params.recipient_email.clone();
+    escrow_metadata.recipient_endpoint = params.recipient_endpoint.clone();
     Ok(())
 }
