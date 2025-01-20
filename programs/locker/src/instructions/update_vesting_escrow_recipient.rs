@@ -26,7 +26,7 @@ pub struct UpdateVestingEscrowRecipientCtx<'info> {
 pub fn handle_update_vesting_escrow_recipient(
     ctx: Context<UpdateVestingEscrowRecipientCtx>,
     new_recipient: Pubkey,
-    new_recipient_email: Option<String>,
+    new_recipient_endpoint: Option<String>,
 ) -> Result<()> {
     let mut escrow = ctx.accounts.escrow.load_mut()?;
     let old_recipient = escrow.recipient;
@@ -34,7 +34,7 @@ pub fn handle_update_vesting_escrow_recipient(
     escrow.validate_update_actor(signer)?;
     escrow.update_recipient(new_recipient);
 
-    if let Some(recipient_email) = new_recipient_email {
+    if let Some(recipient_endpoint) = new_recipient_endpoint {
         if let Some(escrow_metadata) = &mut ctx.accounts.escrow_metadata {
             require!(
                 escrow_metadata.escrow == ctx.accounts.escrow.key(),
@@ -46,7 +46,7 @@ pub fn handle_update_vesting_escrow_recipient(
                     name: escrow_metadata.name.clone(),
                     description: escrow_metadata.description.clone(),
                     creator_email: escrow_metadata.creator_email.clone(),
-                    recipient_email: recipient_email.clone(),
+                    recipient_endpoint: recipient_endpoint.clone(),
                 });
 
             // update rent fee
@@ -66,7 +66,7 @@ pub fn handle_update_vesting_escrow_recipient(
             // realloc
             escrow_metadata_info.realloc(new_len, false)?;
             // update new recipient_email
-            escrow_metadata.recipient_email = recipient_email;
+            escrow_metadata.recipient_endpoint = recipient_endpoint;
         } else {
             return Err(LockerError::InvalidEscrowMetadata.into());
         }

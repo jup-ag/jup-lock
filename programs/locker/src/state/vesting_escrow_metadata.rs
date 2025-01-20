@@ -12,8 +12,8 @@ pub struct VestingEscrowMetadata {
     pub description: String,
     /// Email of creator
     pub creator_email: String,
-    /// Email of recipient
-    pub recipient_email: String,
+    /// endpoint of recipient: email or api url.
+    pub recipient_endpoint: String,
 }
 
 impl VestingEscrowMetadata {
@@ -27,6 +27,6 @@ impl VestingEscrowMetadata {
             + 4
             + metadata.creator_email.as_bytes().len()
             + 4
-            + metadata.recipient_email.as_bytes().len()
+            + metadata.recipient_endpoint.as_bytes().len()
     }
 }

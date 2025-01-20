@@ -7,40 +7,57 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { BN } from "bn.js";
-import { createAndFundWallet, getCurrentBlockTime } from "./common";
 import {
-  createEscrowMetadata,
-  createLockerProgram,
-  createVestingPlan,
-} from "./locker_utils";
+  createAndFundBatchWallet,
+  createAndFundWallet,
+  getCurrentBlockTime,
+} from "../common";
+import { createVestingPlanV3, createEscrowMetadata } from "../locker_utils";
 import {
   sendAndConfirmTransaction,
   SystemProgram,
   Transaction,
 } from "@solana/web3.js";
+import {
+  generateMerkleTreeRoot,
+  getMerkleTreeProof,
+} from "../locker_utils/merkle_tree";
 
-let provider = anchor.AnchorProvider.env();
-provider.opts.commitment = "confirmed";
+const provider = anchor.AnchorProvider.env();
 
-describe("Escrow metadata", () => {
+describe("[V3] Create vesting metadata", () => {
   const tokenDecimal = 8;
   let mintAuthority: web3.Keypair;
   let mintKeypair: web3.Keypair;
   let TOKEN: web3.PublicKey;
+  let mintAmount: bigint;
 
   let UserKP: web3.Keypair;
-  let RecipientKP: web3.Keypair;
-  let RecipientToken: web3.PublicKey;
+  let recipients: web3.Keypair[];
+  let totalDepositAmount;
+  let vestingStartTime;
+  let cliffTime;
+  let frequency;
+  let cliffUnlockAmount;
+  let amountPerPeriod;
+  let numberOfPeriod;
+  let totalLockedAmount;
+  let leaves: any;
 
-  let mintAmount: bigint;
+  let root: any;
+  let proof: any;
+
   before(async () => {
+    {
+      await createAndFundWallet(provider.connection);
+    }
     {
       const result = await createAndFundWallet(provider.connection);
       UserKP = result.keypair;
     }
     {
-      const result = await createAndFundWallet(provider.connection);
-      RecipientKP = result.keypair;
+      const result = await createAndFundBatchWallet(provider.connection);
+      recipients = result.map((item: any) => item.keypair);
     }
 
     mintAuthority = new web3.Keypair();
@@ -95,36 +112,61 @@ describe("Escrow metadata", () => {
       undefined,
       TOKEN_PROGRAM_ID
     );
-  });
-  it("Full flow", async () => {
-    console.log("Create vesting plan");
-    const program = createLockerProgram(new anchor.Wallet(UserKP));
-    let currentBlockTime = await getCurrentBlockTime(
-      program.provider.connection
+
+    // create root & proof
+    // default value
+    vestingStartTime = new BN(0);
+    let currentBlockTime = await getCurrentBlockTime(provider.connection);
+    cliffTime = new BN(currentBlockTime).add(new BN(5));
+    frequency = new BN(1);
+    cliffUnlockAmount = new BN(100_000);
+    amountPerPeriod = new BN(50_000);
+    numberOfPeriod = new BN(2);
+    totalLockedAmount = cliffUnlockAmount.add(
+      amountPerPeriod.mul(numberOfPeriod)
     );
-    const cliffTime = new BN(currentBlockTime).add(new BN(5));
-    let escrow = await createVestingPlan({
+    leaves = recipients.map((item) => {
+      return {
+        account: item.publicKey,
+        cliffUnlockAmount,
+        amountPerPeriod,
+        numberOfPeriod,
+        cliffTime,
+        frequency,
+        vestingStartTime
+      };
+    });
+    const user = {
+      account: recipients[0].publicKey,
+      cliffUnlockAmount,
+      amountPerPeriod,
+      numberOfPeriod,
+      cliffTime,
+      frequency,
+      vestingStartTime
+    };
+    totalDepositAmount = totalLockedAmount.muln(leaves.length);
+    root = generateMerkleTreeRoot(leaves);
+    proof = getMerkleTreeProof(leaves, user);
+  });
+
+  it("Full flow", async () => {
+    let escrow = await createVestingPlanV3({
       ownerKeypair: UserKP,
       tokenMint: TOKEN,
-      vestingStartTime: new BN(0),
       isAssertion: true,
-      cliffTime,
-      frequency: new BN(1),
-      cliffUnlockAmount: new BN(100_000),
-      amountPerPeriod: new BN(50_000),
-      numberOfPeriod: new BN(2),
-      recipient: RecipientKP.publicKey,
-      updateRecipientMode: 0,
+      tokenProgram: TOKEN_PROGRAM_ID,
+      totalDepositAmount,
       cancelMode: 0,
+      root,
     });
-
     console.log("Create escrow metadata");
     await createEscrowMetadata({
       escrow,
       name: "Jupiter lock",
       description: "This is jupiter lock",
       creatorEmail: "andrew@raccoons.dev",
-      recipientEndpoint: "max@raccoons.dev",
+      recipientEndpoint: "",
       creator: UserKP,
       isAssertion: true,
     });

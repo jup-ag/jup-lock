@@ -10,3 +10,5 @@ pub mod v2;
 pub use v2::*;
 pub mod close_vesting_escrow;
 pub use close_vesting_escrow::*;
+pub mod v3;
+pub use v3::*;
