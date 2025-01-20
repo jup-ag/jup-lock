@@ -12,7 +12,7 @@ import {
   createAndFundWallet,
   getCurrentBlockTime,
 } from "../common";
-import { createVestingPlanV3, createEscrowMetadataV3 } from "../locker_utils";
+import { createVestingPlanV3, createEscrowMetadata } from "../locker_utils";
 import {
   sendAndConfirmTransaction,
   SystemProgram,
@@ -161,7 +161,7 @@ describe("[V3] Create vesting metadata", () => {
       root,
     });
     console.log("Create escrow metadata");
-    await createEscrowMetadataV3({
+    await createEscrowMetadata({
       escrow,
       name: "Jupiter lock",
       description: "This is jupiter lock",

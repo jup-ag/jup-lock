@@ -1,3 +1,5 @@
+use util::account_info_ref_lifetime_shortener;
+
 use crate::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -12,9 +14,8 @@ pub struct CreateVestingEscrowMetadataParameters {
 #[derive(Accounts)]
 #[instruction(metadata: CreateVestingEscrowMetadataParameters)]
 pub struct CreateVestingEscrowMetadataCtx<'info> {
-    /// The [Escrow].
-    #[account(mut, has_one = creator)]
-    pub escrow: AccountLoader<'info, VestingEscrow>,
+    /// CHECK: The [Escrow] read-only, used to validate the escrow's creator
+    pub escrow: AccountInfo<'info>,
     /// Creator of the escrow.
     pub creator: Signer<'info>,
     /// The [ProposalMeta].
@@ -36,10 +37,45 @@ pub struct CreateVestingEscrowMetadataCtx<'info> {
     pub system_program: Program<'info, System>,
 }
 
+impl CreateVestingEscrowMetadataCtx<'_> {
+    pub fn validate_escrow_creator(&self) -> Result<()> {
+
+        // First try VestingEscrow
+        if let Ok(escrow) = AccountLoader::<VestingEscrow>::try_from(
+            account_info_ref_lifetime_shortener(&self.escrow.to_account_info()),
+        ) {
+            require_keys_eq!(
+                escrow.load()?.creator,
+                self.creator.key(),
+                LockerError::NotPermitToDoThisAction
+            );
+
+            return Ok(());
+        }
+
+        // Otherwise, attempt to load VestingEscrowV3
+        if let Ok(escrow) = AccountLoader::<VestingEscrowV3>::try_from(
+            account_info_ref_lifetime_shortener(&self.escrow.to_account_info()),
+        ) {
+            require_keys_eq!(
+                escrow.load()?.creator,
+                self.creator.key(),
+                LockerError::NotPermitToDoThisAction
+            );
+
+            return Ok(());
+        }
+
+        err!(LockerError::NotPermitToDoThisAction)
+    }
+}
+
 pub fn handle_create_vesting_escrow_metadata(
     ctx: Context<CreateVestingEscrowMetadataCtx>,
     params: &CreateVestingEscrowMetadataParameters,
 ) -> Result<()> {
+    ctx.accounts.validate_escrow_creator()?;
+
     let escrow_metadata = &mut ctx.accounts.escrow_metadata;
     escrow_metadata.escrow = ctx.accounts.escrow.key();
     escrow_metadata.name = params.name.clone();

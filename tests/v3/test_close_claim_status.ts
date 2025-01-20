@@ -15,7 +15,6 @@ import { createAndFundWallet, getCurrentBlockTime, sleep } from "../common";
 import {
   cancelVestingPlanV3,
   closeClaimStatus,
-  createEscrowMetadataV3,
 } from "../locker_utils";
 import {
   sendAndConfirmTransaction,

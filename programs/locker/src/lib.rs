@@ -160,22 +160,6 @@ pub mod locker {
         handle_create_vesting_escrow_v3(ctx, &params, remaining_accounts_info)
     }
 
-    /// Create vesting escrow metadata v3
-    /// # Arguments
-    ///
-    /// * ctx - The accounts needed by instruction.
-    /// * params - The params needed by instruction.
-    ///   * name - The name of the vesting escrow
-    ///   * description - The description of the vesting escrow
-    ///   * creator_email - The email of the creator
-    ///
-    pub fn create_vesting_escrow_metadata_v3(
-        ctx: Context<CreateVestingEscrowMetadataV3>,
-        params: CreateVestingEscrowMetadataParameters,
-    ) -> Result<()> {
-        handle_create_vesting_escrow_metadata_v3(ctx, &params)
-    }
-
     /// Claim maximum amount from the vesting escrow
     /// This instruction supports both splToken and token2022
     /// # Arguments

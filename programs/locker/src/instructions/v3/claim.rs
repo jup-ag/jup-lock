@@ -150,6 +150,7 @@ pub fn handle_claim_v3<'c: 'info, 'info>(
 ) -> Result<()> {
     let claim_status = &mut ctx.accounts.claim_status;
 
+    // Fill `claim_status` if it hasn't been set yet
     if claim_status.escrow == Pubkey::default() {
         claim_status.recipient = ctx.accounts.recipient.key();
         claim_status.escrow = ctx.accounts.escrow.key();
