@@ -6,13 +6,12 @@ import {
   getOrCreateAssociatedTokenAccount,
   mintTo,
   TOKEN_2022_PROGRAM_ID,
-  TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { BN } from "bn.js";
 import {
   createAndFundWallet,
 } from "../common";
-import { createRootEscrow, fundRootEscrow, createVestingEscrowFromRoot } from "../locker_utils";
+import { createRootEscrow, fundRootEscrow, createVestingEscrowFromRoot, VestingEcrow, getMaxClaimAmount } from "../locker_utils";
 import {
   Keypair,
   PublicKey,
@@ -21,30 +20,6 @@ import { EscrowRecipientTree } from "../locker_utils/merkle_tree/EscrowRecipient
 
 const provider = anchor.AnchorProvider.env();
 
-
-interface VestingEcrow {
-  recipient: PublicKey,
-  vestingStartTime: anchor.BN;
-  cliffTime: anchor.BN;
-  frequency: anchor.BN;
-  cliffUnlockAmount: anchor.BN;
-  amountPerPeriod: anchor.BN;
-  numberOfPeriod: anchor.BN;
-  updateRecipientMode: number,
-  cancelMode: number,
-}
-
-function getTotalDepsitAmount(escrow: VestingEcrow) {
-  return escrow.cliffUnlockAmount.add(escrow.numberOfPeriod.mul(escrow.amountPerPeriod))
-}
-
-function getMaxClaimAmount(allEscrows: VestingEcrow[]) {
-  let sum = new BN(0)
-  for (let i = 0; i < allEscrows.length; i++) {
-    sum = sum.add(getTotalDepsitAmount(allEscrows[i]))
-  }
-  return sum
-}
 
 describe("Root escrow Create vesting with token 2022", () => {
   let payer: web3.Keypair = Keypair.generate();

@@ -40,17 +40,6 @@ const MEMO_PROGRAM = new web3.PublicKey(
 const ESCROW_USE_SPL_TOKEN = 0;
 const ESCROW_USE_TOKEN_2022 = 1;
 
-// export function createLockerProgram1(wallet: Wallet): Program<Locker> {
-//   const provider = new AnchorProvider(AnchorProvider.env().connection, wallet, {
-//     maxRetries: 3,
-//   });
-//   const program = new Program<Locker>(
-//     MerkleDistributorIDL,
-//     MERKLE_DISTRIBUTOR_PROGRAM_ID,
-//     provider
-//   );
-//   return program;
-// }
 
 export function createLockerProgram(wallet?: Wallet): Program<Locker> {
   const provider = new AnchorProvider(AnchorProvider.env().connection, wallet, {
@@ -58,7 +47,7 @@ export function createLockerProgram(wallet?: Wallet): Program<Locker> {
   });
   provider.opts.commitment = "confirmed";
 
-  setProvider(provider);
+  // setProvider(provider);
 
   return workspace.Locker as Program<Locker>;
 }
@@ -313,18 +302,18 @@ export interface UpdateRecipientParams {
   signer: web3.Keypair;
   escrow: web3.PublicKey;
   newRecipient: web3.PublicKey;
-  newrecipientEmail: null | string;
+  newRecipientEmail: null | string;
 }
 
 export async function updateRecipient(params: UpdateRecipientParams) {
-  let { isAssertion, escrow, signer, newRecipient, newrecipientEmail } = params;
+  let { isAssertion, escrow, signer, newRecipient, newRecipientEmail } = params;
   const program = createLockerProgram(new Wallet(signer));
   let escrowMetadata = null;
-  if (newrecipientEmail != null) {
+  if (newRecipientEmail != null) {
     [escrowMetadata] = deriveEscrowMetadata(escrow, program.programId);
   }
   await program.methods
-    .updateVestingEscrowRecipient(newRecipient, newrecipientEmail)
+    .updateVestingEscrowRecipient(newRecipient, newRecipientEmail)
     .accounts({
       escrow,
       escrowMetadata,
@@ -337,12 +326,12 @@ export async function updateRecipient(params: UpdateRecipientParams) {
   if (isAssertion) {
     const escrowState = await program.account.vestingEscrow.fetch(escrow);
     expect(escrowState.recipient.toString()).eq(newRecipient.toString());
-    if (newrecipientEmail != null) {
+    if (newRecipientEmail != null) {
       [escrowMetadata] = deriveEscrowMetadata(escrow, program.programId);
       const escrowMetadataState =
         await program.account.vestingEscrowMetadata.fetch(escrowMetadata);
       expect(escrowMetadataState.recipientEmail.toString()).eq(
-        newrecipientEmail.toString()
+        newRecipientEmail.toString()
       );
     }
   }
@@ -564,6 +553,7 @@ export async function createRootEscrow(params: CreateRootEscrowParams) {
   const baseKP = web3.Keypair.generate();
 
   let rootEscrow = deriveRootEscrow(baseKP.publicKey, tokenMint, version.toNumber());
+
   await program.methods
     .createRootEscrow(
       {
@@ -582,7 +572,7 @@ export async function createRootEscrow(params: CreateRootEscrowParams) {
       systemProgram: web3.SystemProgram.programId,
     })
     .signers([baseKP, ownerKeypair])
-    .rpc();
+    .rpc().catch(console.log).then(console.log);
 
   if (isAssertion) {
     const rootEscrowState = await program.account.rootEscrow.fetch(rootEscrow);
@@ -661,7 +651,7 @@ export async function fundRootEscrow(params: FundRootEscrowParams) {
     tokenProgram,
     systemProgram: web3.SystemProgram.programId,
     associateTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-  }).remainingAccounts(remainingAccounts ? remainingAccounts : []).rpc().catch(console.log).then(console.log);
+  }).remainingAccounts(remainingAccounts ? remainingAccounts : []).signers([payerKP]).rpc().catch(console.log).then(console.log);
 }
 
 export interface CreateVestingEscrowFromRootParams {
@@ -765,7 +755,7 @@ export async function createVestingEscrowFromRoot(params: CreateVestingEscrowFro
       tokenProgram,
       systemProgram: web3.SystemProgram.programId,
       associateTokenProgram: ASSOCIATED_TOKEN_PROGRAM_ID,
-    }).remainingAccounts(remainingAccounts ? remainingAccounts : [])
+    }).remainingAccounts(remainingAccounts ? remainingAccounts : []).signers([payerKP])
     .rpc().catch(console.log).then(console.log);
 
   if (isAssertion) {
@@ -925,110 +915,6 @@ export async function cancelVestingPlan(
   }
 }
 
-// export interface CancelVestingPlanV3Params {
-//   isAssertion: boolean;
-//   escrow: web3.PublicKey;
-//   rentReceiver: web3.PublicKey;
-//   creatorToken: web3.PublicKey;
-//   signer: web3.Keypair;
-// }
-
-// export async function cancelVestingPlanV3(
-//   params: CancelVestingPlanV3Params,
-//   claimable_amount: number,
-//   total_amount: number
-// ) {
-//   let { isAssertion, escrow, rentReceiver, creatorToken, signer } = params;
-//   const program = createLockerProgram(new Wallet(signer));
-//   const escrowState = await program.account.vestingEscrowV3.fetch(escrow);
-//   const tokenProgram =
-//     escrowState.tokenProgramFlag == ESCROW_USE_SPL_TOKEN
-//       ? TOKEN_PROGRAM_ID
-//       : TOKEN_2022_PROGRAM_ID;
-
-//   const escrowToken = getAssociatedTokenAddressSync(
-//     escrowState.tokenMint,
-//     escrow,
-//     true,
-//     tokenProgram,
-//     ASSOCIATED_TOKEN_PROGRAM_ID
-//   );
-
-//   const creator_token_balance_before = (
-//     await program.provider.connection.getTokenAccountBalance(creatorToken)
-//   ).value.amount;
-
-//   let remainingAccountsInfo = null;
-//   let remainingAccounts: AccountMeta[] = [];
-//   if (tokenProgram == TOKEN_2022_PROGRAM_ID) {
-//     let cancelTransferHookAccounts =
-//       await TokenExtensionUtil.getExtraAccountMetasForTransferHook(
-//         program.provider.connection,
-//         escrowState.tokenMint,
-//         escrowToken,
-//         creatorToken,
-//         escrow,
-//         tokenProgram
-//       );
-
-//     [remainingAccountsInfo, remainingAccounts] = new RemainingAccountsBuilder()
-//       .addSlice(
-//         RemainingAccountsType.TransferHookEscrow,
-//         cancelTransferHookAccounts
-//       )
-//       .build();
-//   }
-//   await program.methods
-//     .cancelVestingEscrowV3(remainingAccountsInfo)
-//     .accounts({
-//       escrow,
-//       tokenMint: escrowState.tokenMint,
-//       escrowToken,
-//       rentReceiver,
-//       creatorToken: creatorToken,
-//       signer: signer.publicKey,
-//       tokenProgram,
-//       memoProgram: MEMO_PROGRAM,
-//     })
-//     .preInstructions([
-//       ComputeBudgetProgram.setComputeUnitLimit({
-//         units: 400_000,
-//       }),
-//     ])
-//     .remainingAccounts(remainingAccounts ? remainingAccounts : [])
-//     .signers([signer])
-//     .rpc();
-//   let creator_fee = 0;
-//   let claimer_fee = 0;
-//   if (tokenProgram == TOKEN_2022_PROGRAM_ID) {
-//     const feeConfig = getTransferFeeConfig(
-//       await getMint(
-//         program.provider.connection,
-//         escrowState.tokenMint,
-//         undefined,
-//         TOKEN_2022_PROGRAM_ID
-//       )
-//     );
-//     const epoch = BigInt(await getCurrentEpoch(program.provider.connection));
-//     creator_fee = feeConfig
-//       ? Number(calculateEpochFee(feeConfig, epoch, BigInt(total_amount)))
-//       : 0;
-//     claimer_fee = feeConfig
-//       ? Number(calculateEpochFee(feeConfig, epoch, BigInt(claimable_amount)))
-//       : 0;
-//   }
-
-//   if (isAssertion) {
-//     const escrowState = await program.account.vestingEscrowV3.fetch(escrow);
-//     expect(escrowState.cancelledAt.toNumber()).greaterThan(0);
-
-//     const escrowTokenAccount = await program.provider.connection.getAccountInfo(
-//       escrowToken
-//     );
-//     expect(escrowTokenAccount).eq(null);
-//   }
-// }
-
 export interface CloseVestingEscrowParams {
   isAssertion: boolean;
   creator: web3.Keypair;
@@ -1113,45 +999,26 @@ export async function closeVestingEscrow(params: CloseVestingEscrowParams) {
   }
 }
 
-// export interface CloseClaimStatusParams {
-//   isAssertion: boolean;
-//   recipient: web3.Keypair;
-//   escrow: web3.PublicKey;
-//   rentReceiver: web3.PublicKey;
-// }
+export interface VestingEcrow {
+  recipient: web3.PublicKey,
+  vestingStartTime: BN;
+  cliffTime: BN;
+  frequency: BN;
+  cliffUnlockAmount: BN;
+  amountPerPeriod: BN;
+  numberOfPeriod: BN;
+  updateRecipientMode: number,
+  cancelMode: number,
+}
 
-// export async function closeClaimStatus(params: CloseClaimStatusParams) {
-//   let { isAssertion, escrow, recipient, rentReceiver } = params;
-//   const program = createLockerProgram(new Wallet(recipient));
-//   let [claimStatus] = deriveClaimStatus(
-//     recipient.publicKey,
-//     escrow,
-//     program.programId
-//   );
-//   const rentBalance = await program.provider.connection.getBalance(claimStatus);
-//   const preBalance = await program.provider.connection.getBalance(rentReceiver);
-//   try {
-//     await program.methods
-//       .closeClaimStatus()
-//       .accounts({
-//         escrow,
-//         claimStatus,
-//         rentReceiver: rentReceiver,
-//         recipient: recipient.publicKey,
-//       })
-//       .signers([recipient])
-//       .rpc();
-//   } catch (e) {
-//     console.log(e);
-//   }
-//   if (isAssertion) {
-//     let claimStatusState = await program.account.claimStatus.fetchNullable(
-//       claimStatus
-//     );
-//     expect(claimStatusState).eq(null);
-//     const postBalance = await program.provider.connection.getBalance(
-//       rentReceiver
-//     );
-//     expect(preBalance + rentBalance).eq(postBalance);
-//   }
-// }
+export function getTotalDepsitAmount(escrow: VestingEcrow) {
+  return escrow.cliffUnlockAmount.add(escrow.numberOfPeriod.mul(escrow.amountPerPeriod))
+}
+
+export function getMaxClaimAmount(allEscrows: VestingEcrow[]) {
+  let sum = new BN(0)
+  for (let i = 0; i < allEscrows.length; i++) {
+    sum = sum.add(getTotalDepsitAmount(allEscrows[i]))
+  }
+  return sum
+}
