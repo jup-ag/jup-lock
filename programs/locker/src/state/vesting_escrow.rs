@@ -86,7 +86,7 @@ impl VestingEscrow {
         number_of_period: u64,
         recipient: Pubkey,
         token_mint: Pubkey,
-        sender: Pubkey,
+        creator: Pubkey,
         base: Pubkey,
         escrow_bump: u8,
         update_recipient_mode: u8,
@@ -101,7 +101,7 @@ impl VestingEscrow {
         self.number_of_period = number_of_period;
         self.recipient = recipient;
         self.token_mint = token_mint;
-        self.creator = sender;
+        self.creator = creator;
         self.base = base;
         self.escrow_bump = escrow_bump;
         self.update_recipient_mode = update_recipient_mode;

@@ -1,4 +1,4 @@
-use crate::util::{transfer_to_user_v2, MemoTransferContext};
+use crate::util::{transfer_to_user2, MemoTransferContext};
 use crate::*;
 use anchor_spl::memo::Memo;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
@@ -8,7 +8,7 @@ use util::{
 
 #[event_cpi]
 #[derive(Accounts)]
-pub struct ClaimV2<'info> {
+pub struct Claim2Ctx<'info> {
     /// Escrow.
     #[account(
         mut,
@@ -48,8 +48,8 @@ pub struct ClaimV2<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-pub fn handle_claim_v2<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ClaimV2<'info>>,
+pub fn handle_claim2<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, Claim2Ctx<'info>>,
     max_amount: u64,
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
@@ -69,7 +69,7 @@ pub fn handle_claim_v2<'c: 'info, 'info>(
         None => ParsedRemainingAccounts::default(),
     };
 
-    transfer_to_user_v2(
+    transfer_to_user2(
         &ctx.accounts.escrow,
         &ctx.accounts.token_mint,
         &ctx.accounts.escrow_token.to_account_info(),

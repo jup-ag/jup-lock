@@ -8,13 +8,13 @@ use util::{
 };
 
 use crate::safe_math::SafeMath;
-use crate::util::{transfer_to_user_v2, MemoTransferContext};
+use crate::util::{transfer_to_user2, MemoTransferContext};
 use crate::*;
 
 /// Accounts for [locker::cancel_vesting_escrow].
 #[derive(Accounts)]
 #[event_cpi]
-pub struct CancelVestingEscrow<'info> {
+pub struct CancelVestingEscrowCtx<'info> {
     /// Escrow.
     #[account(
         mut,
@@ -69,7 +69,7 @@ pub struct CancelVestingEscrow<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-impl<'info> CancelVestingEscrow<'info> {
+impl<'info> CancelVestingEscrowCtx<'info> {
     fn close_escrow_token(&self) -> Result<()> {
         let escrow = self.escrow.load()?;
         let escrow_seeds = escrow_seeds!(escrow);
@@ -89,7 +89,7 @@ impl<'info> CancelVestingEscrow<'info> {
 }
 
 pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrow<'info>>,
+    ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrowCtx<'info>>,
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     let mut escrow = ctx.accounts.escrow.load_mut()?;
@@ -119,7 +119,7 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
     };
 
     // Transfer the claimable amount to the recipient
-    transfer_to_user_v2(
+    transfer_to_user2(
         &ctx.accounts.escrow,
         &ctx.accounts.token_mint,
         &ctx.accounts.escrow_token.to_account_info(),
@@ -134,7 +134,7 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
     )?;
 
     // Transfer the remaining amount to the creator
-    transfer_to_user_v2(
+    transfer_to_user2(
         &ctx.accounts.escrow,
         &ctx.accounts.token_mint,
         &ctx.accounts.escrow_token.to_account_info(),

@@ -2207,11 +2207,12 @@ dependencies = [
 
 [[package]]
 name = "locker"
-version = "0.3.1"
+version = "0.4.0"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
+ "merkle-verify",
  "num_enum 0.7.3",
  "proptest",
  "solana-program",
@@ -2256,6 +2257,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "merkle-verify"
+version = "0.0.1"
+dependencies = [
+ "solana-program",
 ]
 
 [[package]]

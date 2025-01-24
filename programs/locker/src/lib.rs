@@ -117,11 +117,11 @@ pub mod locker {
     /// * remaining_accounts_info: additional accounts needed by instruction
     ///
     pub fn create_vesting_escrow_v2<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
+        ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrow2Ctx<'info>>,
         params: CreateVestingEscrowParameters,
         remaining_accounts_info: Option<RemainingAccountsInfo>,
     ) -> Result<()> {
-        handle_create_vesting_escrow_v2(ctx, &params, remaining_accounts_info)
+        handle_create_vesting_escrow2(ctx, &params, remaining_accounts_info)
     }
 
     /// Claim maximum amount from the vesting escrow
@@ -133,11 +133,11 @@ pub mod locker {
     /// * remaining_accounts_info: additional accounts needed by instruction
     ///
     pub fn claim_v2<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, ClaimV2<'info>>,
+        ctx: Context<'_, '_, 'c, 'info, Claim2Ctx<'info>>,
         max_amount: u64,
         remaining_accounts_info: Option<RemainingAccountsInfo>,
     ) -> Result<()> {
-        handle_claim_v2(ctx, max_amount, remaining_accounts_info)
+        handle_claim2(ctx, max_amount, remaining_accounts_info)
     }
 
     /// Cancel a vesting escrow.
@@ -150,7 +150,7 @@ pub mod locker {
     /// * remaining_accounts_info: additional accounts needed by instruction
     ///
     pub fn cancel_vesting_escrow<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrow<'info>>,
+        ctx: Context<'_, '_, 'c, 'info, CancelVestingEscrowCtx<'info>>,
         remaining_accounts_info: Option<RemainingAccountsInfo>,
     ) -> Result<()> {
         handle_cancel_vesting_escrow(ctx, remaining_accounts_info)
@@ -166,9 +166,37 @@ pub mod locker {
     /// * remaining_accounts_info: additional accounts needed by instruction
     ///
     pub fn close_vesting_escrow<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, CloseVestingEscrow<'info>>,
+        ctx: Context<'_, '_, 'c, 'info, CloseVestingEscrowCtx<'info>>,
         remaining_accounts_info: Option<RemainingAccountsInfo>,
     ) -> Result<()> {
         handle_close_vesting_escrow(ctx, remaining_accounts_info)
+    }
+
+    // Instructions for RootEscrow
+    /// Create root escrow
+    pub fn create_root_escrow<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CreateRootEscrowCtx<'info>>,
+        params: CreateRootEscrowParameters,
+    ) -> Result<()> {
+        handle_create_root_escrow(ctx, &params)
+    }
+
+    /// Fund root escrow
+    pub fn fund_root_escrow<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, FundRootEscrowCtx<'info>>,
+        max_amount: u64,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_fund_root_escrow(ctx, max_amount, remaining_accounts_info)
+    }
+
+    /// Crate vesting escrow from root
+    pub fn create_vesting_escrow_from_root<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowFromRootCtx<'info>>,
+        params: CreateVestingEscrowFromRootParams,
+        proof: Vec<[u8; 32]>,
+        remaining_accounts_info: Option<RemainingAccountsInfo>,
+    ) -> Result<()> {
+        handle_create_vesting_escrow_from_root(ctx, &params, proof, remaining_accounts_info)
     }
 }

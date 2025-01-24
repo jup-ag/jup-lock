@@ -62,4 +62,13 @@ pub enum LockerError {
 
     #[msg("Claiming is not finished")]
     ClaimingIsNotFinished,
+
+    #[msg("Invalid merkle proof")]
+    InvalidMerkleProof,
+
+    #[msg("Escrow is not cancelled")]
+    EscrowNotCancelled,
+
+    #[msg("Amount is zero")]
+    AmountIsZero,
 }

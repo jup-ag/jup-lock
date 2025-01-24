@@ -15,7 +15,7 @@ use anchor_spl::token_interface::{
     TokenInterface,
 };
 
-use crate::{LockerError, VestingEscrow};
+use crate::{LockerError, RootEscrow, VestingEscrow};
 
 const ONE_IN_BASIS_POINTS: u128 = MAX_FEE_BASIS_POINTS as u128;
 
@@ -25,7 +25,7 @@ pub struct MemoTransferContext<'a, 'info> {
     pub memo: &'static [u8],
 }
 
-pub fn transfer_to_escrow_v2<'a, 'c: 'info, 'info>(
+pub fn transfer_to_escrow2<'a, 'c: 'info, 'info>(
     sender: &'a Signer<'info>,
     token_mint: &InterfaceAccount<'info, Mint>,
     sender_token: &InterfaceAccount<'info, TokenAccount>,
@@ -82,7 +82,7 @@ pub fn transfer_to_escrow_v2<'a, 'c: 'info, 'info>(
     Ok(())
 }
 
-pub fn transfer_to_user_v2<'c: 'info, 'info>(
+pub fn transfer_to_user2<'c: 'info, 'info>(
     escrow: &AccountLoader<'info, VestingEscrow>,
     token_mint: &InterfaceAccount<'info, Mint>,
     escrow_token: &AccountInfo<'info>,
@@ -151,7 +151,73 @@ pub fn transfer_to_user_v2<'c: 'info, 'info>(
     Ok(())
 }
 
-pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<()> {
+pub fn transfer_from_root_escrow<'c: 'info, 'info>(
+    root_escrow: &AccountLoader<'info, RootEscrow>,
+    token_mint: &InterfaceAccount<'info, Mint>,
+    escrow_token: &AccountInfo<'info>,
+    recipient_account: &InterfaceAccount<'info, TokenAccount>,
+    token_program: &Interface<'info, TokenInterface>,
+    amount: u64,
+    transfer_hook_accounts: Option<&'c [AccountInfo<'info>]>,
+) -> Result<()> {
+    let root_escrow_state = root_escrow.load()?;
+    let root_escrow_seeds = root_escrow_seeds!(root_escrow_state);
+
+    let mut instruction = spl_token_2022::instruction::transfer_checked(
+        token_program.key,
+        &escrow_token.key(),
+        &token_mint.key(),        // mint
+        &recipient_account.key(), // to
+        &root_escrow.key(),       // authority
+        &[],
+        amount,
+        token_mint.decimals,
+    )?;
+
+    let mut account_infos = vec![
+        escrow_token.to_account_info(),
+        token_mint.to_account_info(),
+        recipient_account.to_account_info(),
+        root_escrow.to_account_info(),
+    ];
+
+    // TransferHook extension
+    if let Some(hook_program_id) = get_transfer_hook_program_id(token_mint)? {
+        let Some(transfer_hook_accounts) = transfer_hook_accounts else {
+            return Err(LockerError::NoTransferHookProgram.into());
+        };
+
+        spl_transfer_hook_interface::onchain::add_extra_accounts_for_execute_cpi(
+            &mut instruction,
+            &mut account_infos,
+            &hook_program_id,
+            escrow_token.to_account_info(),
+            token_mint.to_account_info(),
+            recipient_account.to_account_info(),
+            root_escrow.to_account_info(),
+            amount,
+            transfer_hook_accounts,
+        )?;
+    } else {
+        require!(
+            transfer_hook_accounts.is_none(),
+            LockerError::NoTransferHookProgram
+        );
+    }
+
+    solana_program::program::invoke_signed(
+        &instruction,
+        &account_infos,
+        &[&root_escrow_seeds[..]],
+    )?;
+
+    Ok(())
+}
+
+pub fn validate_mint(
+    token_mint: &InterfaceAccount<Mint>,
+    is_allow_transfer_fee: bool,
+) -> Result<()> {
     let token_mint_info = token_mint.to_account_info();
 
     // mint owned by Token Program is supported by default
@@ -167,7 +233,9 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<()> {
     for extension in extensions {
         match extension {
             // supported
-            extension::ExtensionType::TransferFeeConfig => {}
+            extension::ExtensionType::TransferFeeConfig => {
+                require!(is_allow_transfer_fee, LockerError::UnsupportedMint);
+            }
             extension::ExtensionType::TokenMetadata => {}
             extension::ExtensionType::MetadataPointer => {}
             // partially supported
@@ -176,6 +244,7 @@ pub fn validate_mint(token_mint: &InterfaceAccount<Mint>) -> Result<()> {
             }
             extension::ExtensionType::ConfidentialTransferFeeConfig => {
                 // Supported, but non-confidential transfer only
+                require!(is_allow_transfer_fee, LockerError::UnsupportedMint);
             }
             // supported with risks that creator should be aware of
             extension::ExtensionType::PermanentDelegate => {}
