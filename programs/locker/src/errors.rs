@@ -71,4 +71,7 @@ pub enum LockerError {
 
     #[msg("Amount is zero")]
     AmountIsZero,
+
+    #[msg("Invalid params")]
+    InvalidParams,
 }

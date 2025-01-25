@@ -14,6 +14,16 @@ pub struct CreateRootEscrowParameters {
     pub root: [u8; 32],
 }
 
+impl CreateRootEscrowParameters {
+    fn validate(&self) -> Result<()> {
+        require!(
+            self.max_claim_amount > 0 && self.max_escrow > 0,
+            LockerError::InvalidParams
+        );
+        Ok(())
+    }
+}
+
 /// Accounts for [locker::create_root_escrow].
 #[event_cpi]
 #[derive(Accounts)]
@@ -50,6 +60,7 @@ pub fn handle_create_root_escrow<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, CreateRootEscrowCtx<'info>>,
     params: &CreateRootEscrowParameters,
 ) -> Result<()> {
+    params.validate()?;
     // Validate if token_mint is supported
     // dont allow transfer fee
     validate_mint(&ctx.accounts.token_mint, false)?;
