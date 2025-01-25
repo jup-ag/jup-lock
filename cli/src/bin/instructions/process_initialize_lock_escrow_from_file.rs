@@ -16,7 +16,7 @@ use std::str::FromStr;
 
 /// Represents a single entry in a CSV
 #[derive(Debug, Clone, Eq, Hash, PartialEq, Serialize, Deserialize)]
-pub struct CsvEntry {
+struct CsvEntry {
     /// address
     pub address: String,
     /// cliff_unlock_amount
@@ -25,7 +25,10 @@ pub struct CsvEntry {
     pub amount_per_period: u64,
 }
 
-pub fn initialize_lock_escrow_from_file(args: &Args, sub_args: &InitializeLockEscrowFromFileArgs) {
+pub fn process_initialize_lock_escrow_from_file(
+    args: &Args,
+    sub_args: &InitializeLockEscrowFromFileArgs,
+) {
     println!("initialize lock escrow from file: {sub_args:#?}");
     create_lock_escrow(args, sub_args).unwrap();
 }

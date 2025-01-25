@@ -3,6 +3,9 @@ name = "cli"
 version = { workspace = true }
 edition = { workspace = true }
 
+[features]
+localnet = ["locker/localnet"]
+
 [dependencies]
 anchor-lang = { workspace = true }
 anchor-spl = { workspace = true }
@@ -16,3 +19,5 @@ csv= { workspace = true }
 anyhow = "1.0.57"
 serde = { workspace = true }
 locker = { path = "../programs/locker" }
+merkle-tree = { path = "../merkle-tree" }
+rand = "0.8"

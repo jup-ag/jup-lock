@@ -27,7 +27,7 @@ impl CreateVestingEscrowParameters {
         Ok(total_amount)
     }
 
-    fn validate(&self) -> Result<()> {
+    pub fn validate(&self) -> Result<()> {
         require!(
             self.cliff_time >= self.vesting_start_time,
             LockerError::InvalidVestingStartTime

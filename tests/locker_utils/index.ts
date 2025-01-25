@@ -567,6 +567,7 @@ export async function createRootEscrow(params: CreateRootEscrowParams) {
       base: baseKP.publicKey,
       rootEscrow,
       tokenMint,
+      payer: ownerKeypair.publicKey,
       creator: ownerKeypair.publicKey,
       tokenProgram,
       systemProgram: web3.SystemProgram.programId,

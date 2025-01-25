@@ -27,7 +27,7 @@ solana-program = {workspace = true}
 bytemuck = { version = "1.13.1", features = ["derive", "min_const_generics"] }
 static_assertions = "1.1.0"
 num_enum = "0.7.1"
-merkle-verify = { path = "../../verify" }
+merkle-verify = { path = "../../merkle-verify" }
 
 [dev-dependencies]
 proptest = "1.2.0"

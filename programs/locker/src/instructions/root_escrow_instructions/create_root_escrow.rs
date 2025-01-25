@@ -41,16 +41,19 @@ pub struct CreateRootEscrowCtx<'info> {
             params.version.to_le_bytes().as_ref(),
         ],
         bump,
-        payer = creator,
+        payer = payer,
         space = 8 + RootEscrow::INIT_SPACE
     )]
     pub root_escrow: AccountLoader<'info, RootEscrow>,
 
     pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    /// Creator.
+    /// payer.
     #[account(mut)]
-    pub creator: Signer<'info>,
+    pub payer: Signer<'info>,
+
+    /// CHECK: Creator.
+    pub creator: UncheckedAccount<'info>,
 
     /// system program.
     pub system_program: Program<'info, System>,
