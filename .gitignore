@@ -10,7 +10,7 @@ proptest-regressions
 
 .idea
 
-trash
+# trash
 base.json
 
 yarn.lock
