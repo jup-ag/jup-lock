@@ -69,6 +69,8 @@ pub enum Commands {
     FundRootEscrow(FundRootEscrowArgs),
     /// Create vesting escrow from root
     CreateVestingEcrowFromRoot(CreateVestingEcrowFromRootArgs),
+    /// Verify all escrows has been created
+    VerifyAllEscrowCreated(VerifyAllEscrowCreatedArgs),
 }
 
 #[derive(Parser, Debug)]
@@ -175,6 +177,19 @@ pub struct CreateVestingEcrowFromRootArgs {
     pub mint: Pubkey,
 }
 
+#[derive(Parser, Debug)]
+pub struct VerifyAllEscrowCreatedArgs {
+    /// Merkle tree out path
+    #[clap(long, env)]
+    pub merkle_tree_path: PathBuf,
+
+    #[clap(long, env)]
+    pub base: Pubkey,
+    /// token mint
+    #[clap(long, env)]
+    pub mint: Pubkey,
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -189,6 +204,9 @@ fn main() {
         Commands::FundRootEscrow(sub_args) => process_fund_root_escrow(&args, sub_args),
         Commands::CreateVestingEcrowFromRoot(sub_args) => {
             process_create_vesting_escrow_from_root(&args, &sub_args)
+        }
+        Commands::VerifyAllEscrowCreated(sub_args) => {
+            process_verify_all_escrow_created(&args, sub_args)
         }
     }
 }

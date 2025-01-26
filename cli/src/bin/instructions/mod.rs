@@ -12,3 +12,5 @@ pub mod process_fund_root_escrow;
 pub use process_fund_root_escrow::*;
 pub mod process_create_vesting_escrow_from_root;
 pub use process_create_vesting_escrow_from_root::*;
+pub mod process_verify_all_escrow_created;
+pub use process_verify_all_escrow_created::*;
