@@ -27,7 +27,7 @@ impl CreateVestingEscrowParameters {
         Ok(total_amount)
     }
 
-    fn validate(&self) -> Result<()> {
+    pub fn validate(&self) -> Result<()> {
         require!(
             self.cliff_time >= self.vesting_start_time,
             LockerError::InvalidVestingStartTime
@@ -53,10 +53,10 @@ impl CreateVestingEscrowParameters {
         vesting_escrow: &AccountLoader<VestingEscrow>,
         recipient: Pubkey,
         token_mint: Pubkey,
-        sender: Pubkey,
+        creator: Pubkey,
         base: Pubkey,
         escrow_bump: u8,
-        token_program_flag: TokenProgramFlag,
+        token_program_flag: u8,
     ) -> Result<()> {
         self.validate()?;
 
@@ -70,12 +70,12 @@ impl CreateVestingEscrowParameters {
             self.number_of_period,
             recipient,
             token_mint,
-            sender,
+            creator,
             base,
             escrow_bump,
             self.update_recipient_mode,
             self.cancel_mode,
-            token_program_flag.into(),
+            token_program_flag,
         );
 
         Ok(())
@@ -139,7 +139,7 @@ pub fn handle_create_vesting_escrow(
         ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         ctx.bumps.escrow,
-        UseSplToken,
+        UseSplToken.into(),
     )?;
 
     transfer_to_escrow(

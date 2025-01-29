@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["programs/*", "cli"]
+members = ["programs/*", "cli", "merkle-tree","merkle-verify"]
 
 [workspace.package]
 edition = "2021"
@@ -17,7 +17,7 @@ incremental = false
 codegen-units = 1
 
 [workspace.dependencies]
-anchor-lang = "0.30.1"
+anchor-lang = { version = "0.30.1", features = ["init-if-needed"] }
 anchor-spl = "0.30.1"
 anchor-client = "0.30.1"
 clap = { version = "3.2.25", features = ["derive", "env"] }
@@ -27,3 +27,12 @@ solana-program = { version = "1.18.21" }
 solana-rpc-client = { version = "1.18.21" }
 solana-sdk = { version = "1.18.21" }
 spl-associated-token-account = "2.2.0"
+fast-math = "0.1"
+indexmap = "2.1.0"
+merkle-verify = { path = "merkle-verify" }
+rust_decimal = "1.35.0"
+rand = "0.8.5"
+serde_derive = "1.0.171"
+serde_json = "1.0.102"
+thiserror = "1.0.50"
+hex = "0.4.3"

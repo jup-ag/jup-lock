@@ -21,6 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+## Program [0.4.0]
+### Added
+- Support creating vesting escrow from batch, using root escrow and merkle tree
+
 ## Program [0.3.1] [PR #22](https://github.com/jup-ag/jup-lock/pull/22)
 
 ### Added

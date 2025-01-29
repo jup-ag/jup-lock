@@ -4,14 +4,14 @@ use anchor_spl::{
     token_interface::{close_account, CloseAccount, Mint, TokenAccount, TokenInterface},
 };
 use util::{
-    close, harvest_fees, is_closed, parse_remaining_accounts, transfer_to_user_v2, AccountsType,
+    close, harvest_fees, is_closed, parse_remaining_accounts, transfer_to_user2, AccountsType,
     MemoTransferContext, ParsedRemainingAccounts, TRANSFER_MEMO_CLOSE_ESCROW,
 };
 
 /// Accounts for [locker::close_vesting_escrow].
 #[derive(Accounts)]
 #[event_cpi]
-pub struct CloseVestingEscrow<'info> {
+pub struct CloseVestingEscrowCtx<'info> {
     /// Escrow.
     #[account(
         mut,
@@ -54,7 +54,7 @@ pub struct CloseVestingEscrow<'info> {
 }
 
 pub fn handle_close_vesting_escrow<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, CloseVestingEscrow<'info>>,
+    ctx: Context<'_, '_, 'c, 'info, CloseVestingEscrowCtx<'info>>,
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     let escrow = ctx.accounts.escrow.load()?;
@@ -87,7 +87,7 @@ pub fn handle_close_vesting_escrow<'c: 'info, 'info>(
                 )?,
                 None => ParsedRemainingAccounts::default(),
             };
-            transfer_to_user_v2(
+            transfer_to_user2(
                 &ctx.accounts.escrow,
                 &ctx.accounts.token_mint,
                 &ctx.accounts.escrow_token,

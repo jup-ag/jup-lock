@@ -124,7 +124,7 @@ describe("Escrow metadata", () => {
       name: "Jupiter lock",
       description: "This is jupiter lock",
       creatorEmail: "andrew@raccoons.dev",
-      recipientEmail: "max@raccoons.dev",
+      recipientEndpoint: "max@raccoons.dev",
       creator: UserKP,
       isAssertion: true,
     });

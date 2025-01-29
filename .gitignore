@@ -9,3 +9,9 @@ test-ledger
 proptest-regressions
 
 .idea
+
+# trash
+base.json
+
+yarn.lock
+pnpm-lock.yaml

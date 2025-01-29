@@ -3,7 +3,7 @@ use anchor_spl::token_2022::spl_token_2022;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 use crate::util::{
-    calculate_transfer_fee_included_amount, parse_remaining_accounts, transfer_to_escrow_v2,
+    calculate_transfer_fee_included_amount, parse_remaining_accounts, transfer_to_escrow2,
     validate_mint, AccountsType, ParsedRemainingAccounts,
 };
 use crate::TokenProgramFlag::{UseSplToken, UseToken2022};
@@ -11,7 +11,7 @@ use crate::*;
 
 #[event_cpi]
 #[derive(Accounts)]
-pub struct CreateVestingEscrowV2<'info> {
+pub struct CreateVestingEscrow2Ctx<'info> {
     /// Base.
     #[account(mut)]
     pub base: Signer<'info>,
@@ -59,13 +59,13 @@ pub struct CreateVestingEscrowV2<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrowV2<'info>>,
+pub fn handle_create_vesting_escrow2<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, CreateVestingEscrow2Ctx<'info>>,
     params: &CreateVestingEscrowParameters,
     remaining_accounts_info: Option<RemainingAccountsInfo>,
 ) -> Result<()> {
     // Validate if token_mint is supported
-    validate_mint(&ctx.accounts.token_mint)?;
+    validate_mint(&ctx.accounts.token_mint, true)?;
 
     let token_mint_info = ctx.accounts.token_mint.to_account_info();
     let token_program_flag = match *token_mint_info.owner {
@@ -81,7 +81,7 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
         ctx.accounts.sender.key(),
         ctx.accounts.base.key(),
         ctx.bumps.escrow,
-        token_program_flag,
+        token_program_flag.into(),
     )?;
 
     // Process remaining accounts
@@ -95,7 +95,7 @@ pub fn handle_create_vesting_escrow_v2<'c: 'info, 'info>(
         None => ParsedRemainingAccounts::default(),
     };
 
-    transfer_to_escrow_v2(
+    transfer_to_escrow2(
         &ctx.accounts.sender,
         &ctx.accounts.token_mint,
         &ctx.accounts.sender_token,

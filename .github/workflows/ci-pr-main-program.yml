@@ -52,7 +52,7 @@ jobs:
       - uses: ./.github/actions/setup-dep
       - uses: ./.github/actions/setup-anchor
       # Install rust + toolchain
-      - run: rustup toolchain install stable --component clippy
+      - uses: dtolnay/rust-toolchain@1.76.0
       # Cache rust, cargo
       - uses: Swatinem/rust-cache@v2
         with:

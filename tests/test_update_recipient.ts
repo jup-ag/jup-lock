@@ -285,7 +285,7 @@ describe("Update recipient", () => {
     });
   });
 
-  it("Update both recipient and recipient email", async () => {
+  it("Update both recipient and recipient endpoint", async () => {
     console.log("Create vesting plan");
     const program = createLockerProgram(new anchor.Wallet(UserKP));
     let currentBlockTime = await getCurrentBlockTime(
@@ -313,12 +313,12 @@ describe("Update recipient", () => {
       name: "Jupiter lock",
       description: "This is jupiter lock",
       creatorEmail: "andrew@raccoons.dev",
-      recipientEmail: "max@raccoons.dev",
+      recipientEndpoint: "max@raccoons.dev",
       creator: UserKP,
       isAssertion: true,
     });
 
-    it("Update both recipient and recipient email", async () => {
+    it("Update both recipient and recipient endpoint", async () => {
       console.log("Create vesting plan");
       const program = createLockerProgram(new anchor.Wallet(UserKP));
       let currentBlockTime = await getCurrentBlockTime(
@@ -346,7 +346,7 @@ describe("Update recipient", () => {
         name: "Jupiter lock",
         description: "This is jupiter lock",
         creatorEmail: "andrew@raccoons.dev",
-        recipientEmail: "max@raccoons.dev",
+        recipientEndpoint: "max@raccoons.dev",
         creator: UserKP,
         isAssertion: true,
       });
