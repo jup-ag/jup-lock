@@ -19,23 +19,13 @@ jobs:
         with:
           fetch-depth: 0 # Ensures full history for commits
 
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-
-      - name: Install Solana CLI
-        run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/stable/install)"
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-
-      - name: Install Anchor
-        run: |
-          cargo install --git https://github.com/coral-xyz/anchor avm --locked
-          avm install 0.30.1
-          avm use 0.30.1
-
       - name: Build Anchor program and generate IDL
+      - uses: actions/checkout@v3
+      - uses: metadaoproject/setup-anchor@v3.1
+        with:
+          anchor-version: "0.30.1"
+          solana-cli-version: "1.18.25" # Set it to 2.x.x to use the Anza release
+          node-version: "20.16.0"
         run: anchor build
 
       - name: Commit and push IDL if changed
