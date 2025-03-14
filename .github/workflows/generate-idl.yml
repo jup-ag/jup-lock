@@ -34,7 +34,6 @@ jobs:
           # only add generated locker.json file
           add-paths: |
             sdk/artifacts/locker.json
-          author: github_actions
           # branch name, see https://github.com/marketplace/actions/create-pull-request#action-behaviour
           branch: idl
           # always create unique branch name, see https://github.com/marketplace/actions/create-pull-request#alternative-strategy---always-create-a-new-pull-request-branch
