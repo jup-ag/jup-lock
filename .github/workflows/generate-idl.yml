@@ -32,6 +32,5 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add target/idl/*.json
-          git add target/types/*.ts
+          cp target/idl/*.json target/types/*.ts sdk/artifacts/ && git add sdk/artifacts/*.json sdk/artifacts/*.ts
           git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update Anchor IDL" && git push)
