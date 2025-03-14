@@ -7,7 +7,9 @@ on:
 jobs:
   generate-idl:
     runs-on: ubuntu-latest
-    permissions: write-all
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -25,8 +27,15 @@ jobs:
       - name: Move idl.json
         run: |
           mv target/idl/locker.json ./sdk/artifacts/
-      - name: Commit changes
-        uses: EndBug/add-and-commit@v9
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
         with:
-          new_branch: idl
-          default_author: github_actions
+          title: "Update IDL"
+          # only add generated locker.json file
+          add-paths: |
+            sdk/artifacts/locker.json
+          author: github_actions
+          # branch name, see https://github.com/marketplace/actions/create-pull-request#action-behaviour
+          branch: idl
+          # always create unique branch name, see https://github.com/marketplace/actions/create-pull-request#alternative-strategy---always-create-a-new-pull-request-branch
+          branch-suffix: timestamp
