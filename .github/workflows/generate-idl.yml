@@ -1,12 +1,7 @@
 name: Generate Anchor IDL
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+  merge_group:
   workflow_dispatch: # Allows manual triggering
 
 permissions:
@@ -37,5 +32,18 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Fetch all branches
+          git fetch origin
+
+          # Ensure we are on the idl branch (create if missing)
+          if git ls-remote --exit-code --heads origin idl; then
+            git checkout idl
+            git pull origin idl
+          else
+            git checkout -b idl
+          fi
+
+          # Copy IDL files
           cp target/idl/*.json target/types/*.ts sdk/artifacts/ && git add sdk/artifacts/*.json sdk/artifacts/*.ts
           git diff --quiet && git diff --staged --quiet || (git commit -m "chore: update Anchor IDL" && git push origin HEAD:${{ github.ref }})
