@@ -43,7 +43,7 @@ impl CreateVestingEscrowParameters {
             LockerError::InvalidCancelMode,
         );
 
-        if self.amount_per_period > 0 || self.number_of_period > 0 {
+        if self.amount_per_period > 0 && self.number_of_period > 0 {
             require!(self.frequency != 0, LockerError::FrequencyIsZero);
         }
 

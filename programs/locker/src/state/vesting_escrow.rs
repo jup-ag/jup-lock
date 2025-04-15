@@ -113,6 +113,9 @@ impl VestingEscrow {
         if current_ts < self.cliff_time {
             return Ok(0);
         }
+        if self.frequency == 0 {
+            return Ok(self.cliff_unlock_amount);
+        }
         let period = current_ts
             .safe_sub(self.cliff_time)?
             .safe_div(self.frequency)?;
