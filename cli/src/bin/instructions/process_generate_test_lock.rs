@@ -1,7 +1,7 @@
 use crate::GenerateTestLockArgs;
+use anchor_client::solana_sdk::pubkey::Pubkey;
 use csv::Writer;
 use rand::Rng;
-use solana_sdk::pubkey::Pubkey;
 
 pub fn process_generate_test_lock(args: &GenerateTestLockArgs) {
     let mut wtr = Writer::from_path(&args.csv_path).unwrap();

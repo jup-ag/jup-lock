@@ -6,10 +6,10 @@ use std::{
     result,
 };
 
+use anchor_lang::solana_program::{hash::hashv, pubkey::Pubkey};
 use indexmap::IndexMap;
 use merkle_verify::verify;
 use serde::{Deserialize, Serialize};
-use solana_program::{hash::hashv, pubkey::Pubkey};
 
 use crate::{
     csv_entry::CsvEntry,

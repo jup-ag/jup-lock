@@ -2,17 +2,17 @@ use crate::Args;
 use crate::FundRootEscrowArgs;
 use anchor_client::anchor_lang::InstructionData;
 use anchor_client::anchor_lang::ToAccountMetas;
+use anchor_client::solana_client::rpc_client::RpcClient;
+use anchor_client::solana_sdk::commitment_config::CommitmentConfig;
+use anchor_client::solana_sdk::transaction::Transaction;
+use anchor_client::solana_sdk::{
+    compute_budget::ComputeBudgetInstruction, instruction::Instruction, pubkey::Pubkey,
+    signature::read_keypair_file,
+};
 use anchor_spl::associated_token::get_associated_token_address;
 use anchor_spl::token::spl_token;
 use locker::RootEscrow;
 use merkle_tree::jup_lock_merkle_tree::JupLockMerkleTree;
-use solana_rpc_client::rpc_client::RpcClient;
-use solana_sdk::commitment_config::CommitmentConfig;
-use solana_sdk::transaction::Transaction;
-use solana_sdk::{
-    compute_budget::ComputeBudgetInstruction, instruction::Instruction, pubkey::Pubkey,
-    signature::read_keypair_file,
-};
 
 pub fn process_fund_root_escrow(args: &Args, sub_args: &FundRootEscrowArgs) {
     let program = args.get_program_client();
@@ -57,7 +57,7 @@ pub fn process_fund_root_escrow(args: &Args, sub_args: &FundRootEscrowArgs) {
             root_escrow_token: get_associated_token_address(&root_escrow, &sub_args.mint),
             payer: program.payer(),
             payer_token: get_associated_token_address(&program.payer(), &sub_args.mint),
-            system_program: solana_program::system_program::id(),
+            system_program: anchor_lang::solana_program::system_program::id(),
             event_authority,
             program: program.id(),
             token_program: spl_token::ID,

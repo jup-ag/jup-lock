@@ -1,8 +1,8 @@
 use crate::Args;
 use crate::VerifyRootEscrowArgs;
+use anchor_client::solana_sdk::pubkey::Pubkey;
 use locker::RootEscrow;
 use merkle_tree::jup_lock_merkle_tree::JupLockMerkleTree;
-use solana_sdk::pubkey::Pubkey;
 
 pub fn process_verify_root_escrow(args: &Args, sub_args: &VerifyRootEscrowArgs) {
     let program = args.get_program_client();

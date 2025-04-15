@@ -48,14 +48,14 @@ pub struct CreateRootEscrowCtx<'info> {
 
     pub token_mint: Box<InterfaceAccount<'info, Mint>>,
 
-    /// payer.
+    /// Payer.
     #[account(mut)]
     pub payer: Signer<'info>,
 
     /// CHECK: Creator.
     pub creator: UncheckedAccount<'info>,
 
-    /// system program.
+    /// System program.
     pub system_program: Program<'info, System>,
 }
 
