@@ -15,3 +15,5 @@ base.json
 
 yarn.lock
 pnpm-lock.yaml
+
+commands_mainnet

@@ -1,16 +1,16 @@
 use crate::*;
 use anchor_client::anchor_lang::InstructionData;
 use anchor_client::anchor_lang::ToAccountMetas;
+use anchor_client::solana_client::rpc_client::RpcClient;
+use anchor_client::solana_sdk::transaction::Transaction;
+use anchor_client::solana_sdk::{
+    compute_budget::ComputeBudgetInstruction, instruction::Instruction, pubkey::Pubkey,
+    signature::Signature, signer::Signer,
+};
 use anchor_spl::token;
 use anyhow::{Ok, Result};
 use locker::CreateVestingEscrowParameters;
 use serde::{Deserialize, Serialize};
-use solana_rpc_client::rpc_client::RpcClient;
-use solana_sdk::transaction::Transaction;
-use solana_sdk::{
-    compute_budget::ComputeBudgetInstruction, instruction::Instruction, pubkey::Pubkey,
-    signature::Signature, signer::Signer,
-};
 use std::fs::File;
 use std::str::FromStr;
 
@@ -152,7 +152,7 @@ fn create_lock_escrow_for_an_user(
             event_authority,
             program: locker::ID,
             token_program: token::ID,
-            system_program: solana_program::system_program::id(),
+            system_program: anchor_lang::solana_program::system_program::id(),
         }
         .to_account_metas(None),
         data: locker::instruction::CreateVestingEscrow {

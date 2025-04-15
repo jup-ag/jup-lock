@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+## Program [0.5.0]
+
+### Changed
+
+- Bump `anchor` version to 0.31.0
+
+
 ## Program [0.4.0]
 ### Added
 - Support creating vesting escrow from batch, using root escrow and merkle tree

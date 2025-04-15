@@ -10,8 +10,7 @@ indexmap = { workspace = true }
 merkle-verify = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-solana-program = { workspace = true }
-solana-sdk = { workspace = true }
+anchor-lang = { workspace = true }
 thiserror = { workspace = true }
 rust_decimal = { workspace = true }
 

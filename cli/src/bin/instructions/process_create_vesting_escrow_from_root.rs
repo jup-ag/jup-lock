@@ -2,20 +2,20 @@ use crate::Args;
 use crate::CreateVestingEcrowFromRootArgs;
 use anchor_client::anchor_lang::InstructionData;
 use anchor_client::anchor_lang::ToAccountMetas;
+use anchor_client::solana_client::rpc_client::RpcClient;
+use anchor_client::solana_sdk::commitment_config::CommitmentConfig;
+use anchor_client::solana_sdk::signature::Keypair;
+use anchor_client::solana_sdk::transaction::Transaction;
+use anchor_client::solana_sdk::{
+    compute_budget::ComputeBudgetInstruction, instruction::Instruction, pubkey::Pubkey,
+    signature::read_keypair_file,
+};
 use anchor_spl::associated_token::get_associated_token_address;
 use anchor_spl::token::spl_token;
 use anyhow::Result;
 use locker::CreateVestingEscrowFromRootParams;
 use merkle_tree::jup_lock_merkle_tree::JupLockMerkleTree;
 use merkle_tree::tree_node::TreeNode;
-use solana_rpc_client::rpc_client::RpcClient;
-use solana_sdk::commitment_config::CommitmentConfig;
-use solana_sdk::signature::Keypair;
-use solana_sdk::transaction::Transaction;
-use solana_sdk::{
-    compute_budget::ComputeBudgetInstruction, instruction::Instruction, pubkey::Pubkey,
-    signature::read_keypair_file,
-};
 
 pub fn process_create_vesting_escrow_from_root(
     args: &Args,
@@ -94,7 +94,7 @@ fn create_vesting_escrow_from_root(
             recipient,
             associated_token_program: spl_associated_token_account::ID,
             token_program: spl_token::ID,
-            system_program: solana_program::system_program::id(),
+            system_program: anchor_lang::solana_program::system_program::id(),
             event_authority,
             program: program.id(),
         }

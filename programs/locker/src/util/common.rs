@@ -1,9 +1,9 @@
 // borrow code from anchor lang
 
 use anchor_lang::prelude::{Id, System};
+use anchor_lang::solana_program::account_info::AccountInfo;
+use anchor_lang::solana_program::system_program;
 use anchor_lang::Result;
-use solana_program::account_info::AccountInfo;
-use solana_program::system_program;
 
 pub fn close<'info>(info: AccountInfo<'info>, sol_destination: AccountInfo<'info>) -> Result<()> {
     // Transfer tokens from the account to the sol_destination.

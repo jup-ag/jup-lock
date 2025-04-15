@@ -11,13 +11,10 @@ anchor-lang = { workspace = true }
 anchor-spl = { workspace = true }
 anchor-client = { workspace = true }
 clap = { workspace = true }
-solana-program = { workspace = true }
-solana-rpc-client = { workspace = true }
-solana-sdk = { workspace = true }
 spl-associated-token-account = { workspace = true }
 csv= { workspace = true }
 anyhow = "1.0.57"
 serde = { workspace = true }
 locker = { path = "../programs/locker" }
 merkle-tree = { path = "../merkle-tree" }
-rand = "0.8"
+rand = { workspace = true }

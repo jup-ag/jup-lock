@@ -1,15 +1,15 @@
 use crate::{Args, CreateRootEscrowArgs};
 use anchor_client::anchor_lang::InstructionData;
 use anchor_client::anchor_lang::ToAccountMetas;
-use locker::CreateRootEscrowParameters;
-use merkle_tree::jup_lock_merkle_tree::JupLockMerkleTree;
-use solana_rpc_client::rpc_client::RpcClient;
-use solana_sdk::commitment_config::CommitmentConfig;
-use solana_sdk::transaction::Transaction;
-use solana_sdk::{
+use anchor_client::solana_client::rpc_client::RpcClient;
+use anchor_client::solana_sdk::commitment_config::CommitmentConfig;
+use anchor_client::solana_sdk::transaction::Transaction;
+use anchor_client::solana_sdk::{
     compute_budget::ComputeBudgetInstruction, instruction::Instruction, pubkey::Pubkey,
     signature::read_keypair_file, signer::Signer,
 };
+use locker::CreateRootEscrowParameters;
+use merkle_tree::jup_lock_merkle_tree::JupLockMerkleTree;
 
 pub fn process_create_root_escrow(args: &Args, sub_args: &CreateRootEscrowArgs) {
     let program = args.get_program_client();
@@ -48,7 +48,7 @@ pub fn process_create_root_escrow(args: &Args, sub_args: &CreateRootEscrowArgs) 
             token_mint: sub_args.mint,
             payer: program.payer(),
             creator: sub_args.creator,
-            system_program: solana_program::system_program::id(),
+            system_program: anchor_lang::solana_program::system_program::id(),
             event_authority,
             program: program.id(),
         }

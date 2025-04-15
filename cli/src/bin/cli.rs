@@ -6,8 +6,10 @@ use anchor_client::{
     solana_sdk::signer::keypair::read_keypair_file, Client as AnchorClient, Cluster, Program,
 };
 
+use anchor_client::solana_sdk::{
+    commitment_config::CommitmentConfig, pubkey::Pubkey, signer::keypair::Keypair,
+};
 use clap::{Parser, Subcommand};
-use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey, signer::keypair::Keypair};
 
 use crate::instructions::*;
 #[derive(Parser, Debug)]
