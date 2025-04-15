@@ -7,9 +7,9 @@ on:
       - staging
 
 env:
-  SOLANA_CLI_VERSION: 1.18.21
-  NODE_VERSION: 18.14.2
-  ANCHOR_CLI_VERSION: 0.30.1
+  SOLANA_CLI_VERSION: 2.1.0
+  NODE_VERSION: 18.20.6
+  ANCHOR_CLI_VERSION: 0.31.0
 
 jobs:
   program_changed_files:
@@ -17,7 +17,7 @@ jobs:
     outputs:
       program: ${{steps.changed-files-specific.outputs.any_changed}}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Get specific changed files
@@ -47,18 +47,21 @@ jobs:
     needs: program_changed_files
     if: needs.program_changed_files.outputs.program == 'true'
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/setup-solana
       - uses: ./.github/actions/setup-dep
       - uses: ./.github/actions/setup-anchor
       # Install rust + toolchain
-      - uses: dtolnay/rust-toolchain@1.76.0
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy
       # Cache rust, cargo
       - uses: Swatinem/rust-cache@v2
         with:
           prefix-key: "v1"
       # Cache node_modules
-      - uses: actions/cache@v2
+      - uses: actions/cache@v4
         id: cache-node-modules
         with:
           path: ./node_modules
