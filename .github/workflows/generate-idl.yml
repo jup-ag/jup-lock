@@ -18,7 +18,7 @@ jobs:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
       - uses: metadaoproject/setup-anchor@v3.1
         with:
-          anchor-version: "0.31.2"
+          anchor-version: "0.31.0"
           solana-cli-version: "2.1.21" # Set it to 2.x.x to use the Anza release
           node-version: "20.16.0"
       - run: anchor build
