@@ -48,9 +48,8 @@ pub struct CancelVestingEscrowCtx<'info> {
     /// Receipient Token Account.
     #[account(
         mut,
-        associated_token::mint = token_mint,
-        associated_token::authority = escrow.load()?.recipient,
-        associated_token::token_program = token_program
+        token::mint = token_mint,
+        token::authority = escrow.load()?.recipient,
     )]
     pub recipient_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
