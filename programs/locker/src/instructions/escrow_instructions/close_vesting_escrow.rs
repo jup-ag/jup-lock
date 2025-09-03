@@ -1,3 +1,4 @@
+use crate::UncloseableFlag::Closeable;
 use crate::*;
 use anchor_spl::{
     memo::Memo,
@@ -112,7 +113,7 @@ pub fn handle_close_vesting_escrow<'c: 'info, 'info>(
         // close escrow token
         let escrow_seeds = escrow_seeds!(escrow);
         // Allow closing of token account but not the escrow.
-        if escrow.uncloseable_flag == 0u8 {
+        if escrow.uncloseable_flag == Closeable as u8 {
             close_account(CpiContext::new_with_signer(
                 ctx.accounts.token_program.to_account_info(),
                 CloseAccount {
