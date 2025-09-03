@@ -105,6 +105,7 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
         .safe_sub(claimable_amount)?;
     escrow.cancelled_at = current_ts;
     require!(escrow.cancelled_at > 0, LockerError::CancelledAtIsZero);
+    let escrow_closable = escrow.uncloseable_flag == UncloseableFlag::Closeable as u8;
     drop(escrow);
 
     // Process remaining accounts
@@ -155,7 +156,9 @@ pub fn handle_cancel_vesting_escrow<'c: 'info, 'info>(
         &ctx.accounts.token_mint,
     )?;
 
-    ctx.accounts.close_escrow_token()?;
+    if escrow_closable {
+        ctx.accounts.close_escrow_token()?;
+    }
 
     emit_cpi!(EventCancelVestingEscrow {
         escrow: ctx.accounts.escrow.key(),

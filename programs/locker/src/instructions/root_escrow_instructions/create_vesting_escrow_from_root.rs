@@ -1,3 +1,4 @@
+use crate::UncloseableFlag::Uncloseable;
 use crate::*;
 use anchor_lang::solana_program::hash::hashv;
 use anchor_spl::associated_token::AssociatedToken;
@@ -7,7 +8,6 @@ use util::{
     calculate_transfer_fee_included_amount, parse_remaining_accounts, transfer_from_root_escrow,
     AccountsType, ParsedRemainingAccounts,
 };
-
 const LEAF_PREFIX: &[u8] = &[0];
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -152,6 +152,7 @@ pub fn handle_create_vesting_escrow_from_root<'c: 'info, 'info>(
         ctx.accounts.base.key(),
         ctx.bumps.escrow,
         token_program_flag,
+        Uncloseable.into(),
     )?;
 
     // Process remaining accounts

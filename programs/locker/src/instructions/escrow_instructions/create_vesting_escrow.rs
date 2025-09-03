@@ -3,6 +3,7 @@ use anchor_spl::token::{Token, TokenAccount};
 use crate::safe_math::SafeMath;
 use crate::util::token::transfer_to_escrow;
 use crate::TokenProgramFlag::UseSplToken;
+use crate::UncloseableFlag::Closeable;
 use crate::*;
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
@@ -59,6 +60,7 @@ impl CreateVestingEscrowParameters {
         base: Pubkey,
         escrow_bump: u8,
         token_program_flag: u8,
+        uncloseable_flag: u8,
     ) -> Result<()> {
         self.validate()?;
 
@@ -78,6 +80,7 @@ impl CreateVestingEscrowParameters {
             self.update_recipient_mode,
             self.cancel_mode,
             token_program_flag,
+            uncloseable_flag,
         );
 
         Ok(())
@@ -142,6 +145,7 @@ pub fn handle_create_vesting_escrow(
         ctx.accounts.base.key(),
         ctx.bumps.escrow,
         UseSplToken.into(),
+        Closeable.into(),
     )?;
 
     transfer_to_escrow(

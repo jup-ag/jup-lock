@@ -7,6 +7,7 @@ use crate::util::{
     validate_mint, AccountsType, ParsedRemainingAccounts,
 };
 use crate::TokenProgramFlag::{UseSplToken, UseToken2022};
+use crate::UncloseableFlag::Closeable;
 use crate::*;
 
 #[event_cpi]
@@ -82,6 +83,7 @@ pub fn handle_create_vesting_escrow2<'c: 'info, 'info>(
         ctx.accounts.base.key(),
         ctx.bumps.escrow,
         token_program_flag.into(),
+        Closeable.into(),
     )?;
 
     // Process remaining accounts

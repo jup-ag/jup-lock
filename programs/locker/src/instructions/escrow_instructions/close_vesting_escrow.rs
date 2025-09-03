@@ -111,15 +111,18 @@ pub fn handle_close_vesting_escrow<'c: 'info, 'info>(
 
         // close escrow token
         let escrow_seeds = escrow_seeds!(escrow);
-        close_account(CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
-            CloseAccount {
-                account: ctx.accounts.escrow_token.to_account_info(),
-                destination: ctx.accounts.creator.to_account_info(),
-                authority: ctx.accounts.escrow.to_account_info(),
-            },
-            &[&escrow_seeds[..]],
-        ))?;
+        // Allow closing of token account but not the escrow.
+        if escrow.uncloseable_flag == 0u8 {
+            close_account(CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                CloseAccount {
+                    account: ctx.accounts.escrow_token.to_account_info(),
+                    destination: ctx.accounts.creator.to_account_info(),
+                    authority: ctx.accounts.escrow.to_account_info(),
+                },
+                &[&escrow_seeds[..]],
+            ))?;
+        }
     }
 
     // close escrow metadata

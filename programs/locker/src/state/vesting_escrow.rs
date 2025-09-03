@@ -30,6 +30,13 @@ pub enum TokenProgramFlag {
     UseToken2022, //1
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, IntoPrimitive, TryFromPrimitive)]
+#[repr(u8)]
+pub enum UncloseableFlag {
+    Closeable,   //0
+    Uncloseable, //1
+}
+
 #[account(zero_copy)]
 #[derive(Default, InitSpace, Debug)]
 pub struct VestingEscrow {
@@ -49,8 +56,10 @@ pub struct VestingEscrow {
     pub cancel_mode: u8,
     /// token program flag
     pub token_program_flag: u8,
+    /// uncloseable flag
+    pub uncloseable_flag: u8,
     /// padding
-    pub padding_0: [u8; 4],
+    pub padding_0: [u8; 3],
     /// cliff time
     pub cliff_time: u64,
     /// frequency
@@ -92,6 +101,7 @@ impl VestingEscrow {
         update_recipient_mode: u8,
         cancel_mode: u8,
         token_program_flag: u8,
+        uncloseable_flag: u8,
     ) {
         self.vesting_start_time = vesting_start_time;
         self.cliff_time = cliff_time;
@@ -107,6 +117,7 @@ impl VestingEscrow {
         self.update_recipient_mode = update_recipient_mode;
         self.cancel_mode = cancel_mode;
         self.token_program_flag = token_program_flag;
+        self.uncloseable_flag = uncloseable_flag;
     }
 
     pub fn get_max_unlocked_amount(&self, current_ts: u64) -> Result<u64> {
