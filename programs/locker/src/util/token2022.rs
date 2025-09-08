@@ -413,10 +413,11 @@ mod token2022_tests {
             };
             let fee = transfer_fee.calculate_fee(amount_in).unwrap();
             let amount_out = amount_in.checked_sub(fee).unwrap();
-            let fee_exact_out = calculate_pre_fee_amount(&transfer_fee, amount_out).unwrap().checked_sub(amount_out).unwrap();
-            assert!(fee_exact_out >= fee);
-            if fee_exact_out - fee > 0 {
-                println!("dif {} {} {} {} {}",fee_exact_out - fee, fee, fee_exact_out, maximum_fee, amount_in);
+            let fee_exact_out = transfer_fee.calculate_fee(calculate_pre_fee_amount(&transfer_fee, amount_out).unwrap()).unwrap();
+            assert!(fee >= fee_exact_out);
+
+            if fee - fee_exact_out > 0 {
+                println!("dif {} {} {} {} {}",fee - fee_exact_out, fee, fee_exact_out, maximum_fee, amount_in);
             }
 
         }
