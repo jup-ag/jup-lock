@@ -48,13 +48,13 @@ pub struct CreateVestingEscrowFromRootCtx<'info> {
     )]
     pub root_escrow: AccountLoader<'info, RootEscrow>,
 
-    /// CHECK: Base.
+    /// Base account for deriving escrow PDA and enforcing uniqueness.
     #[account(
         init,
         seeds = [
             b"base",
             root_escrow.key().as_ref(),
-            recipient.key().as_ref(), // unique
+            recipient.key().as_ref(),
         ],
         payer = payer,
         space = 8,
