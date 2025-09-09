@@ -50,7 +50,7 @@ pub struct CancelVestingEscrowCtx<'info> {
         mut,
         token::mint = token_mint,
         token::authority = escrow.load()?.recipient,
-        token
+        token::program = token_program,
     )]
     pub recipient_token: Box<InterfaceAccount<'info, TokenAccount>>,
 
