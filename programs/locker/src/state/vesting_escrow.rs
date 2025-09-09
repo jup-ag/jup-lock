@@ -31,6 +31,9 @@ pub enum TokenProgramFlag {
 }
 
 #[account(zero_copy)]
+pub struct Marker {}
+
+#[account(zero_copy)]
 #[derive(Default, InitSpace, Debug)]
 pub struct VestingEscrow {
     /// recipient address

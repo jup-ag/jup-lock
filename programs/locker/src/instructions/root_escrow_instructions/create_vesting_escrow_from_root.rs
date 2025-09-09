@@ -50,14 +50,17 @@ pub struct CreateVestingEscrowFromRootCtx<'info> {
 
     /// CHECK: Base.
     #[account(
+        init,
         seeds = [
             b"base",
             root_escrow.key().as_ref(),
             recipient.key().as_ref(), // unique
         ],
+        payer = payer,
+        space = 8,
         bump,
     )]
-    pub base: UncheckedAccount<'info>,
+    pub base: AccountLoader<'info, Marker>,
 
     /// Escrow.
     #[account(
