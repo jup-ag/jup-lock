@@ -172,7 +172,9 @@ impl VestingEscrow {
     }
 
     fn signer_flag(&self, signer: Pubkey) -> u8 {
-        if signer == self.creator {
+        if signer == self.creator && signer == self.recipient {
+            0x3
+        } else if signer == self.creator {
             0x1
         } else if signer == self.recipient {
             0x2
