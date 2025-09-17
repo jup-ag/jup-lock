@@ -17,8 +17,6 @@ use anchor_spl::token_interface::{
 
 use crate::{LockerError, RootEscrow, VestingEscrow};
 
-const ONE_IN_BASIS_POINTS: u128 = MAX_FEE_BASIS_POINTS as u128;
-
 #[derive(Clone, Copy)]
 pub struct MemoTransferContext<'a, 'info> {
     pub memo_program: &'a Program<'info, Memo>,
@@ -265,30 +263,71 @@ pub fn validate_mint(
 
     Ok(())
 }
-
-// This function calculate the pre amount (with fee) require to transfer `amount` of token
-pub fn calculate_transfer_fee_included_amount(
-    amount: u64,
-    token_mint: &InterfaceAccount<Mint>,
-) -> Result<u64> {
-    let mint_info = token_mint.to_account_info();
-    if *mint_info.owner == Token::id() {
-        return Ok(amount);
+fn get_epoch_transfer_fee<'info>(
+    token_mint: &InterfaceAccount<'info, Mint>,
+) -> Result<Option<TransferFee>> {
+    let token_mint_info = token_mint.to_account_info();
+    if *token_mint_info.owner == Token::id() {
+        return Ok(None);
     }
 
-    let token_mint_data = mint_info.try_borrow_data()?;
+    let token_mint_data = token_mint_info.try_borrow_data()?;
     let token_mint_unpacked =
         StateWithExtensions::<spl_token_2022::state::Mint>::unpack(&token_mint_data)?;
-    let actual_amount: u64 =
-        if let Ok(transfer_fee_config) = token_mint_unpacked.get_extension::<TransferFeeConfig>() {
-            let transfer_fee = transfer_fee_config.get_epoch_fee(Clock::get()?.epoch);
-            calculate_pre_fee_amount(transfer_fee, amount)
-                .ok_or(LockerError::TransferFeeCalculationFailure)?
-        } else {
-            amount
-        };
+    if let Ok(transfer_fee_config) =
+        token_mint_unpacked.get_extension::<extension::transfer_fee::TransferFeeConfig>()
+    {
+        let epoch = Clock::get()?.epoch;
+        return Ok(Some(transfer_fee_config.get_epoch_fee(epoch).clone()));
+    }
 
-    Ok(actual_amount)
+    Ok(None)
+}
+#[derive(Debug)]
+pub struct TransferFeeIncludedAmount {
+    pub amount: u64,
+    pub transfer_fee: u64,
+}
+pub fn calculate_transfer_fee_included_amount<'info>(
+    transfer_fee_excluded_amount: u64,
+    token_mint: &InterfaceAccount<'info, Mint>,
+) -> Result<u64> {
+    if transfer_fee_excluded_amount == 0 {
+        return Ok(0);
+    }
+
+    if let Some(epoch_transfer_fee) = get_epoch_transfer_fee(token_mint)? {
+        let transfer_fee: u64 =
+            if u16::from(epoch_transfer_fee.transfer_fee_basis_points) == MAX_FEE_BASIS_POINTS {
+                // edge-case: if transfer fee rate is 100%, current SPL implementation returns 0 as inverse fee.
+                // https://github.com/solana-labs/solana-program-library/blob/fe1ac9a2c4e5d85962b78c3fc6aaf028461e9026/token/program-2022/src/extension/transfer_fee/mod.rs#L95
+
+                // But even if transfer fee is 100%, we can use maximum_fee as transfer fee.
+                // if transfer_fee_excluded_amount + maximum_fee > u64 max, the following checked_add should fail.
+                u64::from(epoch_transfer_fee.maximum_fee)
+            } else {
+                epoch_transfer_fee
+                    .calculate_inverse_fee(transfer_fee_excluded_amount)
+                    .ok_or(LockerError::MathOverflow)?
+            };
+
+        let transfer_fee_included_amount = transfer_fee_excluded_amount
+            .checked_add(transfer_fee)
+            .ok_or(LockerError::MathOverflow)?;
+
+        // verify transfer fee calculation for safety
+        let transfer_fee_verification = epoch_transfer_fee
+            .calculate_fee(transfer_fee_included_amount)
+            .unwrap();
+        if transfer_fee != transfer_fee_verification {
+            // We believe this should never happen
+            return Err(LockerError::MathOverflow.into());
+        }
+
+        return Ok(transfer_fee_included_amount);
+    }
+
+    Ok(transfer_fee_excluded_amount)
 }
 
 pub fn harvest_fees<'c: 'info, 'info>(
@@ -361,64 +400,4 @@ fn get_transfer_hook_program_id<'info>(
     Ok(extension::transfer_hook::get_program_id(
         &token_mint_unpacked,
     ))
-}
-
-pub fn calculate_pre_fee_amount(transfer_fee: &TransferFee, post_fee_amount: u64) -> Option<u64> {
-    if post_fee_amount == 0 {
-        return Some(0);
-    }
-    let maximum_fee = u64::from(transfer_fee.maximum_fee);
-    let transfer_fee_basis_points = u16::from(transfer_fee.transfer_fee_basis_points) as u128;
-    if transfer_fee_basis_points == 0 {
-        Some(post_fee_amount)
-    } else if transfer_fee_basis_points == ONE_IN_BASIS_POINTS {
-        Some(maximum_fee.checked_add(post_fee_amount)?)
-    } else {
-        let numerator = (post_fee_amount as u128).checked_mul(ONE_IN_BASIS_POINTS)?;
-        let denominator = ONE_IN_BASIS_POINTS.checked_sub(transfer_fee_basis_points)?;
-        // let raw_pre_fee_amount = ceil_div(numerator, denominator)?;
-        let raw_pre_fee_amount = numerator
-            .checked_add(ONE_IN_BASIS_POINTS)?
-            .checked_sub(1)?
-            .checked_div(denominator)?;
-
-        if raw_pre_fee_amount.checked_sub(post_fee_amount as u128)? >= maximum_fee as u128 {
-            post_fee_amount.checked_add(maximum_fee)
-        } else {
-            // should return `None` if `pre_fee_amount` overflows
-            u64::try_from(raw_pre_fee_amount).ok()
-        }
-    }
-}
-
-#[cfg(test)]
-mod token2022_tests {
-    use anchor_spl::token_interface::spl_pod::primitives::{PodU16, PodU64};
-    use proptest::prelude::*;
-
-    use super::*;
-
-    const MAX_FEE_BASIS_POINTS: u16 = 100;
-    proptest! {
-        #[test]
-        fn inverse_fee_relationship(
-            transfer_fee_basis_points in 0u16..MAX_FEE_BASIS_POINTS,
-            maximum_fee in u64::MIN..=u64::MAX,
-            amount_in in 0..=u64::MAX
-        ) {
-            let transfer_fee = TransferFee {
-                epoch: PodU64::from(0),
-                maximum_fee: PodU64::from(maximum_fee),
-                transfer_fee_basis_points: PodU16::from(transfer_fee_basis_points),
-            };
-            let fee = transfer_fee.calculate_fee(amount_in).unwrap();
-            let amount_out = amount_in.checked_sub(fee).unwrap();
-            let fee_exact_out = calculate_pre_fee_amount(&transfer_fee, amount_out).unwrap().checked_sub(amount_out).unwrap();
-            assert!(fee_exact_out >= fee);
-            if fee_exact_out - fee > 0 {
-                println!("dif {} {} {} {} {}",fee_exact_out - fee, fee, fee_exact_out, maximum_fee, amount_in);
-            }
-
-        }
-    }
 }
