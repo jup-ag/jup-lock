@@ -21,6 +21,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking Changes
 
+
+## Program [0.6.0]
+
+### Breaking Changes
+
+- Vesting escrows created from root escrows will initialize a base account, the `create-vesting-escrow-from-root` instruction will require base account to be mutable
+
+### Fixed 
+
+- Fix calculation for spl-token2022 fees
+- Fix signer flag check when `creator == recipient`
+- Allow any token account to be recipient token account as long as the ownership is owned by the recipient
+
+
 ## Program [0.5.0]
 
 ### Changed
